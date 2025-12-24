@@ -46,7 +46,7 @@ const MANUAL_RECITERS: Reciter[] = [
     format: 'audio',
     type: 'surah',
     isVerseByVerse: false,
-    urlPrefix: 'https://server6.mp3quran.net/lhdan/'
+    urlPrefix: 'https://server8.mp3quran.net/lhdan/'
   }
 ];
 
