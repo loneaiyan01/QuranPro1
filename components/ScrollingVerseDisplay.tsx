@@ -33,29 +33,53 @@ const ScrollingVerseDisplay: React.FC<ScrollingVerseDisplayProps> = ({
         }
     }, [arabicSurah]);
 
+    const isUserInteracting = useRef(false);
+    const isAutoScrolling = useRef(false);
+    const interactionTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    // Handle manual scroll detection
+    const handleScroll = () => {
+        if (isAutoScrolling.current) {
+            isAutoScrolling.current = false; // Reset flag
+            return;
+        }
+
+        // User is scrolling manually
+        isUserInteracting.current = true;
+
+        // Clear existing timeout
+        if (interactionTimeout.current) {
+            clearTimeout(interactionTimeout.current);
+        }
+
+        // Resume auto-scroll after 4 seconds of inactivity
+        interactionTimeout.current = setTimeout(() => {
+            isUserInteracting.current = false;
+        }, 4000);
+    };
+
     // Auto-scroll logic
     useEffect(() => {
+        // Don't auto-scroll if user is interacting
+        if (isUserInteracting.current) return;
+
         if (isPlaying && containerRef.current && duration > 0) {
             const container = containerRef.current;
             const scrollHeight = container.scrollHeight - container.clientHeight;
 
-            // Calculate target scroll position based on playback progress
-            // We assume reading speed is roughly constant relative to audio time
             const progress = currentTime / duration;
             const targetScrollTop = scrollHeight * progress;
 
-            // Smoothly scroll to target
-            // We use a small threshold to avoid jitter if user tries to scroll manually
-            if (Math.abs(container.scrollTop - targetScrollTop) > 50) {
-                // If difference is huge, maybe user jumped or just started.
-                // In a real sophisticated app we'd detect manual scroll interactions
-                // and pause auto-scroll. For now, we'll just soft update.
+            // Only scroll if the difference is significant to avoid micro-jitters
+            if (Math.abs(container.scrollTop - targetScrollTop) > 10) {
+                isAutoScrolling.current = true;
+                // Use direct assignment for consistent un-interrupted flow, 
+                // or scrollTo for smooth. Direct is often better for "sync" feeling
+                // but 'smooth' looks nicer.
                 container.scrollTo({
                     top: targetScrollTop,
                     behavior: 'smooth'
                 });
-            } else {
-                container.scrollTop = targetScrollTop;
             }
         }
     }, [currentTime, duration, isPlaying]);
@@ -73,6 +97,7 @@ const ScrollingVerseDisplay: React.FC<ScrollingVerseDisplayProps> = ({
     return (
         <div
             ref={containerRef}
+            onScroll={handleScroll}
             className="flex-1 overflow-y-auto px-4 py-8 lg:px-20 scroll-smooth"
         >
             <div className="max-w-4xl mx-auto space-y-8 pb-32">
