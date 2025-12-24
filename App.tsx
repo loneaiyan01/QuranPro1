@@ -21,7 +21,7 @@ function App() {
   // UI State
   const [isLoadingContent, setIsLoadingContent] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false); // Start closed on mobile, logic handles desktop
-  const [displayMode, setDisplayMode] = useState<DisplayMode>(DisplayMode.BOTH);
+  const [displayMode, setDisplayMode] = useState<DisplayMode>(DisplayMode.ENGLISH_ONLY);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
 
   // Audio State - Dual buffer system for seamless transitions
