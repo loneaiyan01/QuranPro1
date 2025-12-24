@@ -13,23 +13,25 @@ function App() {
   const [currentSurah, setCurrentSurah] = useState<Surah | null>(null);
   const [surahText, setSurahText] = useState<{ arabic: SurahContent; english: SurahContent } | null>(null);
   const [audioData, setAudioData] = useState<AudioAyah[]>([]);
-  
+
   // Selection State
   const [selectedReciter, setSelectedReciter] = useState<Reciter | null>(null);
   const [currentAyahIndex, setCurrentAyahIndex] = useState<number>(0);
-  
+
   // UI State
   const [isLoadingContent, setIsLoadingContent] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false); // Start closed on mobile, logic handles desktop
   const [displayMode, setDisplayMode] = useState<DisplayMode>(DisplayMode.BOTH);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
 
-  // Audio State
+  // Audio State - Dual buffer system for seamless transitions
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const preloadAudioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [audioProgress, setAudioProgress] = useState<number>(0);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
+  const isTransitioning = useRef<boolean>(false);
 
   // Initialization
   useEffect(() => {
@@ -40,14 +42,14 @@ function App() {
       ]);
       setSurahs(fetchedSurahs);
       setReciters(fetchedReciters);
-      
+
       // Defaults
       if (fetchedReciters.length > 0) {
         // Prefer Mishary if available, otherwise first
         const mishary = fetchedReciters.find(r => r.identifier === 'ar.alafasy');
         setSelectedReciter(mishary || fetchedReciters[0]);
       }
-      
+
       // Load Surah Al-Fatiha by default
       if (fetchedSurahs.length > 0) {
         handleSelectSurah(fetchedSurahs[0]);
@@ -60,7 +62,7 @@ function App() {
     };
 
     init();
-    
+
     // Check system preference for dark mode
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       setIsDarkMode(true);
@@ -94,7 +96,7 @@ function App() {
     setCurrentAyahIndex(0); // Reset to first ayah
     setIsPlaying(false);
     setAudioProgress(0);
-    
+
     // Reset audio source immediately to stop previous playback
     if (audioRef.current) {
       audioRef.current.pause();
@@ -103,31 +105,43 @@ function App() {
 
     const textData = await fetchSurahText(surah.number);
     setSurahText(textData);
-    
+
     // Audio data will be fetched by the other useEffect
     setIsLoadingContent(false);
   };
 
-  // Audio Logic: Source Management
+  // Audio Logic: Source Management with Preloading
   useEffect(() => {
     if (audioData.length > 0 && audioRef.current && currentAyahIndex < audioData.length) {
       const audioUrl = audioData[currentAyahIndex]?.audio;
       if (audioUrl && audioRef.current.src !== audioUrl) {
         // Save current play state
-        const wasPlaying = isPlaying;
-        
+        const wasPlaying = isPlaying || isTransitioning.current;
+        isTransitioning.current = false;
+
         audioRef.current.src = audioUrl;
         audioRef.current.load();
-        
+
         if (wasPlaying) {
-            audioRef.current.play().catch(e => {
-                console.error("Autoplay prevented or failed", e);
-                setIsPlaying(false);
-            });
+          audioRef.current.play().catch(e => {
+            console.error("Autoplay prevented or failed", e);
+            setIsPlaying(false);
+          });
         }
       }
     }
-  }, [currentAyahIndex, audioData]); // Removed isPlaying from deps to avoid re-triggering src set
+  }, [currentAyahIndex, audioData]);
+
+  // Audio Logic: Preload Next Verse
+  useEffect(() => {
+    if (audioData.length > 0 && currentAyahIndex < audioData.length - 1) {
+      const nextAudioUrl = audioData[currentAyahIndex + 1]?.audio;
+      if (nextAudioUrl && preloadAudioRef.current) {
+        preloadAudioRef.current.src = nextAudioUrl;
+        preloadAudioRef.current.load();
+      }
+    }
+  }, [currentAyahIndex, audioData]);
 
   // Audio Logic: Play/Pause Toggle
   const togglePlay = () => {
@@ -155,11 +169,12 @@ function App() {
     };
 
     const handleEnded = () => {
-      // Auto-sync: Move to next ayah
+      // Auto-sync: Move to next ayah with seamless transition
       if (surahText && currentAyahIndex < surahText.arabic.ayahs.length - 1) {
+        // Mark that we're transitioning to prevent pause state flicker
+        isTransitioning.current = true;
         setCurrentAyahIndex(prev => prev + 1);
-        // FORCE PLAYING STATE for seamless transition
-        // This overrides the 'pause' event that might have fired when the track ended
+        // Keep playing state true during transition
         setIsPlaying(true);
       } else {
         setIsPlaying(false);
@@ -168,14 +183,19 @@ function App() {
     };
 
     const handlePlay = () => setIsPlaying(true);
-    
+
     const handlePause = () => {
-      // We check if the audio actually ended to avoid setting playing to false 
-      // during the split second transition, but relying on handleEnded's state update 
-      // in the same tick cycle usually works best in React.
-      // However, for safety, if we are at the end, let handleEnded manage state.
-      if (!audio.ended) {
-         setIsPlaying(false);
+      // Ignore pause events during transitions to prevent state flicker
+      if (!audio.ended && !isTransitioning.current) {
+        setIsPlaying(false);
+      }
+    };
+
+    const handleCanPlayThrough = () => {
+      // When the audio is ready to play without buffering, 
+      // immediately start if we were transitioning
+      if (isTransitioning.current && isPlaying) {
+        audio.play().catch(console.error);
       }
     };
 
@@ -183,14 +203,16 @@ function App() {
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
+    audio.addEventListener('canplaythrough', handleCanPlayThrough);
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('canplaythrough', handleCanPlayThrough);
     };
-  }, [currentAyahIndex, surahText]);
+  }, [currentAyahIndex, surahText, isPlaying]);
 
   // Navigation Handlers
   const handleNext = () => {
@@ -215,13 +237,14 @@ function App() {
 
   return (
     <div className="flex h-screen w-full relative overflow-hidden">
-      
+
       {/* Hidden Audio Element */}
       <audio ref={audioRef} preload="auto" />
+      <audio ref={preloadAudioRef} preload="auto" />
 
       {/* Sidebar */}
-      <Sidebar 
-        isOpen={isSidebarOpen} 
+      <Sidebar
+        isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         surahs={surahs}
         currentSurah={currentSurah}
@@ -237,10 +260,10 @@ function App() {
 
       {/* Main Content */}
       <div className={`flex-1 flex flex-col h-full transition-all duration-300 relative ${isSidebarOpen ? 'lg:ml-80' : ''}`}>
-        
+
         {/* Top Mobile Bar */}
         <div className="lg:hidden absolute top-0 left-0 p-4 z-20">
-          <button 
+          <button
             onClick={() => setIsSidebarOpen(true)}
             className="p-2 bg-white/80 dark:bg-emerald-900/80 rounded-full shadow-sm backdrop-blur-sm text-emerald-900 dark:text-emerald-100"
           >
@@ -250,7 +273,7 @@ function App() {
 
         {/* Desktop Sidebar Toggle (Optional, for Zen Mode) */}
         <div className="hidden lg:block absolute top-4 left-4 z-20">
-          <button 
+          <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="p-2 bg-transparent hover:bg-gray-100 dark:hover:bg-emerald-800 rounded-lg text-gray-400 hover:text-emerald-600 transition-colors"
             title={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
@@ -261,7 +284,7 @@ function App() {
 
         {/* Verse Display Area */}
         <main className="flex-1 flex flex-col relative">
-          <VerseDisplay 
+          <VerseDisplay
             arabicVerse={surahText?.arabic.ayahs[currentAyahIndex]}
             englishVerse={surahText?.english.ayahs[currentAyahIndex]}
             displayMode={displayMode}
@@ -271,7 +294,7 @@ function App() {
         </main>
 
         {/* Player Controls */}
-        <PlayerControls 
+        <PlayerControls
           isPlaying={isPlaying}
           onPlayPause={togglePlay}
           onNext={handleNext}
