@@ -303,7 +303,7 @@ function App() {
         </div>
 
         {/* Verse Display Area */}
-        <main className="flex-1 flex flex-col relative h-full">
+        <main className="flex-1 flex flex-col relative">
           {/* h-full is important for scrolling container */}
 
           {isScrollingMode ? (
