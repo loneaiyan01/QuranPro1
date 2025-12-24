@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
 import VerseDisplay from './components/VerseDisplay';
+import ScrollingVerseDisplay from './components/ScrollingVerseDisplay';
 import PlayerControls from './components/PlayerControls';
 import { fetchReciters, fetchSurahs, fetchSurahText, fetchSurahAudio } from './services/api';
 import { Surah, Reciter, SurahContent, AudioAyah, DisplayMode } from './types';
@@ -32,6 +33,9 @@ function App() {
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const isTransitioning = useRef<boolean>(false);
+
+  // Derived State
+  const isScrollingMode = selectedReciter && !selectedReciter.isVerseByVerse;
 
   // Initialization
   useEffect(() => {
@@ -112,8 +116,12 @@ function App() {
 
   // Audio Logic: Source Management with Preloading
   useEffect(() => {
-    if (audioData.length > 0 && audioRef.current && currentAyahIndex < audioData.length) {
-      const audioUrl = audioData[currentAyahIndex]?.audio;
+    // If not VBV, we just play index 0 (the full file)
+    const targetIndex = isScrollingMode ? 0 : currentAyahIndex;
+
+    if (audioData.length > 0 && audioRef.current && targetIndex < audioData.length) {
+      const audioUrl = audioData[targetIndex]?.audio;
+
       if (audioUrl && audioRef.current.src !== audioUrl) {
         // Save current play state
         const wasPlaying = isPlaying || isTransitioning.current;
@@ -130,22 +138,25 @@ function App() {
         }
       }
     }
-  }, [currentAyahIndex, audioData]);
+  }, [currentAyahIndex, audioData, isScrollingMode]);
 
-  // Audio Logic: Preload Next Verse
+  // Audio Logic: Preload Next Verse (Only for VBV mode)
   useEffect(() => {
-    if (audioData.length > 0 && currentAyahIndex < audioData.length - 1) {
+    if (!isScrollingMode && audioData.length > 0 && currentAyahIndex < audioData.length - 1) {
       const nextAudioUrl = audioData[currentAyahIndex + 1]?.audio;
       if (nextAudioUrl && preloadAudioRef.current) {
         preloadAudioRef.current.src = nextAudioUrl;
         preloadAudioRef.current.load();
       }
     }
-  }, [currentAyahIndex, audioData]);
+  }, [currentAyahIndex, audioData, isScrollingMode]);
 
   // Audio Logic: Play/Pause Toggle
   const togglePlay = () => {
-    if (!audioRef.current || !audioData[currentAyahIndex]) return;
+    if (!audioRef.current) return;
+
+    const targetIndex = isScrollingMode ? 0 : currentAyahIndex;
+    if (!audioData[targetIndex]) return;
 
     if (isPlaying) {
       audioRef.current.pause();
@@ -169,6 +180,13 @@ function App() {
     };
 
     const handleEnded = () => {
+      if (isScrollingMode) {
+        // In scrolling mode (full file), just stop at end
+        setIsPlaying(false);
+        setAudioProgress(0);
+        return;
+      }
+
       // Auto-sync: Move to next ayah with seamless transition
       if (surahText && currentAyahIndex < surahText.arabic.ayahs.length - 1) {
         // Mark that we're transitioning to prevent pause state flicker
@@ -212,16 +230,18 @@ function App() {
       audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('canplaythrough', handleCanPlayThrough);
     };
-  }, [currentAyahIndex, surahText, isPlaying]);
+  }, [currentAyahIndex, surahText, isPlaying, isScrollingMode]);
 
   // Navigation Handlers
   const handleNext = () => {
+    if (isScrollingMode) return; // Disable next in scrolling mode
     if (surahText && currentAyahIndex < surahText.arabic.ayahs.length - 1) {
       setCurrentAyahIndex(prev => prev + 1);
     }
   };
 
   const handlePrev = () => {
+    if (isScrollingMode) return; // Disable prev in scrolling mode
     if (currentAyahIndex > 0) {
       setCurrentAyahIndex(prev => prev - 1);
     }
@@ -283,14 +303,29 @@ function App() {
         </div>
 
         {/* Verse Display Area */}
-        <main className="flex-1 flex flex-col relative">
-          <VerseDisplay
-            arabicVerse={surahText?.arabic.ayahs[currentAyahIndex]}
-            englishVerse={surahText?.english.ayahs[currentAyahIndex]}
-            displayMode={displayMode}
-            isLoading={isLoadingContent}
-            currentSurah={currentSurah}
-          />
+        <main className="flex-1 flex flex-col relative h-full">
+          {/* h-full is important for scrolling container */}
+
+          {isScrollingMode ? (
+            <ScrollingVerseDisplay
+              arabicSurah={surahText?.arabic}
+              englishSurah={surahText?.english}
+              displayMode={displayMode}
+              isLoading={isLoadingContent}
+              isPlaying={isPlaying}
+              currentTime={currentTime}
+              duration={duration}
+            />
+          ) : (
+            <VerseDisplay
+              arabicVerse={surahText?.arabic.ayahs[currentAyahIndex]}
+              englishVerse={surahText?.english.ayahs[currentAyahIndex]}
+              displayMode={displayMode}
+              isLoading={isLoadingContent}
+              currentSurah={currentSurah}
+            />
+          )}
+
         </main>
 
         {/* Player Controls */}
@@ -305,7 +340,7 @@ function App() {
           duration={duration}
           surahName={currentSurah?.englishName}
           reciterName={selectedReciter?.name}
-          verseNumber={surahText?.arabic.ayahs[currentAyahIndex]?.numberInSurah}
+          verseNumber={isScrollingMode ? undefined : surahText?.arabic.ayahs[currentAyahIndex]?.numberInSurah}
         />
       </div>
 

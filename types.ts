@@ -50,6 +50,8 @@ export interface Reciter {
   language: string;
   format: string;
   type: string;
+  isVerseByVerse: boolean;
+  urlPrefix?: string;
 }
 
 export enum DisplayMode {

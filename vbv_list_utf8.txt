@@ -1,0 +1,23 @@
+ar.abdullahbasfar : Abdullah Basfar
+ar.abdurrahmaansudais : Abdurrahmaan As-Sudais
+ar.abdulsamad : Abdul Samad
+ar.shaatree : Abu Bakr Ash-Shaatree
+ar.ahmedajamy : Ahmed ibn Ali al-Ajamy
+ar.alafasy : Alafasy
+ar.hanirifai : Hani Rifai
+ar.husary : Husary
+ar.husarymujawwad : Husary (Mujawwad)
+ar.hudhaify : Hudhaify
+ar.ibrahimakhbar : Ibrahim Akhdar
+ar.mahermuaiqly : Maher Al Muaiqly
+ar.muhammadayyoub : Muhammad Ayyoub
+ar.muhammadjibreel : Muhammad Jibreel
+ar.saoodshuraym : Saood bin Ibraaheem Ash-Shuraym
+en.walk : Ibrahim Walk
+ar.parhizgar : Parhizgar
+ur.khan : Shamshad Ali Khan
+zh.chinese : Chinese
+fr.leclerc : Youssouf Leclerc
+ar.aymanswoaid : Ayman Sowaid
+ru.kuliev-audio : Elmir Kuliev by 1MuslimApp
+ru.kuliev-audio-2 : Elmir Kuliev 2 by 1MuslimApp
