@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
 import ScrollingVerseDisplay from './components/ScrollingVerseDisplay';
 import PlayerControls from './components/PlayerControls';
+import DynamicIsland from './components/DynamicIsland';
 import { fetchReciters, fetchSurahs, fetchSurahText, fetchSurahAudio } from './services/api';
 import { Surah, Reciter, SurahContent, AudioAyah, DisplayMode, Theme } from './types';
 import { Menu } from 'lucide-react';
@@ -288,8 +289,46 @@ function App() {
     }
   };
 
+  // Media Session API Integration
+  useEffect(() => {
+    if ('mediaSession' in navigator && selectedReciter && currentSurah) {
+      const artworkUrl = `/assets/reciters/${selectedReciter.identifier}.png`;
+      // Use fallback if artwork is missing (handled by the browser or we can check exists)
+
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: currentSurah.englishName,
+        artist: selectedReciter.name, // Use 'name' property for reciter
+        album: 'Nur Quran',
+        artwork: [
+          { src: artworkUrl, sizes: '512x512', type: 'image/png' },
+          { src: '/assets/reciters/default.png', sizes: '512x512', type: 'image/png' }
+        ]
+      });
+
+      navigator.mediaSession.setActionHandler('play', () => togglePlay());
+      navigator.mediaSession.setActionHandler('pause', () => togglePlay());
+      navigator.mediaSession.setActionHandler('previoustrack', () => {
+        if (!isFullSurahAudio && currentAyahIndex > 0) {
+          setCurrentAyahIndex(prev => prev - 1);
+        }
+      });
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        if (!isFullSurahAudio && surahText && currentAyahIndex < surahText.arabic.ayahs.length - 1) {
+          setCurrentAyahIndex(prev => prev + 1);
+        }
+      });
+    }
+  }, [selectedReciter, currentSurah, currentAyahIndex, isPlaying, isFullSurahAudio, surahText, togglePlay]);
+
   return (
     <div className="flex h-screen w-full relative overflow-hidden">
+
+      {/* Dynamic Island */}
+      <DynamicIsland
+        isPlaying={isPlaying}
+        reciter={selectedReciter}
+        currentSurah={currentSurah}
+      />
 
       {/* Hidden Audio Element */}
       <audio ref={audioRef} preload="auto" />
