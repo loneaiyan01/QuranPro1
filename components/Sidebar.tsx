@@ -1,6 +1,6 @@
 import React from 'react';
-import { Surah, Reciter, DisplayMode } from '../types';
-import { BookOpen, User, Settings, Moon, Sun, X, Menu, Search } from 'lucide-react';
+import { Surah, Reciter, DisplayMode, Theme } from '../types';
+import { BookOpen, User, Settings, Moon, Sun, X, Menu, Search, Palette } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -13,8 +13,8 @@ interface SidebarProps {
   onSelectReciter: (reciter: Reciter) => void;
   displayMode: DisplayMode;
   onSetDisplayMode: (mode: DisplayMode) => void;
-  isDarkMode: boolean;
-  onToggleDarkMode: () => void;
+  theme: Theme;
+  onSetTheme: (theme: Theme) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -28,28 +28,28 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSelectReciter,
   displayMode,
   onSetDisplayMode,
-  isDarkMode,
-  onToggleDarkMode
+  theme,
+  onSetTheme
 }) => {
   const [activeTab, setActiveTab] = React.useState<'surahs' | 'settings'>('surahs');
   const [searchQuery, setSearchQuery] = React.useState('');
 
-  const filteredSurahs = surahs.filter(s => 
-    s.englishName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+  const filteredSurahs = surahs.filter(s =>
+    s.englishName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.number.toString().includes(searchQuery)
   );
 
   return (
     <>
       {/* Overlay for mobile */}
-      <div 
+      <div
         className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 md:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
       />
 
       {/* Sidebar Panel */}
       <div className={`fixed inset-y-0 left-0 w-80 bg-white dark:bg-emerald-900 shadow-xl transform transition-transform duration-300 ease-in-out z-50 flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        
+
         {/* Header */}
         <div className="p-6 border-b border-gray-100 dark:border-emerald-800 flex justify-between items-center">
           <h2 className="text-xl font-serif font-bold text-emerald-800 dark:text-emerald-100 flex items-center gap-2">
@@ -63,13 +63,13 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Tabs */}
         <div className="flex border-b border-gray-100 dark:border-emerald-800">
-          <button 
+          <button
             className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'surahs' ? 'text-emerald-600 border-b-2 border-emerald-600 dark:text-emerald-200' : 'text-gray-500 dark:text-emerald-400'}`}
             onClick={() => setActiveTab('surahs')}
           >
             Surahs
           </button>
-          <button 
+          <button
             className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'settings' ? 'text-emerald-600 border-b-2 border-emerald-600 dark:text-emerald-200' : 'text-gray-500 dark:text-emerald-400'}`}
             onClick={() => setActiveTab('settings')}
           >
@@ -83,9 +83,9 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div className="p-4 space-y-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input 
-                  type="text" 
-                  placeholder="Search Surah..." 
+                <input
+                  type="text"
+                  placeholder="Search Surah..."
                   className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-emerald-950 border border-gray-200 dark:border-emerald-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -99,18 +99,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                       onSelectSurah(surah);
                       if (window.innerWidth < 768) onClose();
                     }}
-                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center justify-between transition-colors ${
-                      currentSurah?.number === surah.number 
-                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-800 dark:text-emerald-100' 
+                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center justify-between transition-colors ${currentSurah?.number === surah.number
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-800 dark:text-emerald-100'
                         : 'hover:bg-gray-50 dark:hover:bg-emerald-800/50 text-gray-700 dark:text-emerald-200'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3">
-                      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-                        currentSurah?.number === surah.number 
-                          ? 'bg-emerald-200 dark:bg-emerald-700' 
+                      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${currentSurah?.number === surah.number
+                          ? 'bg-emerald-200 dark:bg-emerald-700'
                           : 'bg-gray-100 dark:bg-emerald-900'
-                      }`}>
+                        }`}>
                         {surah.number}
                       </span>
                       <div>
@@ -131,19 +129,19 @@ const Sidebar: React.FC<SidebarProps> = ({
               <div className="space-y-3">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-emerald-400">Display Mode</h3>
                 <div className="grid grid-cols-3 gap-2">
-                  <button 
+                  <button
                     onClick={() => onSetDisplayMode(DisplayMode.ARABIC_ONLY)}
                     className={`px-3 py-2 text-sm rounded-md border ${displayMode === DisplayMode.ARABIC_ONLY ? 'bg-emerald-600 text-white border-emerald-600' : 'border-gray-200 dark:border-emerald-700 text-gray-600 dark:text-emerald-200'}`}
                   >
                     Arabic
                   </button>
-                  <button 
+                  <button
                     onClick={() => onSetDisplayMode(DisplayMode.ENGLISH_ONLY)}
                     className={`px-3 py-2 text-sm rounded-md border ${displayMode === DisplayMode.ENGLISH_ONLY ? 'bg-emerald-600 text-white border-emerald-600' : 'border-gray-200 dark:border-emerald-700 text-gray-600 dark:text-emerald-200'}`}
                   >
                     English
                   </button>
-                  <button 
+                  <button
                     onClick={() => onSetDisplayMode(DisplayMode.BOTH)}
                     className={`px-3 py-2 text-sm rounded-md border ${displayMode === DisplayMode.BOTH ? 'bg-emerald-600 text-white border-emerald-600' : 'border-gray-200 dark:border-emerald-700 text-gray-600 dark:text-emerald-200'}`}
                   >
@@ -174,25 +172,48 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </div>
               </div>
 
-              {/* Theme */}
+              {/* Theme Selection */}
               <div className="space-y-3">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-emerald-400">Appearance</h3>
-                <button 
-                  onClick={onToggleDarkMode}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-emerald-950 rounded-lg border border-gray-200 dark:border-emerald-800 text-gray-700 dark:text-emerald-200"
-                >
-                  <span className="text-sm font-medium">Dark Mode</span>
-                  {isDarkMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => onSetTheme(Theme.LIGHT)}
+                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md border transition-all ${theme === Theme.LIGHT ? 'bg-emerald-600 text-white border-emerald-600' : 'border-gray-200 dark:border-emerald-700 text-gray-600 dark:text-emerald-200 hover:bg-gray-50'}`}
+                  >
+                    <Sun className="w-4 h-4" />
+                    <span>Light</span>
+                  </button>
+                  <button
+                    onClick={() => onSetTheme(Theme.DARK)}
+                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md border transition-all ${theme === Theme.DARK ? 'bg-emerald-600 text-white border-emerald-600' : 'border-gray-200 dark:border-emerald-700 text-gray-600 dark:text-emerald-200 hover:bg-gray-50'}`}
+                  >
+                    <Moon className="w-4 h-4" />
+                    <span>Dark</span>
+                  </button>
+                  <button
+                    onClick={() => onSetTheme(Theme.SEPIA)}
+                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md border transition-all ${theme === Theme.SEPIA ? 'bg-[#704214] text-white border-[#704214]' : 'border-orange-200/50 text-[#704214] dark:text-orange-200/80 hover:bg-orange-50/50'}`}
+                  >
+                    <div className="w-3 h-3 rounded-full bg-[#f4e4bc]" />
+                    <span>Sepia</span>
+                  </button>
+                  <button
+                    onClick={() => onSetTheme(Theme.MINIMAL)}
+                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md border transition-all ${theme === Theme.MINIMAL ? 'bg-black text-white border-black' : 'border-gray-200 text-gray-600 hover:bg-gray-100'}`}
+                  >
+                    <Palette className="w-4 h-4" />
+                    <span>Minimal</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}
         </div>
-        
+
         <div className="p-4 border-t border-gray-100 dark:border-emerald-800 text-center">
-            <p className="text-xs text-gray-400 dark:text-emerald-600">
-                Data from Alquran.cloud
-            </p>
+          <p className="text-xs text-gray-400 dark:text-emerald-600">
+            Data from Alquran.cloud
+          </p>
         </div>
       </div>
     </>

@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
-import VerseDisplay from './components/VerseDisplay';
 import ScrollingVerseDisplay from './components/ScrollingVerseDisplay';
 import PlayerControls from './components/PlayerControls';
 import { fetchReciters, fetchSurahs, fetchSurahText, fetchSurahAudio } from './services/api';
-import { Surah, Reciter, SurahContent, AudioAyah, DisplayMode } from './types';
+import { Surah, Reciter, SurahContent, AudioAyah, DisplayMode, Theme } from './types';
 import { Menu } from 'lucide-react';
 
 function App() {
@@ -23,7 +22,7 @@ function App() {
   const [isLoadingContent, setIsLoadingContent] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false); // Start closed on mobile, logic handles desktop
   const [displayMode, setDisplayMode] = useState<DisplayMode>(DisplayMode.ENGLISH_ONLY);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  const [theme, setTheme] = useState<Theme>(Theme.LIGHT);
 
   // Audio State - Dual buffer system for seamless transitions
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -33,9 +32,35 @@ function App() {
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const isTransitioning = useRef<boolean>(false);
+  const fadeRef = useRef<number | null>(null);
+
+  // Helper: Fade In Audio
+  const fadeAudioIn = useCallback(() => {
+    if (!audioRef.current) return;
+
+    // Clear any existing fade
+    if (fadeRef.current) {
+      clearInterval(fadeRef.current);
+    }
+
+    const audio = audioRef.current;
+    audio.volume = 0;
+    const duration = 400; // ms
+    const step = 0.05;
+    const interval = duration * step;
+
+    fadeRef.current = window.setInterval(() => {
+      if (audio.volume < 1) {
+        audio.volume = Math.min(1, audio.volume + step);
+      } else {
+        clearInterval(fadeRef.current!);
+        fadeRef.current = null;
+      }
+    }, interval);
+  }, []);
 
   // Derived State
-  const isScrollingMode = selectedReciter && !selectedReciter.isVerseByVerse;
+  const isFullSurahAudio = selectedReciter && !selectedReciter.isVerseByVerse;
 
   // Initialization
   useEffect(() => {
@@ -49,9 +74,9 @@ function App() {
 
       // Defaults
       if (fetchedReciters.length > 0) {
-        // Prefer Mishary if available, otherwise first
-        const mishary = fetchedReciters.find(r => r.identifier === 'ar.alafasy');
-        setSelectedReciter(mishary || fetchedReciters[0]);
+        // Prefer Sudais if available, otherwise first
+        const sudais = fetchedReciters.find(r => r.identifier === 'ar.abdurrahmaansudais');
+        setSelectedReciter(sudais || fetchedReciters[0]);
       }
 
       // Load Surah Al-Fatiha by default
@@ -69,18 +94,25 @@ function App() {
 
     // Check system preference for dark mode
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setIsDarkMode(true);
+      setTheme(Theme.DARK);
     }
   }, []);
 
-  // Effect: Update dark mode class
+  // Effect: Update document theme classes
   useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    // Remove all theme classes first
+    const root = document.documentElement;
+    root.classList.remove('dark', 'theme-sepia', 'theme-minimal');
+
+    // Add active theme class
+    if (theme === Theme.DARK) {
+      root.classList.add('dark');
+    } else if (theme === Theme.SEPIA) {
+      root.classList.add('theme-sepia');
+    } else if (theme === Theme.MINIMAL) {
+      root.classList.add('theme-minimal');
     }
-  }, [isDarkMode]);
+  }, [theme]);
 
   // Effect: Load Audio Data when Surah or Reciter changes
   useEffect(() => {
@@ -117,7 +149,7 @@ function App() {
   // Audio Logic: Source Management with Preloading
   useEffect(() => {
     // If not VBV, we just play index 0 (the full file)
-    const targetIndex = isScrollingMode ? 0 : currentAyahIndex;
+    const targetIndex = isFullSurahAudio ? 0 : currentAyahIndex;
 
     if (audioData.length > 0 && audioRef.current && targetIndex < audioData.length) {
       const audioUrl = audioData[targetIndex]?.audio;
@@ -128,6 +160,7 @@ function App() {
         isTransitioning.current = false;
 
         audioRef.current.src = audioUrl;
+        audioRef.current.volume = 0; // Prepare for fade
         audioRef.current.load();
 
         if (wasPlaying) {
@@ -138,29 +171,30 @@ function App() {
         }
       }
     }
-  }, [currentAyahIndex, audioData, isScrollingMode]);
+  }, [currentAyahIndex, audioData, isFullSurahAudio]);
 
   // Audio Logic: Preload Next Verse (Only for VBV mode)
   useEffect(() => {
-    if (!isScrollingMode && audioData.length > 0 && currentAyahIndex < audioData.length - 1) {
+    if (!isFullSurahAudio && audioData.length > 0 && currentAyahIndex < audioData.length - 1) {
       const nextAudioUrl = audioData[currentAyahIndex + 1]?.audio;
       if (nextAudioUrl && preloadAudioRef.current) {
         preloadAudioRef.current.src = nextAudioUrl;
         preloadAudioRef.current.load();
       }
     }
-  }, [currentAyahIndex, audioData, isScrollingMode]);
+  }, [currentAyahIndex, audioData, isFullSurahAudio]);
 
   // Audio Logic: Play/Pause Toggle
   const togglePlay = () => {
-    if (!audioRef.current) return;
+    if (!audioRef.current || audioData.length === 0) return;
 
-    const targetIndex = isScrollingMode ? 0 : currentAyahIndex;
+    const targetIndex = isFullSurahAudio ? 0 : currentAyahIndex;
     if (!audioData[targetIndex]) return;
 
     if (isPlaying) {
       audioRef.current.pause();
     } else {
+      audioRef.current.volume = 0; // Prepare for fade
       audioRef.current.play().catch(console.error);
     }
     setIsPlaying(!isPlaying);
@@ -180,8 +214,8 @@ function App() {
     };
 
     const handleEnded = () => {
-      if (isScrollingMode) {
-        // In scrolling mode (full file), just stop at end
+      if (isFullSurahAudio) {
+        // In full surah mode (single file), just stop at end
         setIsPlaying(false);
         setAudioProgress(0);
         return;
@@ -200,7 +234,10 @@ function App() {
       }
     };
 
-    const handlePlay = () => setIsPlaying(true);
+    const handlePlay = () => {
+      setIsPlaying(true);
+      fadeAudioIn();
+    };
 
     const handlePause = () => {
       // Ignore pause events during transitions to prevent state flicker
@@ -213,6 +250,7 @@ function App() {
       // When the audio is ready to play without buffering, 
       // immediately start if we were transitioning
       if (isTransitioning.current && isPlaying) {
+        audio.volume = 0; // Prepare for fade
         audio.play().catch(console.error);
       }
     };
@@ -230,18 +268,18 @@ function App() {
       audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('canplaythrough', handleCanPlayThrough);
     };
-  }, [currentAyahIndex, surahText, isPlaying, isScrollingMode]);
+  }, [currentAyahIndex, surahText, isPlaying, isFullSurahAudio, fadeAudioIn]);
 
   // Navigation Handlers
   const handleNext = () => {
-    if (isScrollingMode) return; // Disable next in scrolling mode
+    if (isFullSurahAudio) return; // Disable next in full surah mode
     if (surahText && currentAyahIndex < surahText.arabic.ayahs.length - 1) {
       setCurrentAyahIndex(prev => prev + 1);
     }
   };
 
   const handlePrev = () => {
-    if (isScrollingMode) return; // Disable prev in scrolling mode
+    if (isFullSurahAudio) return; // Disable prev in full surah mode
     if (currentAyahIndex > 0) {
       setCurrentAyahIndex(prev => prev - 1);
     }
@@ -274,8 +312,8 @@ function App() {
         onSelectReciter={setSelectedReciter}
         displayMode={displayMode}
         onSetDisplayMode={setDisplayMode}
-        isDarkMode={isDarkMode}
-        onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+        theme={theme}
+        onSetTheme={setTheme}
       />
 
       {/* Main Content */}
@@ -306,25 +344,17 @@ function App() {
         <main className="flex-1 flex flex-col relative min-h-0 overflow-hidden">
           {/* h-full is important for scrolling container */}
 
-          {isScrollingMode ? (
-            <ScrollingVerseDisplay
-              arabicSurah={surahText?.arabic}
-              englishSurah={surahText?.english}
-              displayMode={displayMode}
-              isLoading={isLoadingContent}
-              isPlaying={isPlaying}
-              currentTime={currentTime}
-              duration={duration}
-            />
-          ) : (
-            <VerseDisplay
-              arabicVerse={surahText?.arabic.ayahs[currentAyahIndex]}
-              englishVerse={surahText?.english.ayahs[currentAyahIndex]}
-              displayMode={displayMode}
-              isLoading={isLoadingContent}
-              currentSurah={currentSurah}
-            />
-          )}
+          <ScrollingVerseDisplay
+            arabicSurah={surahText?.arabic}
+            englishSurah={surahText?.english}
+            displayMode={displayMode}
+            isLoading={isLoadingContent}
+            isPlaying={isPlaying}
+            currentTime={currentTime}
+            duration={duration}
+            currentAyahIndex={currentAyahIndex}
+            isVerseByVerse={!isFullSurahAudio}
+          />
 
         </main>
 
@@ -340,7 +370,7 @@ function App() {
           duration={duration}
           surahName={currentSurah?.englishName}
           reciterName={selectedReciter?.name}
-          verseNumber={isScrollingMode ? undefined : surahText?.arabic.ayahs[currentAyahIndex]?.numberInSurah}
+          verseNumber={surahText?.arabic.ayahs[currentAyahIndex]?.numberInSurah}
         />
       </div>
 

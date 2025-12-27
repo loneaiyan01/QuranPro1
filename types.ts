@@ -54,6 +54,13 @@ export interface Reciter {
   urlPrefix?: string;
 }
 
+export enum Theme {
+  LIGHT = 'light',
+  DARK = 'dark',
+  SEPIA = 'sepia',
+  MINIMAL = 'minimal'
+}
+
 export enum DisplayMode {
   BOTH = 'both',
   ARABIC_ONLY = 'arabic',

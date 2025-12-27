@@ -3,16 +3,16 @@ import { Surah, Reciter, SurahContent, AudioAyah } from '../types';
 const BASE_URL = 'https://api.alquran.cloud/v1';
 
 // Priority list for famous reciters to appear at the top
-const PRIORITY_IDENTIFIERS = [
-  'ar.alafasy',           // Mishary Rashid Alafasy
-  'ar.yasseraldossari',   // Yasser Al-Dosari
-  'ar.muhammadalluhaidan', // Muhammad Al-Luhaidan
-  'ar.sudais',            // Abdul Rahman Al-Sudais
-  'ar.shuraym',           // Saud Al-Shuraim
-  'ar.mahermuaiqly',      // Maher Al Muaiqly
-  'ar.abdulbasitmurattal', // Abdul Basit (Murattal)
-  'ar.minshawi',          // Mohamed Siddiq Al-Minshawi
-  'ar.husary'             // Mahmoud Khalil Al-Husary
+// Priority list for allowed reciters
+const ALLOWED_IDENTIFIERS = [
+  'ar.abdurrahmaansudais', // Sudais
+  'ar.saoodshuraym',       // Shuraim
+  'ar.mahermuaiqly',      // Maher
+  'ar.muhammadayyoub',    // Muhammad Ayyub
+  'ar.hudhaify',          // Hudhaify
+  'ar.yasseraldosari',     // Yasser Al-Dosari (Manual)
+  'ar.muhammadalluhaidan', // Luhaidan (Manual)
+  'ar.ahmedtalib'          // Ahmed bin Talib (Manual)
 ];
 
 export const fetchSurahs = async (): Promise<Surah[]> => {
@@ -29,17 +29,17 @@ export const fetchSurahs = async (): Promise<Surah[]> => {
 // Manual list of Non-VBV reciters to append
 const MANUAL_RECITERS: Reciter[] = [
   {
-    identifier: 'ar.yasseraldosari', // Custom ID
+    identifier: 'ar.yasseraldosari',
     name: 'ياسر الدوسري',
     englishName: 'Yasser Al-Dosari',
     language: 'ar',
     format: 'audio',
-    type: 'surah', // Full surah audio
+    type: 'surah',
     isVerseByVerse: false,
     urlPrefix: 'https://server11.mp3quran.net/yasser/'
   },
   {
-    identifier: 'ar.muhammadalluhaidan', // Custom ID
+    identifier: 'ar.muhammadalluhaidan',
     name: 'محمد اللحيدان',
     englishName: 'Muhammad Al-Luhaidan',
     language: 'ar',
@@ -47,45 +47,41 @@ const MANUAL_RECITERS: Reciter[] = [
     type: 'surah',
     isVerseByVerse: false,
     urlPrefix: 'https://server8.mp3quran.net/lhdan/'
+  },
+  {
+    identifier: 'ar.ahmedtalib',
+    name: 'أحمد طالب بن حميد',
+    englishName: 'Ahmed bin Talib',
+    language: 'ar',
+    format: 'audio',
+    type: 'surah',
+    isVerseByVerse: false,
+    urlPrefix: 'https://server16.mp3quran.net/a_binhameed/Rewayat-Hafs-A-n-Assem/'
   }
 ];
 
 export const fetchReciters = async (): Promise<Reciter[]> => {
   try {
-    // We only want verse-by-verse audio for this specific player architecture
-    // to ensure the "single verse focus" works seamlessly with auto-sync.
     const response = await fetch(`${BASE_URL}/edition?format=audio&type=versebyverse`);
     const data = await response.json();
 
     if (!data.data) return [];
 
-    // Filter for Arabic language only (removes translations)
-    let reciters = data.data.filter((r: Reciter) => r.language === 'ar');
+    // Filter for Arabic language only
+    let apiReciters = data.data.filter((r: Reciter) => r.language === 'ar');
 
-    // Add isVerseByVerse flag to API results
-    reciters = reciters.map((r: Reciter) => ({ ...r, isVerseByVerse: true }));
+    // Add isVerseByVerse flag
+    apiReciters = apiReciters.map((r: Reciter) => ({ ...r, isVerseByVerse: true }));
 
-    // Append Manual Reciters
-    reciters = [...reciters, ...MANUAL_RECITERS];
+    // Merge with Manual
+    let reciters = [...apiReciters, ...MANUAL_RECITERS];
 
-    // Sort reciters: Priority ones first, then alphabetical
-    reciters.sort((a: Reciter, b: Reciter) => {
-      const indexA = PRIORITY_IDENTIFIERS.indexOf(a.identifier);
-      const indexB = PRIORITY_IDENTIFIERS.indexOf(b.identifier);
+    // Strictly keep ONLY the reciters requested by the user
+    reciters = reciters.filter(r => ALLOWED_IDENTIFIERS.includes(r.identifier));
 
-      // If both are in priority list, sort by the order in PRIORITY_IDENTIFIERS
-      if (indexA !== -1 && indexB !== -1) {
-        return indexA - indexB;
-      }
-
-      // If only A is in priority list, it comes first
-      if (indexA !== -1) return -1;
-
-      // If only B is in priority list, it comes first
-      if (indexB !== -1) return 1;
-
-      // Otherwise, sort alphabetically
-      return a.englishName.localeCompare(b.englishName);
+    // Sort by the order in ALLOWED_IDENTIFIERS
+    reciters.sort((a, b) => {
+      return ALLOWED_IDENTIFIERS.indexOf(a.identifier) - ALLOWED_IDENTIFIERS.indexOf(b.identifier);
     });
 
     return reciters;
