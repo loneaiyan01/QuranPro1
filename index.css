@@ -2,6 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Quranic Fonts */
+@font-face {
+  font-family: 'KFGQPC_V2';
+  src: url('https://cdn.jsdelivr.net/gh/thetruetruth/quran-data-kfgqpc@main/hafs-smart/font/hafssmart.8.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'KFGQPC_V1';
+  src: url('https://cdn.jsdelivr.net/gh/hafssa/kfgqpc-uthmanic-script-hafs@master/KFGQPC%20Uthman%20Taha%20Naskh.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Uthmani_Hafs';
+  src: url('https://cdn.jsdelivr.net/gh/GhaithSaffar/Quran-Uthmani-Fonts@main/UthmanicHafs1-13.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 :root {
   --bg-main: #FCFCFA;
   --bg-sidebar: #ffffff;

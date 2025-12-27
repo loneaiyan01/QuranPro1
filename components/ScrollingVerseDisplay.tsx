@@ -157,8 +157,8 @@ const ScrollingVerseDisplay: React.FC<ScrollingVerseDisplayProps> = ({
                             key={ayah.number}
                             ref={el => verseRefs.current[index] = el}
                             className={`p-8 md:p-10 rounded-3xl transition-all duration-700 border ${isActive
-                                    ? 'bg-card-active border-active shadow-xl'
-                                    : 'bg-transparent border-transparent hover:bg-white/50 dark:hover:bg-white/5'
+                                ? 'bg-card-active border-active shadow-xl'
+                                : 'bg-transparent border-transparent hover:bg-white/50 dark:hover:bg-white/5'
                                 }`}
                         >
                             {/* Header: Verse Number */}
@@ -183,7 +183,7 @@ const ScrollingVerseDisplay: React.FC<ScrollingVerseDisplayProps> = ({
                             {/* Arabic Text */}
                             {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ARABIC_ONLY) && (
                                 <p
-                                    className={`text-right font-amiri text-4xl md:text-5xl leading-[2.2] mb-8 transition-all duration-500 ${isActive ? 'text-main scale-[1.02] origin-right' : 'text-main opacity-90'
+                                    className={`text-right font-quran text-5xl md:text-6xl leading-[2.4] mb-8 transition-all duration-500 ${isActive ? 'text-main scale-[1.02] origin-right' : 'text-main opacity-90'
                                         }`}
                                     dir="rtl"
                                 >
