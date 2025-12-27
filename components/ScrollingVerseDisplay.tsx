@@ -11,6 +11,8 @@ interface ScrollingVerseDisplayProps {
     duration: number;
     currentAyahIndex: number;
     isVerseByVerse: boolean;
+    arabicFontSize: number;
+    translationFontSize: number;
 }
 
 const ScrollingVerseDisplay: React.FC<ScrollingVerseDisplayProps> = ({
@@ -23,6 +25,8 @@ const ScrollingVerseDisplay: React.FC<ScrollingVerseDisplayProps> = ({
     duration,
     currentAyahIndex,
     isVerseByVerse,
+    arabicFontSize,
+    translationFontSize,
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const verseRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -183,9 +187,10 @@ const ScrollingVerseDisplay: React.FC<ScrollingVerseDisplayProps> = ({
                             {/* Arabic Text */}
                             {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ARABIC_ONLY) && (
                                 <p
-                                    className={`text-right font-quran text-5xl md:text-6xl leading-[2.4] mb-8 transition-all duration-500 ${isActive ? 'text-main scale-[1.02] origin-right' : 'text-main opacity-90'
+                                    className={`text-right font-quran leading-[2.4] mb-8 transition-all duration-500 ${isActive ? 'text-main scale-[1.02] origin-right' : 'text-main opacity-90'
                                         }`}
                                     dir="rtl"
+                                    style={{ fontSize: `${arabicFontSize}px` }}
                                 >
                                     {ayah.text}
                                 </p>
@@ -194,8 +199,9 @@ const ScrollingVerseDisplay: React.FC<ScrollingVerseDisplayProps> = ({
                             {/* English Text */}
                             {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ENGLISH_ONLY) && englishSurah?.ayahs[index] && (
                                 <p
-                                    className={`text-left font-sans text-lg md:text-xl leading-relaxed transition-all duration-500 ${isActive ? 'text-slate-900 dark:text-slate-100 font-normal' : 'text-slate-500 dark:text-slate-400 opacity-60'
+                                    className={`text-left font-sans leading-relaxed transition-all duration-500 ${isActive ? 'text-slate-900 dark:text-slate-100 font-normal' : 'text-slate-500 dark:text-slate-400 opacity-60'
                                         }`}
+                                    style={{ fontSize: `${translationFontSize}px` }}
                                 >
                                     {englishSurah.ayahs[index].text}
                                 </p>

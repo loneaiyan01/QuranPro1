@@ -1,56 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nur Quran Player</title>
-    <meta name="description" content="Minimalist Quran Player with verse focus" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              cream: {
-                50: '#FCFCFA',
-                100: '#F5F5F0',
-                200: '#E6E6DF',
-                300: '#D1D1C7',
-              },
-              emerald: {
-                850: '#022C22', // Deep green
-                950: '#011C16',
-              }
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tarteela</title>
+  <meta name="description" content="Minimalist Quran Player with verse focus" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cream: {
+              50: '#FCFCFA',
+              100: '#F5F5F0',
+              200: '#E6E6DF',
+              300: '#D1D1C7',
             },
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              amiri: ['Amiri', 'serif'],
-              quran: ['KFGQPC_V2', 'KFGQPC_V1', 'Uthmani_Hafs', 'Amiri', 'serif'],
+            emerald: {
+              850: '#022C22', // Deep green
+              950: '#011C16',
             }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            amiri: ['Amiri', 'serif'],
+            quran: ['KFGQPC_V2', 'KFGQPC_V1', 'Uthmani_Hafs', 'Amiri', 'serif'],
           }
         }
       }
-    </script>
-    <style>
-      body {
-        font-family: 'Inter', sans-serif;
-      }
-      /* Custom scrollbar for webkit */
-      ::-webkit-scrollbar {
-        width: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      ::-webkit-scrollbar-thumb {
-        background-color: rgba(156, 163, 175, 0.5);
-        border-radius: 20px;
-      }
-    </style>
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Custom scrollbar for webkit */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: rgba(156, 163, 175, 0.5);
+      border-radius: 20px;
+    }
+  </style>
   <script type="importmap">
 {
   "imports": {
@@ -61,10 +67,13 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-cream-50 text-emerald-950 dark:bg-emerald-950 dark:text-cream-50 transition-colors duration-300 antialiased overflow-hidden">
-    <div id="root"></div>
+
+<body
+  class="bg-cream-50 text-emerald-950 dark:bg-emerald-950 dark:text-cream-50 transition-colors duration-300 antialiased overflow-hidden">
+  <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
+
 </html>

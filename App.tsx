@@ -24,6 +24,8 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false); // Start closed on mobile, logic handles desktop
   const [displayMode, setDisplayMode] = useState<DisplayMode>(DisplayMode.ENGLISH_ONLY);
   const [theme, setTheme] = useState<Theme>(Theme.LIGHT);
+  const [arabicFontSize, setArabicFontSize] = useState<number>(64);
+  const [translationFontSize, setTranslationFontSize] = useState<number>(20);
 
   // Audio State - Dual buffer system for seamless transitions
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -298,7 +300,7 @@ function App() {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: currentSurah.englishName,
         artist: selectedReciter.name, // Use 'name' property for reciter
-        album: 'Nur Quran',
+        album: 'Tarteela',
         artwork: [
           { src: artworkUrl, sizes: '512x512', type: 'image/png' },
           { src: '/assets/reciters/default.png', sizes: '512x512', type: 'image/png' }
@@ -348,6 +350,10 @@ function App() {
         onSetDisplayMode={setDisplayMode}
         theme={theme}
         onSetTheme={setTheme}
+        arabicFontSize={arabicFontSize}
+        onSetArabicFontSize={setArabicFontSize}
+        translationFontSize={translationFontSize}
+        onSetTranslationFontSize={setTranslationFontSize}
       />
 
       {/* Main Content */}
@@ -388,6 +394,8 @@ function App() {
             duration={duration}
             currentAyahIndex={currentAyahIndex}
             isVerseByVerse={!isFullSurahAudio}
+            arabicFontSize={arabicFontSize}
+            translationFontSize={translationFontSize}
           />
 
         </main>

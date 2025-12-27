@@ -15,6 +15,10 @@ interface SidebarProps {
   onSetDisplayMode: (mode: DisplayMode) => void;
   theme: Theme;
   onSetTheme: (theme: Theme) => void;
+  arabicFontSize: number;
+  onSetArabicFontSize: (size: number) => void;
+  translationFontSize: number;
+  onSetTranslationFontSize: (size: number) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -29,7 +33,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   displayMode,
   onSetDisplayMode,
   theme,
-  onSetTheme
+  onSetTheme,
+  arabicFontSize,
+  onSetArabicFontSize,
+  translationFontSize,
+  onSetTranslationFontSize
 }) => {
   const [activeTab, setActiveTab] = React.useState<'surahs' | 'settings'>('surahs');
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -54,9 +62,18 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="p-6 border-b border-gray-100 dark:border-emerald-800 flex justify-between items-center bg-sidebar">
           <h2 className="text-xl font-serif font-bold text-accent dark:text-accent-foreground flex items-center gap-2">
             <BookOpen className="w-5 h-5" />
-            <span>Nur Quran</span>
+            <span>Tarteela</span>
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-emerald-800 rounded-full md:hidden">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-emerald-800 rounded-full text-gray-500 dark:text-emerald-400 transition-colors z-50"
+            aria-label="Close Sidebar"
+            title="Close Sidebar"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -100,14 +117,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                       if (window.innerWidth < 768) onClose();
                     }}
                     className={`w-full text-left px-4 py-3 rounded-lg flex items-center justify-between transition-colors ${currentSurah?.number === surah.number
-                        ? 'bg-accent-muted text-accent'
-                        : 'hover:bg-accent-muted/50 text-main'
+                      ? 'bg-accent-muted text-accent'
+                      : 'hover:bg-accent-muted/50 text-main'
                       }`}
                   >
                     <div className="flex items-center gap-3">
                       <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${currentSurah?.number === surah.number
-                          ? 'bg-accent text-white shadow-sm'
-                          : 'bg-accent-muted text-accent'
+                        ? 'bg-accent text-white shadow-sm'
+                        : 'bg-accent-muted text-accent'
                         }`}>
                         {surah.number}
                       </span>
@@ -204,6 +221,39 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <Palette className="w-4 h-4" />
                     <span>Minimal</span>
                   </button>
+                </div>
+              </div>
+
+              {/* Font Sizes */}
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-emerald-400">Arabic Font Size</h3>
+                    <span className="text-xs font-mono text-accent">{arabicFontSize}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="32"
+                    max="120"
+                    value={arabicFontSize}
+                    onChange={(e) => onSetArabicFontSize(parseInt(e.target.value))}
+                    className="w-full h-1.5 bg-gray-200 dark:bg-emerald-800 rounded-lg appearance-none cursor-pointer accent-accent"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-emerald-400">Translation Font Size</h3>
+                    <span className="text-xs font-mono text-accent">{translationFontSize}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="14"
+                    max="48"
+                    value={translationFontSize}
+                    onChange={(e) => onSetTranslationFontSize(parseInt(e.target.value))}
+                    className="w-full h-1.5 bg-gray-200 dark:bg-emerald-800 rounded-lg appearance-none cursor-pointer accent-accent"
+                  />
                 </div>
               </div>
             </div>
