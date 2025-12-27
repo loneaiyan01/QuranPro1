@@ -157,7 +157,7 @@ const ScrollingVerseDisplay: React.FC<ScrollingVerseDisplayProps> = ({
                             key={ayah.number}
                             ref={el => verseRefs.current[index] = el}
                             className={`p-8 md:p-10 rounded-3xl transition-all duration-700 border ${isActive
-                                    ? 'bg-white dark:bg-emerald-900/40 border-emerald-200 dark:border-emerald-800 shadow-xl shadow-emerald-900/5 ring-1 ring-emerald-500/10'
+                                    ? 'bg-card-active border-active shadow-xl'
                                     : 'bg-transparent border-transparent hover:bg-white/50 dark:hover:bg-white/5'
                                 }`}
                         >
@@ -165,16 +165,16 @@ const ScrollingVerseDisplay: React.FC<ScrollingVerseDisplayProps> = ({
                             <div className="flex justify-between items-center mb-6">
                                 <div className="flex items-center gap-3">
                                     <span className={`w-10 h-10 flex items-center justify-center text-xs font-mono rounded-xl transition-all duration-500 shadow-sm ${isActive
-                                            ? 'bg-emerald-600 text-white rotate-0 scale-110'
-                                            : 'bg-emerald-50 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 rotate-45 group-hover:rotate-0'
+                                        ? 'bg-accent text-white rotate-0 scale-110'
+                                        : 'bg-emerald-50 dark:bg-emerald-900/50 text-accent rotate-45 group-hover:rotate-0'
                                         }`}>
                                         <span className={isActive ? '' : '-rotate-45'}>{ayah.numberInSurah}</span>
                                     </span>
                                     {isActive && isPlaying && (
                                         <div className="flex gap-0.5 items-end h-3">
-                                            <div className="w-1 bg-emerald-500 animate-[music-bar_0.8s_ease-in-out_infinite] h-full" />
-                                            <div className="w-1 bg-emerald-500 animate-[music-bar_1.2s_ease-in-out_infinite] h-2" />
-                                            <div className="w-1 bg-emerald-500 animate-[music-bar_1.0s_ease-in-out_infinite] h-3" />
+                                            <div className="w-1 bg-accent animate-[music-bar_0.8s_ease-in-out_infinite] h-full" />
+                                            <div className="w-1 bg-accent animate-[music-bar_1.2s_ease-in-out_infinite] h-2" />
+                                            <div className="w-1 bg-accent animate-[music-bar_1.0s_ease-in-out_infinite] h-3" />
                                         </div>
                                     )}
                                 </div>
@@ -183,7 +183,7 @@ const ScrollingVerseDisplay: React.FC<ScrollingVerseDisplayProps> = ({
                             {/* Arabic Text */}
                             {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ARABIC_ONLY) && (
                                 <p
-                                    className={`text-right font-amiri text-4xl md:text-5xl leading-[2.2] mb-8 transition-all duration-500 ${isActive ? 'text-emerald-950 dark:text-emerald-50 scale-[1.02] origin-right' : 'text-slate-800 dark:text-slate-200 opacity-90'
+                                    className={`text-right font-amiri text-4xl md:text-5xl leading-[2.2] mb-8 transition-all duration-500 ${isActive ? 'text-main scale-[1.02] origin-right' : 'text-main opacity-90'
                                         }`}
                                     dir="rtl"
                                 >

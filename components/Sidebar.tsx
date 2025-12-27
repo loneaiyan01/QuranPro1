@@ -51,8 +51,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className={`fixed inset-y-0 left-0 w-80 bg-white dark:bg-emerald-900 shadow-xl transform transition-transform duration-300 ease-in-out z-50 flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
 
         {/* Header */}
-        <div className="p-6 border-b border-gray-100 dark:border-emerald-800 flex justify-between items-center">
-          <h2 className="text-xl font-serif font-bold text-emerald-800 dark:text-emerald-100 flex items-center gap-2">
+        <div className="p-6 border-b border-gray-100 dark:border-emerald-800 flex justify-between items-center bg-sidebar">
+          <h2 className="text-xl font-serif font-bold text-accent dark:text-accent-foreground flex items-center gap-2">
             <BookOpen className="w-5 h-5" />
             <span>Nur Quran</span>
           </h2>
@@ -62,15 +62,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-100 dark:border-emerald-800">
+        <div className="flex border-b border-gray-100 dark:border-emerald-800 bg-sidebar">
           <button
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'surahs' ? 'text-emerald-600 border-b-2 border-emerald-600 dark:text-emerald-200' : 'text-gray-500 dark:text-emerald-400'}`}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'surahs' ? 'text-accent border-b-2 border-accent' : 'text-muted'}`}
             onClick={() => setActiveTab('surahs')}
           >
             Surahs
           </button>
           <button
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'settings' ? 'text-emerald-600 border-b-2 border-emerald-600 dark:text-emerald-200' : 'text-gray-500 dark:text-emerald-400'}`}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'settings' ? 'text-accent border-b-2 border-accent' : 'text-muted'}`}
             onClick={() => setActiveTab('settings')}
           >
             Settings & Reciters
@@ -100,14 +100,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                       if (window.innerWidth < 768) onClose();
                     }}
                     className={`w-full text-left px-4 py-3 rounded-lg flex items-center justify-between transition-colors ${currentSurah?.number === surah.number
-                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-800 dark:text-emerald-100'
-                        : 'hover:bg-gray-50 dark:hover:bg-emerald-800/50 text-gray-700 dark:text-emerald-200'
+                        ? 'bg-accent-muted text-accent'
+                        : 'hover:bg-accent-muted/50 text-main'
                       }`}
                   >
                     <div className="flex items-center gap-3">
                       <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${currentSurah?.number === surah.number
-                          ? 'bg-emerald-200 dark:bg-emerald-700'
-                          : 'bg-gray-100 dark:bg-emerald-900'
+                          ? 'bg-accent text-white shadow-sm'
+                          : 'bg-accent-muted text-accent'
                         }`}>
                         {surah.number}
                       </span>
@@ -131,19 +131,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => onSetDisplayMode(DisplayMode.ARABIC_ONLY)}
-                    className={`px-3 py-2 text-sm rounded-md border ${displayMode === DisplayMode.ARABIC_ONLY ? 'bg-emerald-600 text-white border-emerald-600' : 'border-gray-200 dark:border-emerald-700 text-gray-600 dark:text-emerald-200'}`}
+                    className={`px-3 py-2 text-sm rounded-md border transition-all ${displayMode === DisplayMode.ARABIC_ONLY ? 'bg-accent text-white border-accent shadow-sm' : 'border-gray-200 dark:border-emerald-700 text-muted hover:bg-black/5'}`}
                   >
                     Arabic
                   </button>
                   <button
                     onClick={() => onSetDisplayMode(DisplayMode.ENGLISH_ONLY)}
-                    className={`px-3 py-2 text-sm rounded-md border ${displayMode === DisplayMode.ENGLISH_ONLY ? 'bg-emerald-600 text-white border-emerald-600' : 'border-gray-200 dark:border-emerald-700 text-gray-600 dark:text-emerald-200'}`}
+                    className={`px-3 py-2 text-sm rounded-md border transition-all ${displayMode === DisplayMode.ENGLISH_ONLY ? 'bg-accent text-white border-accent shadow-sm' : 'border-gray-200 dark:border-emerald-700 text-muted hover:bg-black/5'}`}
                   >
                     English
                   </button>
                   <button
                     onClick={() => onSetDisplayMode(DisplayMode.BOTH)}
-                    className={`px-3 py-2 text-sm rounded-md border ${displayMode === DisplayMode.BOTH ? 'bg-emerald-600 text-white border-emerald-600' : 'border-gray-200 dark:border-emerald-700 text-gray-600 dark:text-emerald-200'}`}
+                    className={`px-3 py-2 text-sm rounded-md border transition-all ${displayMode === DisplayMode.BOTH ? 'bg-accent text-white border-accent shadow-sm' : 'border-gray-200 dark:border-emerald-700 text-muted hover:bg-black/5'}`}
                   >
                     Both
                   </button>
@@ -178,28 +178,28 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => onSetTheme(Theme.LIGHT)}
-                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md border transition-all ${theme === Theme.LIGHT ? 'bg-emerald-600 text-white border-emerald-600' : 'border-gray-200 dark:border-emerald-700 text-gray-600 dark:text-emerald-200 hover:bg-gray-50'}`}
+                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md border transition-all ${theme === Theme.LIGHT ? 'bg-[#059669] text-white border-[#059669] shadow-md' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                   >
                     <Sun className="w-4 h-4" />
                     <span>Light</span>
                   </button>
                   <button
                     onClick={() => onSetTheme(Theme.DARK)}
-                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md border transition-all ${theme === Theme.DARK ? 'bg-emerald-600 text-white border-emerald-600' : 'border-gray-200 dark:border-emerald-700 text-gray-600 dark:text-emerald-200 hover:bg-gray-50'}`}
+                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md border transition-all ${theme === Theme.DARK ? 'bg-[#10b981] text-emerald-950 border-[#10b981] shadow-md' : 'border-gray-200 text-gray-600 dark:text-emerald-200 hover:bg-emerald-800/20'}`}
                   >
                     <Moon className="w-4 h-4" />
                     <span>Dark</span>
                   </button>
                   <button
                     onClick={() => onSetTheme(Theme.SEPIA)}
-                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md border transition-all ${theme === Theme.SEPIA ? 'bg-[#704214] text-white border-[#704214]' : 'border-orange-200/50 text-[#704214] dark:text-orange-200/80 hover:bg-orange-50/50'}`}
+                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md border transition-all ${theme === Theme.SEPIA ? 'bg-[#8c6a46] text-white border-[#8c6a46] shadow-md' : 'border-orange-200/50 text-[#704214] dark:text-orange-200/80 hover:bg-orange-50/50'}`}
                   >
                     <div className="w-3 h-3 rounded-full bg-[#f4e4bc]" />
                     <span>Sepia</span>
                   </button>
                   <button
                     onClick={() => onSetTheme(Theme.MINIMAL)}
-                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md border transition-all ${theme === Theme.MINIMAL ? 'bg-black text-white border-black' : 'border-gray-200 text-gray-600 hover:bg-gray-100'}`}
+                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md border transition-all ${theme === Theme.MINIMAL ? 'bg-black text-white border-black shadow-md' : 'border-gray-200 text-gray-600 hover:bg-gray-100'}`}
                   >
                     <Palette className="w-4 h-4" />
                     <span>Minimal</span>

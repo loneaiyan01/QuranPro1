@@ -91,11 +91,6 @@ function App() {
     };
 
     init();
-
-    // Check system preference for dark mode
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme(Theme.DARK);
-    }
   }, []);
 
   // Effect: Update document theme classes
