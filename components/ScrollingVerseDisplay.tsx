@@ -1,33 +1,31 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Surah, SurahContent, Ayah, DisplayMode } from '../types';
+import { useQuran } from '../contexts/QuranContext';
+import { useAudio } from '../contexts/AudioContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { DisplayMode } from '../types';
 
-interface ScrollingVerseDisplayProps {
-    arabicSurah: SurahContent | undefined;
-    englishSurah: SurahContent | undefined;
-    displayMode: DisplayMode;
-    isLoading: boolean;
-    isPlaying: boolean;
-    currentTime: number;
-    duration: number;
-    currentAyahIndex: number;
-    isVerseByVerse: boolean;
-    arabicFontSize: number;
-    translationFontSize: number;
-}
+const ScrollingVerseDisplay: React.FC = () => {
+    // Contexts
+    const { surahText, isLoadingContent } = useQuran();
+    const {
+        isPlaying,
+        currentTime,
+        duration,
+        currentAyahIndex,
+        isFullSurahAudio,
+        isBuffering
+    } = useAudio();
+    const {
+        displayMode,
+        arabicFontSize,
+        translationFontSize
+    } = useTheme();
 
-const ScrollingVerseDisplay: React.FC<ScrollingVerseDisplayProps> = ({
-    arabicSurah,
-    englishSurah,
-    displayMode,
-    isLoading,
-    isPlaying,
-    currentTime,
-    duration,
-    currentAyahIndex,
-    isVerseByVerse,
-    arabicFontSize,
-    translationFontSize,
-}) => {
+    // Derived
+    const arabicSurah = surahText?.arabic;
+    const englishSurah = surahText?.english;
+    const isVerseByVerse = !isFullSurahAudio;
+
     const containerRef = useRef<HTMLDivElement>(null);
     const verseRefs = useRef<(HTMLDivElement | null)[]>([]);
     const [totalWords, setTotalWords] = useState(0);
@@ -125,7 +123,7 @@ const ScrollingVerseDisplay: React.FC<ScrollingVerseDisplayProps> = ({
         }
     }, [currentAyahIndex, isVerseByVerse]);
 
-    if (isLoading) {
+    if (isLoadingContent) {
         return (
             <div className="flex-1 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
@@ -160,25 +158,31 @@ const ScrollingVerseDisplay: React.FC<ScrollingVerseDisplayProps> = ({
                         <div
                             key={ayah.number}
                             ref={el => verseRefs.current[index] = el}
-                            className={`p-8 md:p-10 rounded-3xl transition-all duration-700 border ${isActive
-                                ? 'bg-card-active border-active shadow-xl'
-                                : 'bg-transparent border-transparent hover:bg-white/50 dark:hover:bg-white/5'
+                            className={`p-6 md:p-10 rounded-3xl transition-all duration-700 border ${isActive
+                                ? 'bg-[var(--bg-card-active)] border-[var(--border-active)] shadow-[var(--shadow-md)] border-l-4'
+                                : 'bg-transparent border-transparent hover:bg-white/50 dark:hover:bg-white/5 active:bg-white/30 dark:active:bg-white/10'
                                 }`}
                         >
                             {/* Header: Verse Number */}
                             <div className="flex justify-between items-center mb-6">
                                 <div className="flex items-center gap-3">
-                                    <span className={`w-10 h-10 flex items-center justify-center text-xs font-mono rounded-xl transition-all duration-500 shadow-sm ${isActive
-                                        ? 'bg-accent text-white rotate-0 scale-110'
-                                        : 'bg-emerald-50 dark:bg-emerald-900/50 text-accent rotate-45 group-hover:rotate-0'
+                                    <span className={`w-10 h-10 flex items-center justify-center text-xs font-mono rounded-xl transition-all duration-500 shadow-sm border ${isActive
+                                        ? 'bg-accent text-white rotate-0 scale-110 border-accent'
+                                        : 'bg-[var(--bg-main)] text-accent rotate-45 group-hover:rotate-0 border-[var(--border)]'
                                         }`}>
                                         <span className={isActive ? '' : '-rotate-45'}>{ayah.numberInSurah}</span>
                                     </span>
                                     {isActive && isPlaying && (
-                                        <div className="flex gap-0.5 items-end h-3">
-                                            <div className="w-1 bg-accent animate-[music-bar_0.8s_ease-in-out_infinite] h-full" />
-                                            <div className="w-1 bg-accent animate-[music-bar_1.2s_ease-in-out_infinite] h-2" />
-                                            <div className="w-1 bg-accent animate-[music-bar_1.0s_ease-in-out_infinite] h-3" />
+                                        <div className="flex items-center gap-2">
+                                            {isBuffering ? (
+                                                <span className="text-[10px] uppercase tracking-wider text-accent animate-pulse font-bold">Buffering...</span>
+                                            ) : (
+                                                <div className="flex gap-0.5 items-end h-3">
+                                                    <div className="w-1 bg-accent animate-[music-bar_0.8s_ease-in-out_infinite] h-full" />
+                                                    <div className="w-1 bg-accent animate-[music-bar_1.2s_ease-in-out_infinite] h-2" />
+                                                    <div className="w-1 bg-accent animate-[music-bar_1.0s_ease-in-out_infinite] h-3" />
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -213,6 +217,5 @@ const ScrollingVerseDisplay: React.FC<ScrollingVerseDisplayProps> = ({
         </div>
     );
 };
-
 
 export default ScrollingVerseDisplay;

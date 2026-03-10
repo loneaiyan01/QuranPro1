@@ -55,10 +55,8 @@ export interface Reciter {
 }
 
 export enum Theme {
-  LIGHT = 'light',
   DARK = 'dark',
-  SEPIA = 'sepia',
-  MINIMAL = 'minimal'
+  DARK_APPLE = 'apple'
 }
 
 export enum DisplayMode {
