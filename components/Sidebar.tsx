@@ -2,7 +2,7 @@ import React from 'react';
 import { useQuran } from '../contexts/QuranContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAudio } from '../contexts/AudioContext';
-import { Theme, DisplayMode } from '../types';
+import { DisplayMode } from '../types';
 import { BookOpen, User, Settings, Moon, Sun, X, Search, Palette, Radio, Clock } from 'lucide-react';
 
 interface SidebarProps {
@@ -28,8 +28,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const {
     displayMode,
     setDisplayMode,
-    theme,
-    setTheme,
     arabicFontSize,
     setArabicFontSize,
     translationFontSize,
@@ -56,8 +54,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       <div className={`fixed inset-y-0 left-0 w-[85vw] md:w-80 bg-sidebar shadow-[var(--shadow-lg)] transform transition-transform duration-300 ease-in-out z-[100] flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
 
         {/* Header */}
-        <div className="p-6 border-b border-gray-100 dark:border-emerald-800 flex justify-between items-center bg-sidebar">
-          <h2 className="text-xl font-serif font-bold text-accent dark:text-accent-foreground flex items-center gap-2">
+        <div className="p-6 border-b border-[var(--border)] flex justify-between items-center bg-sidebar">
+          <h2 className="text-xl font-serif font-bold text-accent flex items-center gap-2">
             <BookOpen className="w-5 h-5" />
             <span>Tarteela</span>
           </h2>
@@ -102,11 +100,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           {activeTab === 'surahs' && (
             <div className="p-4 space-y-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <input
                   type="text"
                   placeholder="Search Surah..."
-                  className="w-full pl-9 pr-4 py-2 bg-[var(--bg-main)] dark:bg-emerald-950 border border-[var(--border)] dark:border-emerald-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 text-main"
+                  className="w-full pl-9 pr-4 py-2 bg-[#1C1C1E] border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 text-main"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -145,7 +143,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           {activeTab === 'radio' && (
             <div className="p-8 flex flex-col items-center justify-center text-center h-[calc(100vh-200px)] space-y-6">
               <div className={`w-24 h-24 rounded-full bg-accent/20 flex items-center justify-center relative ${isRadioMode ? 'after:content-[""] after:absolute after:inset-0 after:rounded-full after:border-2 after:border-accent after:animate-ping' : ''}`}>
-                <Radio className={`w-12 h-12 ${isRadioMode ? 'text-accent animate-pulse' : 'text-gray-400'}`} />
+                <Radio className={`w-12 h-12 ${isRadioMode ? 'text-accent animate-pulse' : 'text-muted'}`} />
               </div>
               <div className="space-y-2">
                 <h3 className="text-xl font-serif font-bold text-main">Tarteela Radio</h3>
@@ -213,7 +211,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <div className="space-y-3">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">Reciter</h3>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                   <select
                     value={selectedReciter?.identifier || ''}
                     onChange={(e) => {
@@ -223,7 +221,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         onClose();
                       }
                     }}
-                    className="w-full pl-9 pr-4 py-2 bg-[var(--bg-main)] dark:bg-emerald-950 border border-[var(--border)] dark:border-emerald-800 rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-accent/50 text-main"
+                    className="w-full pl-9 pr-4 py-2 bg-[#1C1C1E] border border-[var(--border)] rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-accent/50 text-main"
                   >
                     {reciters.map(reciter => (
                       <option key={reciter.identifier} value={reciter.identifier}>
@@ -231,33 +229,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       </option>
                     ))}
                   </select>
-                </div>
-              </div>
-
-              {/* Theme Selection - Dual Dark Mode */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">Appearance</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => {
-                      setTheme(Theme.DARK);
-                      onClose();
-                    }}
-                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md border transition-all ${theme === Theme.DARK ? 'bg-accent text-white border-accent shadow-md' : 'border-[var(--border)] text-muted hover:bg-[var(--accent-muted)]'}`}
-                  >
-                    <div className="w-3 h-3 rounded-full bg-[#10b981]" />
-                    <span>Emerald</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setTheme(Theme.DARK_APPLE);
-                      onClose();
-                    }}
-                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md border transition-all ${theme === Theme.DARK_APPLE ? 'bg-accent text-white border-accent shadow-md' : 'border-[var(--border)] text-muted hover:bg-[var(--accent-muted)]'}`}
-                  >
-                    <div className="w-3 h-3 rounded-full bg-[#0A84FF]" />
-                    <span>Midnight</span>
-                  </button>
                 </div>
               </div>
 
@@ -287,7 +258,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       setSleepTimer(null);
                       onClose();
                     }}
-                    className="w-full py-2 text-[10px] font-bold uppercase tracking-widest text-red-500 hover:text-red-600 dark:text-red-400 transition-colors"
+                    className="w-full py-2 text-[10px] font-bold uppercase tracking-widest text-red-500 hover:text-red-400 transition-colors"
                   >
                     Cancel Timer ({sleepTimer}m remaining)
                   </button>
@@ -298,7 +269,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <div className="space-y-6">
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-emerald-400">Arabic Font Size</h3>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Arabic Font Size</h3>
                     <span className="text-xs font-mono text-accent">{arabicFontSize}px</span>
                   </div>
                   <input
@@ -307,13 +278,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     max="120"
                     value={arabicFontSize}
                     onChange={(e) => setArabicFontSize(parseInt(e.target.value))}
-                    className="w-full h-1.5 bg-gray-200 dark:bg-emerald-800 rounded-lg appearance-none cursor-pointer accent-accent"
+                    className="w-full h-1.5 bg-[var(--border)] rounded-lg appearance-none cursor-pointer accent-accent"
                   />
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-emerald-400">Translation Font Size</h3>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Translation Font Size</h3>
                     <span className="text-xs font-mono text-accent">{translationFontSize}px</span>
                   </div>
                   <input
@@ -322,7 +293,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     max="48"
                     value={translationFontSize}
                     onChange={(e) => setTranslationFontSize(parseInt(e.target.value))}
-                    className="w-full h-1.5 bg-gray-200 dark:bg-emerald-800 rounded-lg appearance-none cursor-pointer accent-accent"
+                    className="w-full h-1.5 bg-[var(--border)] rounded-lg appearance-none cursor-pointer accent-accent"
                   />
                 </div>
               </div>
@@ -330,8 +301,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           )}
         </div>
 
-        <div className="p-4 border-t border-gray-100 dark:border-emerald-800 text-center">
-          <p className="text-xs text-gray-400 dark:text-emerald-600">
+        <div className="p-4 border-t border-[var(--border)] text-center">
+          <p className="text-xs text-[var(--text-muted)]">
             Data from Alquran.cloud
           </p>
         </div>

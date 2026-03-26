@@ -126,7 +126,7 @@ const ScrollingVerseDisplay: React.FC = () => {
     if (isLoadingContent) {
         return (
             <div className="flex-1 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent)]"></div>
             </div>
         );
     }
@@ -141,10 +141,10 @@ const ScrollingVerseDisplay: React.FC = () => {
         >
             <div className="max-w-4xl mx-auto space-y-4 pb-32">
                 <div className="text-center mb-6">
-                    <span className="inline-block px-3 py-1 bg-gray-100 dark:bg-emerald-900/30 text-xs rounded-full text-gray-500 dark:text-emerald-400 mb-2">
+                    <span className="inline-block px-3 py-1 bg-[var(--accent-muted)] text-xs rounded-full text-[var(--accent)] mb-2">
                         {isVerseByVerse ? 'Verse-by-Verse Mode' : 'Scrolling Mode'}
                     </span>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-muted">
                         {isVerseByVerse
                             ? 'Individual verses are played and highlighted.'
                             : 'Audio is continuous. Text scrolls automatically.'}
@@ -159,8 +159,8 @@ const ScrollingVerseDisplay: React.FC = () => {
                             key={ayah.number}
                             ref={el => verseRefs.current[index] = el}
                             className={`p-6 md:p-10 rounded-3xl transition-all duration-700 border ${isActive
-                                ? 'bg-[var(--bg-card-active)] border-[var(--border-active)] shadow-[var(--shadow-md)] border-l-4'
-                                : 'bg-transparent border-transparent hover:bg-white/50 dark:hover:bg-white/5 active:bg-white/30 dark:active:bg-white/10'
+                                ? 'bg-[var(--bg-card-active)] border-[var(--border-active)] shadow-[var(--shadow-lg)] border-l-4'
+                                : 'bg-transparent border-transparent hover:bg-white/5 active:bg-white/10'
                                 }`}
                         >
                             {/* Header: Verse Number */}
@@ -203,7 +203,7 @@ const ScrollingVerseDisplay: React.FC = () => {
                             {/* English Text */}
                             {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ENGLISH_ONLY) && englishSurah?.ayahs[index] && (
                                 <p
-                                    className={`text-left font-sans leading-relaxed transition-all duration-500 ${isActive ? 'text-slate-900 dark:text-slate-100 font-normal' : 'text-slate-500 dark:text-slate-400 opacity-60'
+                                    className={`text-left font-sans leading-relaxed transition-all duration-500 ${isActive ? 'text-main font-normal' : 'text-muted opacity-80'
                                         }`}
                                     style={{ fontSize: `${translationFontSize}px` }}
                                 >

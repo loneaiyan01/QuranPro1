@@ -28,7 +28,7 @@ const RadioInterface: React.FC = () => {
                     style={{ transform: `scale(${1 + Math.sin(randomSeed / 10) * 0.1})` }}
                 />
                 <div
-                    className="absolute w-[400px] h-[400px] rounded-full bg-emerald-500/5 blur-[100px] -bottom-20 -left-20 animate-pulse transition-all duration-1000 delay-700"
+                    className="absolute w-[400px] h-[400px] rounded-full bg-[var(--accent-muted)] blur-[100px] -bottom-20 -left-20 animate-pulse transition-all duration-1000 delay-700"
                     style={{ transform: `scale(${1 + Math.cos(randomSeed / 15) * 0.15})` }}
                 />
             </div>
@@ -44,7 +44,7 @@ const RadioInterface: React.FC = () => {
 
                 {/* Reciter Avatar / Icon Area */}
                 <div className="relative">
-                    <div className={`w-32 h-32 md:w-48 md:h-48 rounded-full bg-[var(--bg-main)] dark:bg-emerald-950 shadow-2xl flex items-center justify-center border-4 border-accent/20 relative ${isPlaying && !isBuffering ? 'animate-[spin_10s_linear_infinite]' : ''}`}>
+                    <div className={`w-32 h-32 md:w-48 md:h-48 rounded-full bg-[var(--bg-main)] shadow-2xl flex items-center justify-center border-4 border-[var(--border)] relative ${isPlaying && !isBuffering ? 'animate-[spin_10s_linear_infinite]' : ''}`}>
                         <Music className="w-12 h-12 md:w-20 md:h-20 text-accent/20" />
 
                         {/* Orbiting particles when playing */}
@@ -83,7 +83,7 @@ const RadioInterface: React.FC = () => {
                 <div className="flex flex-col items-center gap-4 mt-8 w-full max-w-xs">
                     <button
                         onClick={() => actions.nextRadioSurah()}
-                        className="group flex items-center justify-center gap-3 w-full py-4 px-6 bg-[var(--bg-card)] dark:bg-emerald-950 border border-[var(--border)] rounded-3xl shadow-[var(--shadow-lg)] hover:shadow-accent/10 hover:border-accent/40 transition-all duration-500"
+                        className="group flex items-center justify-center gap-3 w-full py-4 px-6 bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl shadow-[var(--shadow-lg)] hover:shadow-[var(--accent)]/10 hover:border-[var(--border-active)] transition-all duration-500"
                     >
                         <span className="font-bold text-main">Play Next Random</span>
                         <ChevronRight className="w-5 h-5 text-accent group-hover:translate-x-1 transition-transform" />

@@ -44,7 +44,7 @@ const MainLayout: React.FC = () => {
                 <div className="hidden md:block absolute top-4 left-4 z-20">
                     <button
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        className="p-2 bg-transparent hover:bg-gray-100 dark:hover:bg-emerald-800 rounded-lg text-gray-400 hover:text-emerald-600 transition-colors"
+                        className="p-2 bg-transparent hover:bg-[var(--bg-card-active)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
                         title={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
                     >
                         <Menu className="w-6 h-6" />

@@ -25,25 +25,10 @@
 }
 
 :root {
-  --bg-main: #011C16;
-  --bg-sidebar: #022C22;
-  --bg-card: transparent;
-  --bg-card-active: rgba(2, 44, 34, 0.4);
-  --text-main: #ECFDF5;
-  --text-muted: #94a3b8;
-  --accent: #10b981;
-  --accent-foreground: #011C16;
-  --accent-muted: rgba(16, 185, 129, 0.1);
-  --border: #064e3b;
-  --border-active: #10b981;
-  --ring: rgba(16, 185, 129, 0.3);
-}
-
-.theme-apple {
   --bg-main: #000000;
   --bg-sidebar: #1C1C1E;
   --bg-card: transparent;
-  --bg-card-active: #2C2C2E;
+  --bg-card-active: #1C1C1E;
   --text-main: #FFFFFF;
   --text-muted: #8E8E93;
   --accent: #0A84FF;
@@ -52,6 +37,9 @@
   --border: #38383A;
   --border-active: #0A84FF;
   --ring: rgba(10, 132, 255, 0.3);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --glass-bg: rgba(28, 28, 30, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.05);
 }
 
 
@@ -134,46 +122,12 @@ body {
   border-color: var(--border);
 }
 
-/* Overrides for hardcoded emerald classes in Tailwind */
-.theme-sepia .bg-emerald-600 {
-  background-color: var(--accent) !important;
-}
-
-.theme-sepia .text-emerald-600 {
-  color: var(--accent) !important;
-}
-
-.theme-sepia .border-emerald-600 {
-  border-color: var(--accent) !important;
-}
-
-.theme-sepia .bg-emerald-50 {
-  background-color: var(--accent-muted) !important;
-}
-
-.theme-sepia .text-emerald-700 {
-  color: var(--accent) !important;
-}
-
-.theme-sepia .bg-emerald-200 {
-  background-color: var(--accent) !important;
-  color: white !important;
-}
-
-.theme-sepia .dark\:bg-emerald-800 {
-  background-color: var(--accent-muted) !important;
-}
-
-.theme-sepia .dark\:text-emerald-100 {
-  color: var(--text-main) !important;
-}
-
-.theme-sepia .dark\:border-emerald-800 {
-  border-color: var(--border) !important;
-}
-
-.theme-sepia .dark\:hover\:bg-emerald-800\/50:hover {
-  background-color: var(--accent-muted) !important;
+/* Glass Panel Utility */
+.glass-panel {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
 }
 
 /* Custom Ring Override */

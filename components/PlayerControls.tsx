@@ -28,7 +28,7 @@ const PlayerControls: React.FC = () => {
   };
 
   return (
-    <div className="bg-[var(--bg-main)]/90 dark:bg-emerald-900/95 backdrop-blur-md border-t border-[var(--border)] relative shadow-[var(--shadow-lg)] z-30">
+    <div className="glass-panel border-t relative z-30">
       {/* Full-Width Dynamic Progress Bar */}
       <div className="absolute top-0 left-0 w-full group cursor-pointer h-1 hover:h-1.5 transition-[height] duration-300 ease-in-out z-40 overflow-visible">
         {/* Background / Track */}
@@ -67,7 +67,7 @@ const PlayerControls: React.FC = () => {
           {/* External Halo */}
           <div className="absolute inset-0 bg-accent/30 rounded-full animate-ping opacity-50" />
           {/* Inner Solid Thumb */}
-          <div className="absolute inset-0 bg-accent rounded-full border-2 border-white dark:border-black shadow-xl" />
+          <div className="absolute inset-0 bg-accent rounded-full border-2 border-[var(--bg-main)] shadow-xl" />
         </div>
       </div>
 
