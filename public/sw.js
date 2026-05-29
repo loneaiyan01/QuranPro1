@@ -1,4 +1,6 @@
-const CACHE_NAME = 'tarteela-v1';
+const CACHE_NAME = 'tarteela-v2';
+const API_CACHE_NAME = 'tarteela-api-v1';
+
 const urlsToCache = [
     '/',
     '/index.html',
@@ -7,6 +9,7 @@ const urlsToCache = [
     '/icon.svg'
 ];
 
+// Pre-cache static assets on install
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -17,10 +20,36 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+    const url = event.request.url;
+
+    // Do NOT intercept audio URLs
+    if (url.includes('/audio/') || url.endsWith('.mp3')) {
+        return;
+    }
+
+    // Network-first strategy for API text requests
+    if (url.includes('api.alquran.cloud/v1/surah') || url.includes('api.alquran.cloud/v1/edition')) {
+        event.respondWith(
+            caches.open(API_CACHE_NAME).then((cache) => {
+                return fetch(event.request)
+                    .then((networkResponse) => {
+                        // Network succeeded – cache the fresh response and return it
+                        cache.put(event.request, networkResponse.clone());
+                        return networkResponse;
+                    })
+                    .catch(() => {
+                        // Network failed – fall back to cached response
+                        return cache.match(event.request);
+                    });
+            })
+        );
+        return;
+    }
+
+    // Cache-first strategy for all other (static) requests
     event.respondWith(
         caches.match(event.request)
             .then((response) => {
-                // Cache hit - return response
                 if (response) {
                     return response;
                 }
@@ -29,13 +58,14 @@ self.addEventListener('fetch', (event) => {
     );
 });
 
+// Clean up old caches on activate
 self.addEventListener('activate', (event) => {
-    const cacheWhitelist = [CACHE_NAME];
+    const currentCaches = [CACHE_NAME, API_CACHE_NAME];
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map((cacheName) => {
-                    if (cacheWhitelist.indexOf(cacheName) === -1) {
+                    if (!currentCaches.includes(cacheName)) {
                         return caches.delete(cacheName);
                     }
                 })

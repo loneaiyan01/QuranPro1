@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import Sidebar from './Sidebar';
 import ScrollingVerseDisplay from './ScrollingVerseDisplay';
 import PlayerControls from './PlayerControls';
 import RadioInterface from './RadioInterface';
 import { Menu } from 'lucide-react';
 import { useQuran } from '../contexts/QuranContext';
+import { useAudio } from '../contexts/AudioContext';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 const MainLayout: React.FC = () => {
     // Local UI State for Sidebar visibility
@@ -17,6 +19,10 @@ const MainLayout: React.FC = () => {
             setIsSidebarOpen(true);
         }
     }, []);
+
+    const { actions: { togglePlay, nextAyah, prevAyah } } = useAudio();
+    const toggleSidebar = useCallback(() => setIsSidebarOpen(prev => !prev), []);
+    useKeyboardShortcuts({ togglePlay, prevAyah, nextAyah, toggleSidebar });
 
     return (
         <div className="flex h-screen w-full relative overflow-hidden">

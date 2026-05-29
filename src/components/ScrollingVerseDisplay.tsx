@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { DisplayMode } from '../types';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Copy, Share2, Check, Search, X } from 'lucide-react';
 
 interface VerseItemProps {
     ayah: any;
@@ -15,6 +15,8 @@ interface VerseItemProps {
     arabicFontSize: number;
     translationFontSize: number;
     innerRef: (el: HTMLDivElement | null) => void;
+    surahName: string;
+    searchQuery: string;
 }
 
 const VerseItem = React.memo<VerseItemProps>(({
@@ -26,12 +28,45 @@ const VerseItem = React.memo<VerseItemProps>(({
     displayMode,
     arabicFontSize,
     translationFontSize,
-    innerRef
+    innerRef,
+    surahName,
+    searchQuery
 }) => {
+    const [copied, setCopied] = React.useState(false);
+
+    const getVerseText = () => {
+        let text = '';
+        if (ayah?.text) text += ayah.text;
+        if (englishAyah?.text) text += '\n\n' + englishAyah.text;
+        text += `\n\n— ${surahName} ${ayah.numberInSurah}`;
+        return text;
+    };
+
+    const handleCopy = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        try {
+            await navigator.clipboard.writeText(getVerseText());
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch { /* clipboard not available */ }
+    };
+
+    const handleShare = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const text = getVerseText();
+        if (navigator.share) {
+            try {
+                await navigator.share({ text });
+            } catch { /* user cancelled */ }
+        } else {
+            handleCopy(e);
+        }
+    };
+
     return (
         <div
             ref={innerRef}
-            className={`p-6 md:p-10 rounded-3xl transition-all duration-700 border ${isActive
+            className={`group p-6 md:p-10 rounded-3xl transition-all duration-700 border ${isActive
                 ? 'bg-[var(--bg-card-active)] border-[var(--border-active)] shadow-[var(--shadow-lg)] border-l-4'
                 : 'bg-transparent border-transparent hover:bg-white/5 active:bg-white/10'
                 }`}
@@ -59,6 +94,24 @@ const VerseItem = React.memo<VerseItemProps>(({
                         </div>
                     )}
                 </div>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <button
+                        onClick={handleCopy}
+                        className="p-2 rounded-lg hover:bg-white/10 text-muted hover:text-accent transition-colors"
+                        aria-label="Copy verse"
+                        title="Copy verse"
+                    >
+                        {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                    <button
+                        onClick={handleShare}
+                        className="p-2 rounded-lg hover:bg-white/10 text-muted hover:text-accent transition-colors"
+                        aria-label="Share verse"
+                        title="Share verse"
+                    >
+                        <Share2 className="w-4 h-4" />
+                    </button>
+                </div>
             </div>
 
             {/* Arabic Text */}
@@ -69,7 +122,7 @@ const VerseItem = React.memo<VerseItemProps>(({
                     dir="rtl"
                     style={{ fontSize: `${arabicFontSize}px` }}
                 >
-                    {ayah.text}
+                    {searchQuery ? highlightText(ayah.text, searchQuery) : ayah.text}
                 </p>
             )}
 
@@ -80,7 +133,7 @@ const VerseItem = React.memo<VerseItemProps>(({
                         }`}
                     style={{ fontSize: `${translationFontSize}px` }}
                 >
-                    {englishAyah.text}
+                    {searchQuery ? highlightText(englishAyah.text, searchQuery) : englishAyah.text}
                 </p>
             )}
         </div>
@@ -88,6 +141,20 @@ const VerseItem = React.memo<VerseItemProps>(({
 });
 
 VerseItem.displayName = 'VerseItem';
+
+/** Splits text on search matches and wraps them in styled <mark> elements */
+function highlightText(text: string, query: string): React.ReactNode {
+    if (!query.trim()) return text;
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'gi');
+    const parts = text.split(regex);
+    if (parts.length === 1) return text;
+    return parts.map((part, i) =>
+        regex.test(part)
+            ? <mark key={i} className="bg-accent/30 text-accent rounded px-0.5">{part}</mark>
+            : part
+    );
+}
 
 const ScrollingVerseDisplay: React.FC = () => {
     // Contexts
@@ -110,6 +177,10 @@ const ScrollingVerseDisplay: React.FC = () => {
     const arabicSurah = surahText?.arabic;
     const englishSurah = surahText?.english;
     const isVerseByVerse = !isFullSurahAudio;
+
+    // Search state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
 
     const containerRef = useRef<HTMLDivElement>(null);
     const verseRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -259,6 +330,46 @@ const ScrollingVerseDisplay: React.FC = () => {
                     </p>
                 </div>
 
+                {/* Search Bar */}
+                <div className="relative mb-4">
+                    {isSearchOpen ? (
+                        <div className="flex items-center gap-2 bg-[var(--bg-card-active)] border border-[var(--border)] rounded-2xl px-4 py-2 shadow-lg">
+                            <Search className="w-4 h-4 text-muted flex-shrink-0" />
+                            <input
+                                type="text"
+                                placeholder="Search in this Surah..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="flex-1 bg-transparent text-sm text-main placeholder-muted outline-none"
+                                autoFocus
+                            />
+                            {searchQuery && (
+                                <span className="text-[10px] text-muted whitespace-nowrap">
+                                    {arabicSurah.ayahs.filter(a =>
+                                        a.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                        (englishSurah?.ayahs[arabicSurah.ayahs.indexOf(a)]?.text || '').toLowerCase().includes(searchQuery.toLowerCase())
+                                    ).length} matches
+                                </span>
+                            )}
+                            <button
+                                onClick={() => { setSearchQuery(''); setIsSearchOpen(false); }}
+                                className="p-1 rounded-lg hover:bg-white/10 text-muted hover:text-main transition-colors"
+                                aria-label="Close search"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => setIsSearchOpen(true)}
+                            className="flex items-center gap-2 text-xs text-muted hover:text-accent transition-colors mx-auto"
+                        >
+                            <Search className="w-3.5 h-3.5" />
+                            <span>Search in Surah</span>
+                        </button>
+                    )}
+                </div>
+
                 {arabicSurah.ayahs.map((ayah, index) => {
                     const isActive = isVerseByVerse && index === currentAyahIndex;
                     return (
@@ -273,6 +384,8 @@ const ScrollingVerseDisplay: React.FC = () => {
                             arabicFontSize={arabicFontSize}
                             translationFontSize={translationFontSize}
                             innerRef={el => { verseRefs.current[index] = el; }}
+                            surahName={arabicSurah.englishName}
+                            searchQuery={searchQuery}
                         />
                     );
                 })}
