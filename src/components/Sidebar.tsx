@@ -114,6 +114,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   <button
                     key={surah.number}
                     onClick={() => {
+                      if (isRadioMode) {
+                        actions.toggleRadioMode(false);
+                      }
                       actions.selectSurah(surah);
                       onClose();
                     }}

@@ -3,6 +3,7 @@ import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { DisplayMode } from '../types';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface VerseItemProps {
     ayah: any;
@@ -90,7 +91,7 @@ VerseItem.displayName = 'VerseItem';
 
 const ScrollingVerseDisplay: React.FC = () => {
     // Contexts
-    const { surahText, isLoadingContent } = useQuran();
+    const { surahText, isLoadingContent, contentError, actions } = useQuran();
     const {
         isPlaying,
         currentTime,
@@ -215,7 +216,30 @@ const ScrollingVerseDisplay: React.FC = () => {
         );
     }
 
-    if (!arabicSurah) return null;
+    if (!arabicSurah) {
+        return (
+            <div className="flex-1 flex items-center justify-center px-6">
+                <div className="max-w-sm w-full text-center p-8 rounded-3xl bg-[var(--bg-card-active)] border border-[var(--border)] shadow-[var(--shadow-lg)] space-y-5">
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-red-500/10 flex items-center justify-center">
+                        <AlertTriangle className="w-8 h-8 text-red-400" />
+                    </div>
+                    <div className="space-y-2">
+                        <h3 className="text-lg font-serif font-bold text-main">Unable to Load Content</h3>
+                        <p className="text-sm text-muted leading-relaxed">
+                            {contentError || 'No Surah data is available. This may be due to a network issue or the API server being offline.'}
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => actions.retryLoadContent()}
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-white font-semibold text-sm rounded-2xl shadow-lg shadow-accent/20 hover:scale-[1.03] active:scale-95 transition-all duration-200"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        Retry Loading
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div

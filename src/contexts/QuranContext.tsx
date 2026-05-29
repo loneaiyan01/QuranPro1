@@ -9,11 +9,13 @@ interface QuranContextType {
     selectedReciter: Reciter | null;
     surahText: { arabic: SurahContent; english: SurahContent } | null;
     isLoadingContent: boolean;
+    contentError: string | null;
     actions: {
         selectSurah: (surah: Surah) => Promise<void>;
         selectReciter: (reciter: Reciter) => void;
         toggleRadioMode: (active: boolean) => void;
         nextRadioSurah: () => void;
+        retryLoadContent: () => void;
     };
     isRadioMode: boolean;
 }
@@ -28,27 +30,32 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const [surahText, setSurahText] = useState<{ arabic: SurahContent; english: SurahContent } | null>(null);
     const [isLoadingContent, setIsLoadingContent] = useState<boolean>(false);
     const [isRadioMode, setIsRadioMode] = useState<boolean>(false);
+    const [contentError, setContentError] = useState<string | null>(null);
 
     // Initialization
     useEffect(() => {
         const init = async () => {
-            const [fetchedSurahs, fetchedReciters] = await Promise.all([
-                fetchSurahs(),
-                fetchReciters()
-            ]);
-            setSurahs(fetchedSurahs);
-            setReciters(fetchedReciters);
+            try {
+                setContentError(null);
+                const [fetchedSurahs, fetchedReciters] = await Promise.all([
+                    fetchSurahs(),
+                    fetchReciters()
+                ]);
+                setSurahs(fetchedSurahs);
+                setReciters(fetchedReciters);
 
-            // Defaults
-            if (fetchedReciters.length > 0) {
-                // Prefer Sudais if available, otherwise first
-                const sudais = fetchedReciters.find(r => r.identifier === 'ar.abdurrahmaansudais');
-                setSelectedReciter(sudais || fetchedReciters[0]);
-            }
+                // Defaults
+                if (fetchedReciters.length > 0) {
+                    const sudais = fetchedReciters.find(r => r.identifier === 'ar.abdurrahmaansudais');
+                    setSelectedReciter(sudais || fetchedReciters[0]);
+                }
 
-            // Load Surah Al-Fatiha by default
-            if (fetchedSurahs.length > 0) {
-                selectSurah(fetchedSurahs[0]);
+                // Load Surah Al-Fatiha by default
+                if (fetchedSurahs.length > 0) {
+                    selectSurah(fetchedSurahs[0]);
+                }
+            } catch (err) {
+                setContentError('Failed to connect to the Quran API. Please check your internet connection.');
             }
         };
 
@@ -57,12 +64,19 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     const selectSurah = useCallback(async (surah: Surah) => {
         setIsLoadingContent(true);
+        setContentError(null);
         setCurrentSurah(surah);
-        // Note: Audio stop logic will need to be handled by AudioContext listening to currentSurah changes
 
-        // Fetch text data
-        const textData = await fetchSurahText(surah.number);
-        setSurahText(textData);
+        try {
+            const textData = await fetchSurahText(surah.number);
+            if (textData) {
+                setSurahText(textData);
+            } else {
+                setContentError('Failed to load Surah content. The server may be unavailable.');
+            }
+        } catch (err) {
+            setContentError('Failed to load Surah content. Please check your internet connection.');
+        }
 
         setIsLoadingContent(false);
     }, []);
@@ -89,12 +103,21 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
     }, [nextRadioSurah]);
 
+    const retryLoadContent = useCallback(() => {
+        if (currentSurah) {
+            selectSurah(currentSurah);
+        } else if (surahs.length > 0) {
+            selectSurah(surahs[0]);
+        }
+    }, [currentSurah, surahs, selectSurah]);
+
     const actions = useMemo(() => ({
         selectSurah,
         selectReciter,
         toggleRadioMode,
-        nextRadioSurah
-    }), [selectSurah, selectReciter, toggleRadioMode, nextRadioSurah]);
+        nextRadioSurah,
+        retryLoadContent
+    }), [selectSurah, selectReciter, toggleRadioMode, nextRadioSurah, retryLoadContent]);
 
     return (
         <QuranContext.Provider
@@ -105,6 +128,7 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 selectedReciter,
                 surahText,
                 isLoadingContent,
+                contentError,
                 actions,
                 isRadioMode
             }}
