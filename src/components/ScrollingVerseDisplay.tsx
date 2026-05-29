@@ -3,7 +3,7 @@ import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { DisplayMode } from '../types';
-import { AlertTriangle, RefreshCw, Copy, Share2, Check, Search, X } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Copy, Share2, Check, Search, X, Bookmark as BookmarkIcon } from 'lucide-react';
 
 interface VerseItemProps {
     ayah: any;
@@ -17,6 +17,8 @@ interface VerseItemProps {
     innerRef: (el: HTMLDivElement | null) => void;
     surahName: string;
     searchQuery: string;
+    isBookmarked: boolean;
+    onToggleBookmark: (e: React.MouseEvent) => void;
 }
 
 const VerseItem = React.memo<VerseItemProps>(({
@@ -30,7 +32,9 @@ const VerseItem = React.memo<VerseItemProps>(({
     translationFontSize,
     innerRef,
     surahName,
-    searchQuery
+    searchQuery,
+    isBookmarked,
+    onToggleBookmark
 }) => {
     const [copied, setCopied] = React.useState(false);
     
@@ -100,6 +104,14 @@ const VerseItem = React.memo<VerseItemProps>(({
                     )}
                 </div>
                 <div className="flex items-center gap-1 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300">
+                    <button
+                        onClick={onToggleBookmark}
+                        className={`p-2.5 rounded-lg hover:bg-white/10 transition-colors ${isBookmarked ? 'text-accent' : 'text-muted hover:text-accent'}`}
+                        aria-label={isBookmarked ? "Remove bookmark" : "Bookmark verse"}
+                        title={isBookmarked ? "Remove bookmark" : "Bookmark verse"}
+                    >
+                        <BookmarkIcon className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
+                    </button>
                     <button
                         onClick={handleCopy}
                         className="p-2.5 rounded-lg hover:bg-white/10 text-muted hover:text-accent transition-colors"
@@ -377,6 +389,7 @@ const ScrollingVerseDisplay: React.FC = () => {
 
                 {arabicSurah.ayahs.map((ayah, index) => {
                     const isActive = isVerseByVerse && index === currentAyahIndex;
+                    const bookmarked = actions.isBookmarked(arabicSurah.number, ayah.numberInSurah);
                     return (
                         <VerseItem
                             key={ayah.number}
@@ -391,6 +404,11 @@ const ScrollingVerseDisplay: React.FC = () => {
                             innerRef={el => { verseRefs.current[index] = el; }}
                             surahName={arabicSurah.englishName}
                             searchQuery={searchQuery}
+                            isBookmarked={bookmarked}
+                            onToggleBookmark={(e) => {
+                                e.stopPropagation();
+                                actions.toggleBookmark(arabicSurah.number, arabicSurah.englishName, ayah.numberInSurah);
+                            }}
                         />
                     );
                 })}

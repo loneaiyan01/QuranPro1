@@ -3,7 +3,7 @@ import { useQuran } from '../contexts/QuranContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAudio } from '../contexts/AudioContext';
 import { DisplayMode, Theme } from '../types';
-import { BookOpen, User, Settings, Moon, Sun, X, Search, Palette, Radio, Clock } from 'lucide-react';
+import { BookOpen, User, Settings, Moon, Sun, X, Search, Palette, Radio, Clock, Bookmark as BookmarkIcon } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -17,12 +17,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     reciters,
     selectedReciter,
     isRadioMode,
+    bookmarks,
     actions
   } = useQuran();
 
   const {
     sleepTimer,
-    actions: { setSleepTimer }
+    actions: { setSleepTimer, setAyahIndex }
   } = useAudio();
 
   const {
@@ -36,7 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     setTheme
   } = useTheme();
 
-  const [activeTab, setActiveTab] = React.useState<'surahs' | 'settings' | 'radio'>('surahs');
+  const [activeTab, setActiveTab] = React.useState<'surahs' | 'settings' | 'radio' | 'bookmarks'>('surahs');
   const [searchQuery, setSearchQuery] = React.useState('');
 
   const filteredSurahs = surahs.filter(s =>
@@ -78,22 +79,28 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         {/* Tabs */}
         <div className="flex border-b border-[var(--border)] bg-sidebar">
           <button
-            className={`flex-1 py-4 text-sm font-semibold transition-colors ${activeTab === 'surahs' ? 'text-accent border-b-2 border-accent' : 'text-muted'}`}
+            className={`flex-1 py-4 text-[11px] md:text-xs font-semibold transition-colors ${activeTab === 'surahs' ? 'text-accent border-b-2 border-accent' : 'text-muted'}`}
             onClick={() => setActiveTab('surahs')}
           >
             Surahs
           </button>
           <button
-            className={`flex-1 py-4 text-sm font-semibold transition-colors ${activeTab === 'settings' ? 'text-accent border-b-2 border-accent' : 'text-muted'}`}
-            onClick={() => setActiveTab('settings')}
+            className={`flex-1 py-4 text-[11px] md:text-xs font-semibold transition-colors ${activeTab === 'bookmarks' ? 'text-accent border-b-2 border-accent' : 'text-muted'}`}
+            onClick={() => setActiveTab('bookmarks')}
           >
-            Settings
+            Bookmarks
           </button>
           <button
-            className={`flex-1 py-4 text-sm font-semibold transition-colors ${activeTab === 'radio' ? 'text-accent border-b-2 border-accent' : 'text-muted'}`}
+            className={`flex-1 py-4 text-[11px] md:text-xs font-semibold transition-colors ${activeTab === 'radio' ? 'text-accent border-b-2 border-accent' : 'text-muted'}`}
             onClick={() => setActiveTab('radio')}
           >
             Radio
+          </button>
+          <button
+            className={`flex-1 py-4 text-[11px] md:text-xs font-semibold transition-colors ${activeTab === 'settings' ? 'text-accent border-b-2 border-accent' : 'text-muted'}`}
+            onClick={() => setActiveTab('settings')}
+          >
+            Settings
           </button>
         </div>
 
@@ -330,6 +337,53 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   />
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'bookmarks' && (
+            <div className="p-4 space-y-4">
+              <div className="flex items-center justify-between px-2 mb-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">Bookmarked Verses</h3>
+                <span className="text-[10px] bg-accent-muted text-accent px-2 py-0.5 rounded-full font-bold">
+                  {bookmarks.length}
+                </span>
+              </div>
+              {bookmarks.length === 0 ? (
+                <div className="text-center py-16 px-4 space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-accent-muted text-accent flex items-center justify-center mx-auto">
+                    <BookmarkIcon className="w-6 h-6" />
+                  </div>
+                  <p className="text-xs text-muted max-w-[200px] mx-auto leading-relaxed">
+                    No bookmarks yet. Tap the bookmark icon on any verse to save it here.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {bookmarks.map((bookmark) => (
+                    <button
+                      key={`${bookmark.surahNumber}-${bookmark.ayahNumberInSurah}`}
+                      onClick={async () => {
+                        const targetSurah = surahs.find(s => s.number === bookmark.surahNumber);
+                        if (targetSurah) {
+                          if (isRadioMode) {
+                            actions.toggleRadioMode(false);
+                          }
+                          await actions.selectSurah(targetSurah);
+                          setAyahIndex(bookmark.ayahNumberInSurah - 1);
+                        }
+                        onClose();
+                      }}
+                      className="w-full text-left px-4 py-3 hover:bg-accent-muted/50 rounded-xl flex items-center justify-between transition-all border border-transparent hover:border-[var(--border)] active:scale-[0.98] text-main"
+                    >
+                      <div>
+                        <p className="font-semibold text-xs md:text-sm">{bookmark.surahEnglishName}</p>
+                        <p className="text-[10px] text-muted">Verse {bookmark.ayahNumberInSurah}</p>
+                      </div>
+                      <BookmarkIcon className="w-3.5 h-3.5 text-accent fill-current" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -66,3 +66,10 @@ export enum Theme {
   EMERALD_MEDINA = 'emerald-medina',
   ROSE_GOLD = 'rose-gold'
 }
+
+export interface Bookmark {
+  surahNumber: number;
+  surahEnglishName: string;
+  ayahNumberInSurah: number;
+  addedAt: number;
+}
