@@ -3,6 +3,7 @@ import Sidebar from './Sidebar';
 import ScrollingVerseDisplay from './ScrollingVerseDisplay';
 import PlayerControls from './PlayerControls';
 import RadioInterface from './RadioInterface';
+import { ResumePrompt } from './ResumePrompt';
 import { Menu } from 'lucide-react';
 import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
@@ -26,6 +27,8 @@ const MainLayout: React.FC = () => {
 
     return (
         <div className="flex h-screen w-full relative overflow-hidden">
+            {/* Resume Session Toast */}
+            <ResumePrompt />
 
             {/* Sidebar */}
             <Sidebar

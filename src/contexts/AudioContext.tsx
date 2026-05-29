@@ -152,6 +152,19 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
     }, [currentSurah, isRadioMode]);
 
+    // Effect: Persist session progress to localStorage
+    useEffect(() => {
+        if (currentSurah && !isRadioMode) {
+            const session = {
+                surahNumber: currentSurah.number,
+                surahEnglishName: currentSurah.englishName,
+                ayahIndex: currentAyahIndex,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('tarteela_last_session', JSON.stringify(session));
+        }
+    }, [currentSurah, currentAyahIndex, isRadioMode]);
+
     // Effect: Load Audio Data with async race condition cleanup
     useEffect(() => {
         let isCurrent = true;
