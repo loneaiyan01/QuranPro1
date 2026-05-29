@@ -6,6 +6,7 @@ export const ALLOWED_IDENTIFIERS = [
   'ar.mahermuaiqly',        // Maher
   'ar.muhammadayyoub',      // Muhammad Ayyub
   'ar.hudhaify',            // Hudhaify
+  'ar.minshawi',            // Minshawi (Murattal)
   'ar.yasseraldosari',      // Yasser Al-Dosari (Manual)
   'ar.muhammadalluhaidan',  // Luhaidan (Manual)
   'ar.ahmedtalib'           // Ahmed bin Talib (Manual)
