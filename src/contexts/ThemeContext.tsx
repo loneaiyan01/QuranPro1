@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { DisplayMode } from '../types';
+import { DisplayMode, Theme } from '../types';
 
 interface ThemeContextType {
   displayMode: DisplayMode;
@@ -8,7 +8,56 @@ interface ThemeContextType {
   setArabicFontSize: (size: number) => void;
   translationFontSize: number;
   setTranslationFontSize: (size: number) => void;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
 }
+
+export const THEME_VARIABLES: Record<Theme, Record<string, string>> = {
+  [Theme.DEFAULT]: {
+    '--bg-main': '#000000',
+    '--bg-sidebar': '#1C1C1E',
+    '--bg-card-active': '#1C1C1E',
+    '--accent': '#0A84FF',
+    '--accent-muted': 'rgba(10, 132, 255, 0.15)',
+    '--border': '#38383A',
+    '--border-active': '#0A84FF',
+    '--ring': 'rgba(10, 132, 255, 0.3)',
+    '--glass-bg': 'rgba(28, 28, 30, 0.65)'
+  },
+  [Theme.MIDNIGHT_KABA]: {
+    '--bg-main': '#0B0B0C',
+    '--bg-sidebar': '#131315',
+    '--bg-card-active': '#19191C',
+    '--accent': '#D4AF37', // Elegant Gold
+    '--accent-muted': 'rgba(212, 175, 55, 0.15)',
+    '--border': '#252528',
+    '--border-active': '#D4AF37',
+    '--ring': 'rgba(212, 175, 55, 0.3)',
+    '--glass-bg': 'rgba(19, 19, 21, 0.65)'
+  },
+  [Theme.EMERALD_MEDINA]: {
+    '--bg-main': '#022C22', // Emerald 950
+    '--bg-sidebar': '#064E3B', // Emerald 900
+    '--bg-card-active': '#065F46',
+    '--accent': '#F59E0B', // Medina Gold Accent
+    '--accent-muted': 'rgba(245, 158, 11, 0.15)',
+    '--border': '#047857',
+    '--border-active': '#F59E0B',
+    '--ring': 'rgba(245, 158, 11, 0.3)',
+    '--glass-bg': 'rgba(6, 78, 59, 0.65)'
+  },
+  [Theme.ROSE_GOLD]: {
+    '--bg-main': '#191213',
+    '--bg-sidebar': '#241B1C',
+    '--bg-card-active': '#2D2224',
+    '--accent': '#E0A899', // Rose Gold
+    '--accent-muted': 'rgba(224, 168, 153, 0.15)',
+    '--border': '#352729',
+    '--border-active': '#E0A899',
+    '--ring': 'rgba(224, 168, 153, 0.3)',
+    '--glass-bg': 'rgba(36, 27, 28, 0.65)'
+  }
+};
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
@@ -17,16 +66,23 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const saved = localStorage.getItem('tarteela_displayMode');
     return saved !== null ? (saved as DisplayMode) : DisplayMode.ENGLISH_ONLY;
   });
+  
   const [arabicFontSize, setArabicFontSize] = useState<number>(() => {
     const saved = localStorage.getItem('tarteela_arabicFontSize');
     return saved !== null ? Number(saved) : 64;
   });
+  
   const [translationFontSize, setTranslationFontSize] = useState<number>(() => {
     const saved = localStorage.getItem('tarteela_translationFontSize');
     return saved !== null ? Number(saved) : 20;
   });
 
-  // Persist to localStorage on change
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem('tarteela_selected_theme');
+    return saved !== null ? (saved as Theme) : Theme.DEFAULT;
+  });
+
+  // Persist settings to localStorage on change
   useEffect(() => {
     localStorage.setItem('tarteela_displayMode', displayMode);
   }, [displayMode]);
@@ -39,11 +95,20 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     localStorage.setItem('tarteela_translationFontSize', String(translationFontSize));
   }, [translationFontSize]);
 
-  // Effect: Update document theme classes
+  useEffect(() => {
+    localStorage.setItem('tarteela_selected_theme', theme);
+  }, [theme]);
+
+  // Effect: Update document theme classes and CSS variables
   useEffect(() => {
     const root = document.documentElement;
     root.classList.add('dark');
-  }, []);
+
+    const variables = THEME_VARIABLES[theme];
+    Object.entries(variables).forEach(([key, val]) => {
+      root.style.setProperty(key, val);
+    });
+  }, [theme]);
 
   return (
     <ThemeContext.Provider
@@ -54,6 +119,8 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setArabicFontSize,
         translationFontSize,
         setTranslationFontSize,
+        theme,
+        setTheme,
       }}
     >
       {children}

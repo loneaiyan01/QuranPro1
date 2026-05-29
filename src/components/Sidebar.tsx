@@ -2,7 +2,7 @@ import React from 'react';
 import { useQuran } from '../contexts/QuranContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAudio } from '../contexts/AudioContext';
-import { DisplayMode } from '../types';
+import { DisplayMode, Theme } from '../types';
 import { BookOpen, User, Settings, Moon, Sun, X, Search, Palette, Radio, Clock } from 'lucide-react';
 
 interface SidebarProps {
@@ -31,7 +31,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     arabicFontSize,
     setArabicFontSize,
     translationFontSize,
-    setTranslationFontSize
+    setTranslationFontSize,
+    theme,
+    setTheme
   } = useTheme();
 
   const [activeTab, setActiveTab] = React.useState<'surahs' | 'settings' | 'radio'>('surahs');
@@ -204,6 +206,40 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   >
                     Both
                   </button>
+                </div>
+              </div>
+
+              {/* Theme Palette */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">Theme Palette</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { id: Theme.DEFAULT, name: 'Default Dark', bg: 'bg-[#000000]', border: 'border-[#38383A]', accent: 'bg-[#0A84FF]' },
+                    { id: Theme.MIDNIGHT_KABA, name: 'Midnight Kaba', bg: 'bg-[#0B0B0C]', border: 'border-[#252528]', accent: 'bg-[#D4AF37]' },
+                    { id: Theme.EMERALD_MEDINA, name: 'Medina Emerald', bg: 'bg-[#022C22]', border: 'border-[#047857]', accent: 'bg-[#F59E0B]' },
+                    { id: Theme.ROSE_GOLD, name: 'Rose Gold Dust', bg: 'bg-[#191213]', border: 'border-[#352729]', accent: 'bg-[#E0A899]' }
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setTheme(t.id)}
+                      className={`relative flex items-center justify-between p-3 rounded-xl border text-left transition-all hover:scale-[1.02] active:scale-95 ${
+                        theme === t.id
+                          ? 'border-active shadow-sm'
+                          : 'border-[var(--border)] bg-black/20 hover:bg-black/40'
+                      }`}
+                    >
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-xs font-semibold text-main">{t.name}</span>
+                        <div className="flex gap-1 items-center mt-1">
+                          <span className={`w-3.5 h-3.5 rounded-full ${t.bg} border ${t.border}`} />
+                          <span className={`w-3.5 h-3.5 rounded-full ${t.accent}`} />
+                        </div>
+                      </div>
+                      {theme === t.id && (
+                        <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                      )}
+                    </button>
+                  ))}
                 </div>
               </div>
 

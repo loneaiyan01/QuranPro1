@@ -59,3 +59,10 @@ export enum DisplayMode {
   ARABIC_ONLY = 'arabic',
   ENGLISH_ONLY = 'english'
 }
+
+export enum Theme {
+  DEFAULT = 'default',
+  MIDNIGHT_KABA = 'midnight-kaba',
+  EMERALD_MEDINA = 'emerald-medina',
+  ROSE_GOLD = 'rose-gold'
+}
