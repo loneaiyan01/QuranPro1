@@ -1,6 +1,18 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-cream-50: #FCFCFA;
+  --color-cream-100: #F5F5F0;
+  --color-cream-200: #E6E6DF;
+  --color-cream-300: #D1D1C7;
+  
+  --color-emerald-850: #022C22;
+  --color-emerald-950: #011C16;
+  
+  --font-sans: "Inter", "sans-serif";
+  --font-amiri: "Amiri", "serif";
+  --font-quran: "KFGQPC_V2", "KFGQPC_V1", "Uthmani_Hafs", "Amiri", "serif";
+}
 
 /* Quranic Fonts */
 @font-face {
