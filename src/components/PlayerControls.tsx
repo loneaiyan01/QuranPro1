@@ -98,10 +98,10 @@ const PlayerControls: React.FC = () => {
           </div>
 
           {/* Buttons */}
-          <div className="flex items-center gap-8 mx-auto">
+          <div className="flex items-center gap-6 md:gap-8 mx-auto">
             <button
               onClick={prevAyah}
-              className="p-2 text-muted hover:text-accent transition-colors"
+              className="p-4 md:p-2 text-muted hover:text-accent transition-colors active:scale-95 transition-transform"
               aria-label="Previous Verse"
             >
               <SkipBack className="w-6 h-6" />
@@ -111,7 +111,7 @@ const PlayerControls: React.FC = () => {
               onClick={togglePlay}
               disabled={isBuffering}
               aria-label={isBuffering ? 'Loading audio' : isPlaying ? 'Pause playback' : 'Play playback'}
-              className={`w-14 h-14 bg-accent hover:bg-accent/90 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-accent/30 hover:scale-105 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-main)] transition-all duration-300 ${isBuffering ? 'opacity-80 cursor-wait' : ''}`}
+              className={`w-14 h-14 bg-accent hover:bg-accent/90 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-accent/30 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-main)] transition-all duration-300 ${isBuffering ? 'opacity-80 cursor-wait' : ''}`}
             >
               {isBuffering ? (
                 <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -124,7 +124,7 @@ const PlayerControls: React.FC = () => {
 
             <button
               onClick={nextAyah}
-              className="p-2 text-muted hover:text-accent transition-colors"
+              className="p-4 md:p-2 text-muted hover:text-accent transition-colors active:scale-95 transition-transform"
               aria-label="Next Verse"
             >
               <SkipForward className="w-6 h-6" />

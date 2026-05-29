@@ -33,6 +33,11 @@ const VerseItem = React.memo<VerseItemProps>(({
     searchQuery
 }) => {
     const [copied, setCopied] = React.useState(false);
+    
+    // Mobile optimizations: cap sizes dynamically for small viewports
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const displayArabicSize = isMobile ? Math.min(arabicFontSize, 36) : arabicFontSize;
+    const displayTranslationSize = isMobile ? Math.min(translationFontSize, 17) : translationFontSize;
 
     const getVerseText = () => {
         let text = '';
@@ -66,7 +71,7 @@ const VerseItem = React.memo<VerseItemProps>(({
     return (
         <div
             ref={innerRef}
-            className={`group p-6 md:p-10 rounded-3xl transition-all duration-700 border ${isActive
+            className={`group p-5 md:p-10 rounded-2xl md:rounded-3xl transition-all duration-700 border ${isActive
                 ? 'bg-[var(--bg-card-active)] border-[var(--border-active)] shadow-[var(--shadow-lg)] border-l-4'
                 : 'bg-transparent border-transparent hover:bg-white/5 active:bg-white/10'
                 }`}
@@ -94,10 +99,10 @@ const VerseItem = React.memo<VerseItemProps>(({
                         </div>
                     )}
                 </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="flex items-center gap-1 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300">
                     <button
                         onClick={handleCopy}
-                        className="p-2 rounded-lg hover:bg-white/10 text-muted hover:text-accent transition-colors"
+                        className="p-2.5 rounded-lg hover:bg-white/10 text-muted hover:text-accent transition-colors"
                         aria-label="Copy verse"
                         title="Copy verse"
                     >
@@ -105,7 +110,7 @@ const VerseItem = React.memo<VerseItemProps>(({
                     </button>
                     <button
                         onClick={handleShare}
-                        className="p-2 rounded-lg hover:bg-white/10 text-muted hover:text-accent transition-colors"
+                        className="p-2.5 rounded-lg hover:bg-white/10 text-muted hover:text-accent transition-colors"
                         aria-label="Share verse"
                         title="Share verse"
                     >
@@ -120,7 +125,7 @@ const VerseItem = React.memo<VerseItemProps>(({
                     className={`text-right font-quran leading-[2.4] mb-8 transition-all duration-500 ${isActive ? 'text-main scale-[1.02] origin-right' : 'text-main opacity-90'
                         }`}
                     dir="rtl"
-                    style={{ fontSize: `${arabicFontSize}px` }}
+                    style={{ fontSize: `${displayArabicSize}px` }}
                 >
                     {searchQuery ? highlightText(ayah.text, searchQuery) : ayah.text}
                 </p>
@@ -131,7 +136,7 @@ const VerseItem = React.memo<VerseItemProps>(({
                 <p
                     className={`text-left font-sans leading-relaxed transition-all duration-500 ${isActive ? 'text-main font-normal' : 'text-muted opacity-80'
                         }`}
-                    style={{ fontSize: `${translationFontSize}px` }}
+                    style={{ fontSize: `${displayTranslationSize}px` }}
                 >
                     {searchQuery ? highlightText(englishAyah.text, searchQuery) : englishAyah.text}
                 </p>

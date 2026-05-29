@@ -182,18 +182,20 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 isTransitioning.current = false;
 
                 audioRef.current.src = audioUrl;
-                audioRef.current.volume = 0; // Prepare for fade
+                audioRef.current.volume = wasPlaying ? 0 : 1; // Prepare for fade if playing
                 audioRef.current.load();
 
                 if (wasPlaying) {
-                    audioRef.current.play().catch(e => {
+                    audioRef.current.play().then(() => {
+                        fadeAudioIn();
+                    }).catch(e => {
                         console.error("Autoplay prevented or failed", e);
                         setIsPlaying(false);
                     });
                 }
             }
         }
-    }, [currentAyahIndex, audioData, isFullSurahAudio, isPlaying, isRadioMode]);
+    }, [currentAyahIndex, audioData, isFullSurahAudio, isPlaying, fadeAudioIn]);
 
     // Audio Logic: Preload Next Verse (Only for VBV mode)
     useEffect(() => {
@@ -362,19 +364,40 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (!audioRef.current || audioData.length === 0) return;
 
         const targetIndex = isFullSurahAudio ? 0 : currentAyahIndex;
-        if (!audioData[targetIndex]) return;
+        const currentTrack = audioData[targetIndex];
+        if (!currentTrack) return;
+
+        // Ensure the source is set synchronously within user gesture
+        if (currentTrack.audio && audioRef.current.src !== currentTrack.audio) {
+            audioRef.current.src = currentTrack.audio;
+            audioRef.current.load();
+        }
 
         if (isPlaying) {
-            fadeAudioOut(() => {
-                audioRef.current?.pause();
-                setIsPlaying(false);
-            });
+            // Stop any active fading animations
+            if (fadeRef.current) {
+                clearInterval(fadeRef.current);
+                fadeRef.current = null;
+            }
+            audioRef.current.pause();
+            setIsPlaying(false);
         } else {
-            audioRef.current.volume = 0;
-            audioRef.current.play().catch(console.error);
-            setIsPlaying(true);
+            // Initialize volume to full immediately before playing on mobile to prevent muted play issues
+            audioRef.current.volume = 1;
+            const playPromise = audioRef.current.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    setIsPlaying(true);
+                    fadeAudioIn();
+                }).catch(e => {
+                    console.error("Mobile play gesture failed", e);
+                    setIsPlaying(false);
+                });
+            } else {
+                setIsPlaying(true);
+            }
         }
-    }, [audioData, isFullSurahAudio, currentAyahIndex, isPlaying, fadeAudioOut]);
+    }, [audioData, isFullSurahAudio, currentAyahIndex, isPlaying, fadeAudioIn]);
 
     const play = useCallback(() => {
         if (audioRef.current) audioRef.current.play();

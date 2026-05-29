@@ -15,7 +15,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [displayMode, setDisplayMode] = useState<DisplayMode>(() => {
     const saved = localStorage.getItem('tarteela_displayMode');
-    return saved !== null ? (saved as DisplayMode) : DisplayMode.BOTH;
+    return saved !== null ? (saved as DisplayMode) : DisplayMode.ENGLISH_ONLY;
   });
   const [arabicFontSize, setArabicFontSize] = useState<number>(() => {
     const saved = localStorage.getItem('tarteela_arabicFontSize');
