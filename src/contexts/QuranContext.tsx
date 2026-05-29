@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { Surah, Reciter, SurahContent } from '../types';
 import { fetchSurahs, fetchReciters, fetchSurahText } from '../services/api';
 
@@ -55,7 +55,7 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         init();
     }, []);
 
-    const selectSurah = async (surah: Surah) => {
+    const selectSurah = useCallback(async (surah: Surah) => {
         setIsLoadingContent(true);
         setCurrentSurah(surah);
         // Note: Audio stop logic will need to be handled by AudioContext listening to currentSurah changes
@@ -65,20 +65,13 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setSurahText(textData);
 
         setIsLoadingContent(false);
-    };
+    }, []);
 
-    const selectReciter = (reciter: Reciter) => {
+    const selectReciter = useCallback((reciter: Reciter) => {
         setSelectedReciter(reciter);
-    };
+    }, []);
 
-    const toggleRadioMode = (active: boolean) => {
-        setIsRadioMode(active);
-        if (active) {
-            nextRadioSurah();
-        }
-    };
-
-    const nextRadioSurah = () => {
+    const nextRadioSurah = useCallback(() => {
         if (surahs.length === 0 || reciters.length === 0) return;
 
         const randomSurah = surahs[Math.floor(Math.random() * surahs.length)];
@@ -87,7 +80,21 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         // Update reciter first to avoid race condition in audio fetching
         setSelectedReciter(randomReciter);
         selectSurah(randomSurah);
-    };
+    }, [surahs, reciters, selectSurah]);
+
+    const toggleRadioMode = useCallback((active: boolean) => {
+        setIsRadioMode(active);
+        if (active) {
+            nextRadioSurah();
+        }
+    }, [nextRadioSurah]);
+
+    const actions = useMemo(() => ({
+        selectSurah,
+        selectReciter,
+        toggleRadioMode,
+        nextRadioSurah
+    }), [selectSurah, selectReciter, toggleRadioMode, nextRadioSurah]);
 
     return (
         <QuranContext.Provider
@@ -98,12 +105,7 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 selectedReciter,
                 surahText,
                 isLoadingContent,
-                actions: {
-                    selectSurah,
-                    selectReciter,
-                    toggleRadioMode,
-                    nextRadioSurah
-                },
+                actions,
                 isRadioMode
             }}
         >

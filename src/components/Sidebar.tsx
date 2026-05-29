@@ -180,7 +180,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   <button
                     onClick={() => {
                       setDisplayMode(DisplayMode.ARABIC_ONLY);
-                      onClose();
                     }}
                     className={`px-3 py-2 text-sm rounded-md border transition-all ${displayMode === DisplayMode.ARABIC_ONLY ? 'bg-accent text-white border-accent shadow-sm' : 'border-[var(--border)] text-muted hover:bg-black/5'}`}
                   >
@@ -189,7 +188,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   <button
                     onClick={() => {
                       setDisplayMode(DisplayMode.ENGLISH_ONLY);
-                      onClose();
                     }}
                     className={`px-3 py-2 text-sm rounded-md border transition-all ${displayMode === DisplayMode.ENGLISH_ONLY ? 'bg-accent text-white border-accent shadow-sm' : 'border-[var(--border)] text-muted hover:bg-black/5'}`}
                   >
@@ -198,7 +196,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   <button
                     onClick={() => {
                       setDisplayMode(DisplayMode.BOTH);
-                      onClose();
                     }}
                     className={`px-3 py-2 text-sm rounded-md border transition-all ${displayMode === DisplayMode.BOTH ? 'bg-accent text-white border-accent shadow-sm' : 'border-[var(--border)] text-muted hover:bg-black/5'}`}
                   >
@@ -218,7 +215,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       const rec = reciters.find(r => r.identifier === e.target.value);
                       if (rec) {
                         actions.selectReciter(rec);
-                        onClose();
                       }
                     }}
                     className="w-full pl-9 pr-4 py-2 bg-[#1C1C1E] border border-[var(--border)] rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-accent/50 text-main"
@@ -244,7 +240,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       key={mins}
                       onClick={() => {
                         setSleepTimer(mins);
-                        onClose();
                       }}
                       className={`py-2 text-xs font-bold rounded-lg border transition-all ${sleepTimer === mins ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20' : 'border-[var(--border)] text-muted'}`}
                     >
@@ -256,7 +251,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   <button
                     onClick={() => {
                       setSleepTimer(null);
-                      onClose();
                     }}
                     className="w-full py-2 text-[10px] font-bold uppercase tracking-widest text-red-500 hover:text-red-400 transition-colors"
                   >

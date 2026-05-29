@@ -4,6 +4,90 @@ import { useAudio } from '../contexts/AudioContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { DisplayMode } from '../types';
 
+interface VerseItemProps {
+    ayah: any;
+    englishAyah: any;
+    isActive: boolean;
+    isPlaying: boolean;
+    isBuffering: boolean;
+    displayMode: DisplayMode;
+    arabicFontSize: number;
+    translationFontSize: number;
+    innerRef: (el: HTMLDivElement | null) => void;
+}
+
+const VerseItem = React.memo<VerseItemProps>(({
+    ayah,
+    englishAyah,
+    isActive,
+    isPlaying,
+    isBuffering,
+    displayMode,
+    arabicFontSize,
+    translationFontSize,
+    innerRef
+}) => {
+    return (
+        <div
+            ref={innerRef}
+            className={`p-6 md:p-10 rounded-3xl transition-all duration-700 border ${isActive
+                ? 'bg-[var(--bg-card-active)] border-[var(--border-active)] shadow-[var(--shadow-lg)] border-l-4'
+                : 'bg-transparent border-transparent hover:bg-white/5 active:bg-white/10'
+                }`}
+        >
+            {/* Header: Verse Number */}
+            <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-3">
+                    <span className={`w-10 h-10 flex items-center justify-center text-xs font-mono rounded-xl transition-all duration-500 shadow-sm border ${isActive
+                        ? 'bg-accent text-white rotate-0 scale-110 border-accent'
+                        : 'bg-[var(--bg-main)] text-accent rotate-45 group-hover:rotate-0 border-[var(--border)]'
+                        }`}>
+                        <span className={isActive ? '' : '-rotate-45'}>{ayah.numberInSurah}</span>
+                    </span>
+                    {isActive && isPlaying && (
+                        <div className="flex items-center gap-2">
+                            {isBuffering ? (
+                                <span className="text-[10px] uppercase tracking-wider text-accent animate-pulse font-bold">Buffering...</span>
+                            ) : (
+                                <div className="flex gap-0.5 items-end h-3">
+                                    <div className="w-1 bg-accent animate-[music-bar_0.8s_ease-in-out_infinite] h-full" />
+                                    <div className="w-1 bg-accent animate-[music-bar_1.2s_ease-in-out_infinite] h-2" />
+                                    <div className="w-1 bg-accent animate-[music-bar_1.0s_ease-in-out_infinite] h-3" />
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Arabic Text */}
+            {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ARABIC_ONLY) && (
+                <p
+                    className={`text-right font-quran leading-[2.4] mb-8 transition-all duration-500 ${isActive ? 'text-main scale-[1.02] origin-right' : 'text-main opacity-90'
+                        }`}
+                    dir="rtl"
+                    style={{ fontSize: `${arabicFontSize}px` }}
+                >
+                    {ayah.text}
+                </p>
+            )}
+
+            {/* English Text */}
+            {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ENGLISH_ONLY) && englishAyah && (
+                <p
+                    className={`text-left font-sans leading-relaxed transition-all duration-500 ${isActive ? 'text-main font-normal' : 'text-muted opacity-80'
+                        }`}
+                    style={{ fontSize: `${translationFontSize}px` }}
+                >
+                    {englishAyah.text}
+                </p>
+            )}
+        </div>
+    );
+});
+
+VerseItem.displayName = 'VerseItem';
+
 const ScrollingVerseDisplay: React.FC = () => {
     // Contexts
     const { surahText, isLoadingContent } = useQuran();
@@ -153,64 +237,19 @@ const ScrollingVerseDisplay: React.FC = () => {
 
                 {arabicSurah.ayahs.map((ayah, index) => {
                     const isActive = isVerseByVerse && index === currentAyahIndex;
-
                     return (
-                        <div
+                        <VerseItem
                             key={ayah.number}
-                            ref={el => verseRefs.current[index] = el}
-                            className={`p-6 md:p-10 rounded-3xl transition-all duration-700 border ${isActive
-                                ? 'bg-[var(--bg-card-active)] border-[var(--border-active)] shadow-[var(--shadow-lg)] border-l-4'
-                                : 'bg-transparent border-transparent hover:bg-white/5 active:bg-white/10'
-                                }`}
-                        >
-                            {/* Header: Verse Number */}
-                            <div className="flex justify-between items-center mb-6">
-                                <div className="flex items-center gap-3">
-                                    <span className={`w-10 h-10 flex items-center justify-center text-xs font-mono rounded-xl transition-all duration-500 shadow-sm border ${isActive
-                                        ? 'bg-accent text-white rotate-0 scale-110 border-accent'
-                                        : 'bg-[var(--bg-main)] text-accent rotate-45 group-hover:rotate-0 border-[var(--border)]'
-                                        }`}>
-                                        <span className={isActive ? '' : '-rotate-45'}>{ayah.numberInSurah}</span>
-                                    </span>
-                                    {isActive && isPlaying && (
-                                        <div className="flex items-center gap-2">
-                                            {isBuffering ? (
-                                                <span className="text-[10px] uppercase tracking-wider text-accent animate-pulse font-bold">Buffering...</span>
-                                            ) : (
-                                                <div className="flex gap-0.5 items-end h-3">
-                                                    <div className="w-1 bg-accent animate-[music-bar_0.8s_ease-in-out_infinite] h-full" />
-                                                    <div className="w-1 bg-accent animate-[music-bar_1.2s_ease-in-out_infinite] h-2" />
-                                                    <div className="w-1 bg-accent animate-[music-bar_1.0s_ease-in-out_infinite] h-3" />
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Arabic Text */}
-                            {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ARABIC_ONLY) && (
-                                <p
-                                    className={`text-right font-quran leading-[2.4] mb-8 transition-all duration-500 ${isActive ? 'text-main scale-[1.02] origin-right' : 'text-main opacity-90'
-                                        }`}
-                                    dir="rtl"
-                                    style={{ fontSize: `${arabicFontSize}px` }}
-                                >
-                                    {ayah.text}
-                                </p>
-                            )}
-
-                            {/* English Text */}
-                            {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ENGLISH_ONLY) && englishSurah?.ayahs[index] && (
-                                <p
-                                    className={`text-left font-sans leading-relaxed transition-all duration-500 ${isActive ? 'text-main font-normal' : 'text-muted opacity-80'
-                                        }`}
-                                    style={{ fontSize: `${translationFontSize}px` }}
-                                >
-                                    {englishSurah.ayahs[index].text}
-                                </p>
-                            )}
-                        </div>
+                            ayah={ayah}
+                            englishAyah={englishSurah?.ayahs[index]}
+                            isActive={isActive}
+                            isPlaying={isPlaying}
+                            isBuffering={isBuffering}
+                            displayMode={displayMode}
+                            arabicFontSize={arabicFontSize}
+                            translationFontSize={translationFontSize}
+                            innerRef={el => { verseRefs.current[index] = el; }}
+                        />
                     );
                 })}
             </div>

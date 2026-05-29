@@ -11,13 +11,13 @@ const PlayerControls: React.FC = () => {
     currentTime,
     duration,
     isBuffering,
+    currentAyahIndex,
     actions: { togglePlay, nextAyah, prevAyah, seek }
   } = useAudio();
 
   const { currentSurah, selectedReciter, surahText } = useQuran();
 
   // Calculate verse number for display
-  const { currentAyahIndex } = useAudio(); // Need index to find verse number
   const verseNumber = surahText?.arabic.ayahs[currentAyahIndex]?.numberInSurah;
 
   const formatTime = (time: number) => {

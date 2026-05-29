@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo, ReactNode } from 'react';
 import { AudioAyah } from '../types';
 import { useQuran } from './QuranContext';
 import { fetchSurahAudio } from '../services/api';
@@ -48,6 +48,36 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     // Derived State
     const isFullSurahAudio = selectedReciter ? !selectedReciter.isVerseByVerse : false;
+
+    // Mutable state reference to avoid stale closures in audio event listeners
+    const stateRef = useRef({
+        isRadioMode,
+        isFullSurahAudio,
+        currentAyahIndex,
+        surahText,
+        isPlaying,
+        nextRadioSurah: actions.nextRadioSurah
+    });
+
+    useEffect(() => {
+        stateRef.current = {
+            isRadioMode,
+            isFullSurahAudio,
+            currentAyahIndex,
+            surahText,
+            isPlaying,
+            nextRadioSurah: actions.nextRadioSurah
+        };
+    }, [isRadioMode, isFullSurahAudio, currentAyahIndex, surahText, isPlaying, actions.nextRadioSurah]);
+
+    // Effect: Clean up fade interval on unmount
+    useEffect(() => {
+        return () => {
+            if (fadeRef.current) {
+                clearInterval(fadeRef.current);
+            }
+        };
+    }, []);
 
     // Helper: Fade In Audio
     const fadeAudioIn = useCallback(() => {
@@ -122,15 +152,21 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
     }, [currentSurah, isRadioMode]);
 
-    // Effect: Load Audio Data
+    // Effect: Load Audio Data with async race condition cleanup
     useEffect(() => {
+        let isCurrent = true;
         if (currentSurah && selectedReciter) {
             const loadAudio = async () => {
                 const audio = await fetchSurahAudio(currentSurah.number, selectedReciter.identifier);
-                setAudioData(audio);
+                if (isCurrent) {
+                    setAudioData(audio);
+                }
             };
             loadAudio();
         }
+        return () => {
+            isCurrent = false;
+        };
     }, [currentSurah, selectedReciter]);
 
     // Audio Logic: Source Management with Preloading
@@ -207,28 +243,25 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         };
 
         const handleEnded = () => {
-            if (isRadioMode) {
-                isTransitioning.current = true;
-                actions.nextRadioSurah();
-                return;
-            }
+            const { isRadioMode, isFullSurahAudio, currentAyahIndex, surahText, nextRadioSurah } = stateRef.current;
 
-            if (isFullSurahAudio) {
-                setIsPlaying(false);
-                setProgress(0);
-                setBuffered(0);
-                return;
-            }
-
-            // Auto-sync: Move to next ayah with seamless transition
-            if (surahText && currentAyahIndex < surahText.arabic.ayahs.length - 1) {
+            // If we are in verse-by-verse mode and not at the last ayah, advance to the next ayah
+            if (!isFullSurahAudio && surahText && currentAyahIndex < surahText.arabic.ayahs.length - 1) {
                 isTransitioning.current = true;
                 setCurrentAyahIndex(prev => prev + 1);
                 setIsPlaying(true);
+                return;
+            }
+
+            // Otherwise, we reached the end of the surah (either full surah audio ended, or last VBV verse ended)
+            if (isRadioMode) {
+                isTransitioning.current = true;
+                nextRadioSurah();
             } else {
                 setIsPlaying(false);
                 setProgress(0);
                 setBuffered(0);
+                setCurrentTime(0);
             }
         };
 
@@ -245,7 +278,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
         const handleCanPlayThrough = () => {
             setIsBuffering(false);
-            if (isTransitioning.current && isPlaying) {
+            if (isTransitioning.current && stateRef.current.isPlaying) {
                 audio.volume = 0;
                 audio.play().catch(console.error);
             }
@@ -263,6 +296,13 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             setIsBuffering(false);
         };
 
+        const handleError = (e: Event) => {
+            const error = (e.target as HTMLAudioElement).error;
+            console.error("Audio element error details:", error);
+            setIsBuffering(false);
+            setIsPlaying(false);
+        };
+
         audio.addEventListener('timeupdate', handleTimeUpdate);
         audio.addEventListener('ended', handleEnded);
         audio.addEventListener('play', handlePlay);
@@ -271,6 +311,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         audio.addEventListener('waiting', handleWaiting);
         audio.addEventListener('playing', handlePlaying);
         audio.addEventListener('stalled', handleStalled);
+        audio.addEventListener('error', handleError);
 
         return () => {
             audio.removeEventListener('timeupdate', handleTimeUpdate);
@@ -281,10 +322,11 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             audio.removeEventListener('waiting', handleWaiting);
             audio.removeEventListener('playing', handlePlaying);
             audio.removeEventListener('stalled', handleStalled);
+            audio.removeEventListener('error', handleError);
         };
-    }, [currentAyahIndex, surahText, isPlaying, isFullSurahAudio, fadeAudioIn]);
+    }, [fadeAudioIn]);
 
-    // Media Session API Integration
+    // Media Session API Integration with cleanup
     useEffect(() => {
         if ('mediaSession' in navigator && selectedReciter && currentSurah) {
             const artworkUrl = `/assets/reciters/${selectedReciter.identifier}.png`;
@@ -304,10 +346,19 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             navigator.mediaSession.setActionHandler('previoustrack', prevAyah);
             navigator.mediaSession.setActionHandler('nexttrack', nextAyah);
         }
+
+        return () => {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.setActionHandler('play', null);
+                navigator.mediaSession.setActionHandler('pause', null);
+                navigator.mediaSession.setActionHandler('previoustrack', null);
+                navigator.mediaSession.setActionHandler('nexttrack', null);
+            }
+        };
     }, [selectedReciter, currentSurah, currentAyahIndex, isPlaying]);
 
-    // Actions
-    const togglePlay = () => {
+    // Actions wrapped in useCallback and useMemo
+    const togglePlay = useCallback(() => {
         if (!audioRef.current || audioData.length === 0) return;
 
         const targetIndex = isFullSurahAudio ? 0 : currentAyahIndex;
@@ -323,45 +374,56 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             audioRef.current.play().catch(console.error);
             setIsPlaying(true);
         }
-    };
+    }, [audioData, isFullSurahAudio, currentAyahIndex, isPlaying, fadeAudioOut]);
 
-    const play = () => {
+    const play = useCallback(() => {
         if (audioRef.current) audioRef.current.play();
-    };
+    }, []);
 
-    const pause = () => {
+    const pause = useCallback(() => {
         if (audioRef.current) audioRef.current.pause();
-    };
+    }, []);
 
-    const nextAyah = () => {
+    const nextAyah = useCallback(() => {
         if (isFullSurahAudio) return;
         if (surahText && currentAyahIndex < surahText.arabic.ayahs.length - 1) {
             setCurrentAyahIndex(prev => prev + 1);
         }
-    };
+    }, [isFullSurahAudio, surahText, currentAyahIndex]);
 
-    const prevAyah = () => {
+    const prevAyah = useCallback(() => {
         if (isFullSurahAudio) return;
         if (currentAyahIndex > 0) {
             setCurrentAyahIndex(prev => prev - 1);
         }
-    };
+    }, [isFullSurahAudio, currentAyahIndex]);
 
-    const seek = (value: number) => {
+    const seek = useCallback((value: number) => {
         if (audioRef.current && duration) {
             const time = (value / 100) * duration;
             audioRef.current.currentTime = time;
             setProgress(value);
         }
-    };
+    }, [duration]);
 
-    const setAyahIndex = (index: number) => {
+    const setAyahIndex = useCallback((index: number) => {
         setCurrentAyahIndex(index);
-    };
+    }, []);
 
-    const handleSetSleepTimer = (minutes: number | null) => {
+    const handleSetSleepTimer = useCallback((minutes: number | null) => {
         setSleepTimer(minutes);
-    };
+    }, []);
+
+    const audioActions = useMemo(() => ({
+        togglePlay,
+        play,
+        pause,
+        nextAyah,
+        prevAyah,
+        seek,
+        setAyahIndex,
+        setSleepTimer: handleSetSleepTimer
+    }), [togglePlay, play, pause, nextAyah, prevAyah, seek, setAyahIndex, handleSetSleepTimer]);
 
     return (
         <AudioContext.Provider
@@ -376,16 +438,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 isFullSurahAudio,
                 isBuffering,
                 sleepTimer,
-                actions: {
-                    togglePlay,
-                    play,
-                    pause,
-                    nextAyah,
-                    prevAyah,
-                    seek,
-                    setAyahIndex,
-                    setSleepTimer: handleSetSleepTimer
-                }
+                actions: audioActions
             }}
         >
             {/* Hidden Audio Elements */}
