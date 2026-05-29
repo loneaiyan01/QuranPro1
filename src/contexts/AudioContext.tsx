@@ -14,6 +14,7 @@ interface AudioContextType {
     isFullSurahAudio: boolean;
     isBuffering: boolean;
     sleepTimer: number | null;
+    verseRepeatLimit: number;
     actions: {
         togglePlay: () => void;
         play: () => void;
@@ -23,6 +24,7 @@ interface AudioContextType {
         seek: (value: number) => void;
         setAyahIndex: (index: number) => void;
         setSleepTimer: (minutes: number | null) => void;
+        setVerseRepeatLimit: (limit: number) => void;
     };
 }
 
@@ -43,11 +45,18 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const [duration, setDuration] = useState<number>(0);
     const [isBuffering, setIsBuffering] = useState<boolean>(false);
     const [sleepTimer, setSleepTimer] = useState<number | null>(null);
+    const [verseRepeatLimit, setVerseRepeatLimit] = useState<number>(1);
+    const ayahPlayCountRef = useRef<number>(0);
     const isTransitioning = useRef<boolean>(false);
     const fadeRef = useRef<number | null>(null);
 
     // Derived State
     const isFullSurahAudio = selectedReciter ? !selectedReciter.isVerseByVerse : false;
+
+    // Reset play count whenever index changes
+    useEffect(() => {
+        ayahPlayCountRef.current = 0;
+    }, [currentAyahIndex]);
 
     // Mutable state reference to avoid stale closures in audio event listeners
     const stateRef = useRef({
@@ -56,7 +65,8 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         currentAyahIndex,
         surahText,
         isPlaying,
-        nextRadioSurah: actions.nextRadioSurah
+        nextRadioSurah: actions.nextRadioSurah,
+        verseRepeatLimit
     });
 
     useEffect(() => {
@@ -66,9 +76,10 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             currentAyahIndex,
             surahText,
             isPlaying,
-            nextRadioSurah: actions.nextRadioSurah
+            nextRadioSurah: actions.nextRadioSurah,
+            verseRepeatLimit
         };
-    }, [isRadioMode, isFullSurahAudio, currentAyahIndex, surahText, isPlaying, actions.nextRadioSurah]);
+    }, [isRadioMode, isFullSurahAudio, currentAyahIndex, surahText, isPlaying, actions.nextRadioSurah, verseRepeatLimit]);
 
     // Effect: Clean up fade interval on unmount
     useEffect(() => {
@@ -258,7 +269,21 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         };
 
         const handleEnded = () => {
-            const { isRadioMode, isFullSurahAudio, currentAyahIndex, surahText, nextRadioSurah } = stateRef.current;
+            const { isRadioMode, isFullSurahAudio, currentAyahIndex, surahText, nextRadioSurah, verseRepeatLimit } = stateRef.current;
+
+            // Check if we need to repeat the current verse (only in verse-by-verse mode)
+            if (!isFullSurahAudio && surahText) {
+                if (verseRepeatLimit === -1 || ayahPlayCountRef.current + 1 < verseRepeatLimit) {
+                    ayahPlayCountRef.current += 1;
+                    if (audioRef.current) {
+                        audioRef.current.currentTime = 0;
+                        audioRef.current.volume = 1;
+                        audioRef.current.play().catch(console.error);
+                    }
+                    return;
+                }
+                ayahPlayCountRef.current = 0;
+            }
 
             // If we are in verse-by-verse mode and not at the last ayah, advance to the next ayah
             if (!isFullSurahAudio && surahText && currentAyahIndex < surahText.arabic.ayahs.length - 1) {
@@ -458,7 +483,8 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         prevAyah,
         seek,
         setAyahIndex,
-        setSleepTimer: handleSetSleepTimer
+        setSleepTimer: handleSetSleepTimer,
+        setVerseRepeatLimit
     }), [togglePlay, play, pause, nextAyah, prevAyah, seek, setAyahIndex, handleSetSleepTimer]);
 
     return (
@@ -474,6 +500,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 isFullSurahAudio,
                 isBuffering,
                 sleepTimer,
+                verseRepeatLimit,
                 actions: audioActions
             }}
         >

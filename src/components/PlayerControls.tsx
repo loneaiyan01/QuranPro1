@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Repeat } from 'lucide-react';
 import { useAudio } from '../contexts/AudioContext';
 import { useQuran } from '../contexts/QuranContext';
 
@@ -12,13 +12,34 @@ const PlayerControls: React.FC = () => {
     duration,
     isBuffering,
     currentAyahIndex,
-    actions: { togglePlay, nextAyah, prevAyah, seek }
+    verseRepeatLimit,
+    isFullSurahAudio,
+    actions: { togglePlay, nextAyah, prevAyah, seek, setVerseRepeatLimit }
   } = useAudio();
 
   const { currentSurah, selectedReciter, surahText } = useQuran();
 
   // Calculate verse number for display
   const verseNumber = surahText?.arabic.ayahs[currentAyahIndex]?.numberInSurah;
+
+  const handleRepeatToggle = () => {
+    // Cycle limits: 1 -> 3 -> 5 -> -1 (infinite) -> 1
+    if (verseRepeatLimit === 1) {
+      setVerseRepeatLimit(3);
+    } else if (verseRepeatLimit === 3) {
+      setVerseRepeatLimit(5);
+    } else if (verseRepeatLimit === 5) {
+      setVerseRepeatLimit(-1);
+    } else {
+      setVerseRepeatLimit(1);
+    }
+  };
+
+  const getRepeatText = (limit: number) => {
+    if (limit === 1) return 'Play once (No repeat)';
+    if (limit === -1) return 'Repeat infinitely';
+    return `Repeat ${limit} times`;
+  };
 
   const formatTime = (time: number) => {
     if (isNaN(time)) return "0:00";
@@ -128,6 +149,32 @@ const PlayerControls: React.FC = () => {
               aria-label="Next Verse"
             >
               <SkipForward className="w-6 h-6" />
+            </button>
+
+            {/* Repeat / Loop Button */}
+            <button
+              onClick={handleRepeatToggle}
+              disabled={isFullSurahAudio}
+              className={`p-4 md:p-2 transition-colors relative active:scale-95 transition-transform ${
+                isFullSurahAudio 
+                  ? 'opacity-30 cursor-not-allowed text-muted' 
+                  : verseRepeatLimit > 1 || verseRepeatLimit === -1 
+                    ? 'text-accent font-bold' 
+                    : 'text-muted hover:text-accent'
+              }`}
+              aria-label="Toggle verse repeat limit"
+              title={
+                isFullSurahAudio 
+                  ? 'Repeat mode not available for full surah audio' 
+                  : `Verse repeat limit: ${getRepeatText(verseRepeatLimit)}`
+              }
+            >
+              <Repeat className="w-5 h-5" />
+              {verseRepeatLimit !== 1 && !isFullSurahAudio && (
+                <span className="absolute top-1 right-1 text-[9px] font-mono bg-accent text-white rounded-full w-4.5 h-4.5 flex items-center justify-center border border-[var(--bg-main)] shadow-sm">
+                  {verseRepeatLimit === -1 ? '∞' : `${verseRepeatLimit}`}
+                </span>
+              )}
             </button>
           </div>
 
