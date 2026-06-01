@@ -2,8 +2,8 @@ import React from 'react';
 import { useQuran } from '../contexts/QuranContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAudio } from '../contexts/AudioContext';
-import { DisplayMode, Theme } from '../types';
-import { BookOpen, User, Settings, Moon, Sun, X, Search, Palette, Radio, Clock, Bookmark as BookmarkIcon } from 'lucide-react';
+import { DisplayMode, Theme, FullscreenLayoutMode } from '../types';
+import { BookOpen, User, Settings, Moon, Sun, X, Search, Palette, Radio, Clock, Bookmark as BookmarkIcon, Tv } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -34,7 +34,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     translationFontSize,
     setTranslationFontSize,
     theme,
-    setTheme
+    setTheme,
+    isFullscreenTranslation,
+    setIsFullscreenTranslation,
+    fullscreenLayoutMode,
+    setFullscreenLayoutMode
   } = useTheme();
 
   const [activeTab, setActiveTab] = React.useState<'surahs' | 'settings' | 'radio' | 'bookmarks'>('surahs');
@@ -271,6 +275,47 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       </option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              {/* Fullscreen Translation Settings */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Tv className="w-4 h-4 text-accent" />
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">Fullscreen Mode</h3>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsFullscreenTranslation(true);
+                    onClose();
+                  }}
+                  className="w-full py-3 bg-accent text-white rounded-xl text-xs font-bold shadow-lg shadow-accent/25 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <Tv className="w-4 h-4" />
+                  Start Fullscreen Translation
+                </button>
+
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <button
+                    onClick={() => setFullscreenLayoutMode('single')}
+                    className={`py-2 text-xs font-bold rounded-lg border transition-all ${
+                      fullscreenLayoutMode === 'single'
+                        ? 'bg-accent text-white border-accent shadow-sm'
+                        : 'border-[var(--border)] text-muted hover:bg-black/5'
+                    }`}
+                  >
+                    Focus (Single)
+                  </button>
+                  <button
+                    onClick={() => setFullscreenLayoutMode('scroll')}
+                    className={`py-2 text-xs font-bold rounded-lg border transition-all ${
+                      fullscreenLayoutMode === 'scroll'
+                        ? 'bg-accent text-white border-accent shadow-sm'
+                        : 'border-[var(--border)] text-muted hover:bg-black/5'
+                    }`}
+                  >
+                    Scroll Mode
+                  </button>
                 </div>
               </div>
 

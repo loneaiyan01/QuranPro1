@@ -67,6 +67,8 @@ export enum Theme {
   ROSE_GOLD = 'rose-gold'
 }
 
+export type FullscreenLayoutMode = 'single' | 'scroll';
+
 export interface Bookmark {
   surahNumber: number;
   surahEnglishName: string;

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { DisplayMode, Theme } from '../types';
+import { DisplayMode, Theme, FullscreenLayoutMode } from '../types';
 
 interface ThemeContextType {
   displayMode: DisplayMode;
@@ -10,6 +10,10 @@ interface ThemeContextType {
   setTranslationFontSize: (size: number) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  isFullscreenTranslation: boolean;
+  setIsFullscreenTranslation: (active: boolean) => void;
+  fullscreenLayoutMode: FullscreenLayoutMode;
+  setFullscreenLayoutMode: (mode: FullscreenLayoutMode) => void;
 }
 
 export const THEME_VARIABLES: Record<Theme, Record<string, string>> = {
@@ -82,6 +86,12 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return saved !== null ? (saved as Theme) : Theme.DEFAULT;
   });
 
+  const [isFullscreenTranslation, setIsFullscreenTranslation] = useState<boolean>(false);
+  const [fullscreenLayoutMode, setFullscreenLayoutMode] = useState<FullscreenLayoutMode>(() => {
+    const saved = localStorage.getItem('tarteela_fullscreenLayoutMode');
+    return saved !== null ? (saved as FullscreenLayoutMode) : 'single';
+  });
+
   // Persist settings to localStorage on change
   useEffect(() => {
     localStorage.setItem('tarteela_displayMode', displayMode);
@@ -98,6 +108,42 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   useEffect(() => {
     localStorage.setItem('tarteela_selected_theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('tarteela_fullscreenLayoutMode', fullscreenLayoutMode);
+  }, [fullscreenLayoutMode]);
+
+  // Listen for browser native fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isBrowserFullscreen = !!document.fullscreenElement;
+      if (!isBrowserFullscreen && isFullscreenTranslation) {
+        setIsFullscreenTranslation(false);
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, [isFullscreenTranslation]);
+
+  // Synchronize internal state with native browser fullscreen
+  useEffect(() => {
+    if (isFullscreenTranslation) {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch((err) => {
+          console.warn('Error enabling fullscreen:', err);
+        });
+      }
+    } else {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch((err) => {
+          console.warn('Error exiting fullscreen:', err);
+        });
+      }
+    }
+  }, [isFullscreenTranslation]);
 
   // Effect: Update document theme classes and CSS variables
   useEffect(() => {
@@ -121,6 +167,10 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setTranslationFontSize,
         theme,
         setTheme,
+        isFullscreenTranslation,
+        setIsFullscreenTranslation,
+        fullscreenLayoutMode,
+        setFullscreenLayoutMode,
       }}
     >
       {children}
