@@ -27,6 +27,7 @@ const FullscreenTranslationView: React.FC = () => {
 
   // local UI states
   const [showHUD, setShowHUD] = useState<boolean>(true);
+  const [userFocusedIndex, setUserFocusedIndex] = useState<number | null>(null);
   const hudTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const verseRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -38,7 +39,16 @@ const FullscreenTranslationView: React.FC = () => {
     ? Math.min(Math.floor((currentTime / duration) * englishAyahs.length), Math.max(0, englishAyahs.length - 1))
     : currentAyahIndex;
 
-  const currentEnglishAyah = englishAyahs[estimatedAyahIndex];
+  const activeIndex = userFocusedIndex !== null ? userFocusedIndex : estimatedAyahIndex;
+  const currentEnglishAyah = englishAyahs[activeIndex];
+
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const displayFontSize = isMobile ? Math.min(translationFontSize, 24) : translationFontSize;
+
+  // Reset focus when surah changes
+  useEffect(() => {
+    setUserFocusedIndex(null);
+  }, [currentSurah]);
 
   // Mouse idle detection
   useEffect(() => {
@@ -67,9 +77,9 @@ const FullscreenTranslationView: React.FC = () => {
     };
   }, []);
 
-  // Scrolling behavior for scroll mode
+  // Scrolling behavior for scroll mode (auto-sync to playing audio)
   useEffect(() => {
-    if (fullscreenLayoutMode === 'scroll' && scrollContainerRef.current) {
+    if (fullscreenLayoutMode === 'scroll' && scrollContainerRef.current && userFocusedIndex === null) {
       const activeElement = verseRefs.current[estimatedAyahIndex];
       if (activeElement) {
         activeElement.scrollIntoView({
@@ -78,7 +88,20 @@ const FullscreenTranslationView: React.FC = () => {
         });
       }
     }
-  }, [estimatedAyahIndex, fullscreenLayoutMode]);
+  }, [estimatedAyahIndex, fullscreenLayoutMode, userFocusedIndex]);
+
+  // Scrolling behavior for manual clicks
+  useEffect(() => {
+    if (fullscreenLayoutMode === 'scroll' && scrollContainerRef.current && userFocusedIndex !== null) {
+      const activeElement = verseRefs.current[userFocusedIndex];
+      if (activeElement) {
+        activeElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }
+    }
+  }, [userFocusedIndex, fullscreenLayoutMode]);
 
   // If reciter has no verse sync, default to scroll mode
   useEffect(() => {
@@ -152,22 +175,22 @@ const FullscreenTranslationView: React.FC = () => {
 
       {/* TOP HEADER (HUD) */}
       <header
-        className={`w-full flex items-center justify-between p-6 bg-gradient-to-b from-black/80 to-transparent transition-opacity duration-500 z-50 ${
+        className={`w-full flex flex-col sm:flex-row items-center justify-between p-4 md:p-6 gap-3 sm:gap-0 bg-gradient-to-b from-black/80 to-transparent transition-opacity duration-500 z-50 ${
           showHUD ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       >
         {/* Info */}
-        <div className="flex flex-col gap-0.5">
-          <h2 className="text-lg font-semibold tracking-wide">
+        <div className="flex flex-col gap-0.5 text-center sm:text-left">
+          <h2 className="text-sm md:text-lg font-semibold tracking-wide">
             {currentSurah.englishName}
           </h2>
-          <p className="text-xs text-neutral-400">
-            Verse {currentEnglishAyah ? currentEnglishAyah.numberInSurah : estimatedAyahIndex + 1} of {currentSurah.numberOfAyahs}
+          <p className="text-[10px] md:text-xs text-neutral-400">
+            Verse {currentEnglishAyah ? currentEnglishAyah.numberInSurah : activeIndex + 1} of {currentSurah.numberOfAyahs}
           </p>
         </div>
 
         {/* HUD Toolbar Options */}
-        <div className="flex items-center gap-2 md:gap-4">
+        <div className="flex items-center gap-2 md:gap-4 flex-wrap justify-center">
           {/* Toggle Layout Modes */}
           <div className="flex items-center bg-white/5 border border-white/10 rounded-lg p-0.5">
             <button
@@ -196,7 +219,7 @@ const FullscreenTranslationView: React.FC = () => {
 
           {/* Font Sizes */}
           <div className="flex items-center bg-white/5 border border-white/10 rounded-lg p-0.5 gap-1 px-2 text-neutral-400">
-            <Type className="w-4 h-4" />
+            <Type className="w-3.5 h-3.5" />
             <button
               onClick={decreaseFontSize}
               className="p-1 hover:text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded hover:bg-white/10"
@@ -222,28 +245,28 @@ const FullscreenTranslationView: React.FC = () => {
             className="p-2 bg-white/10 hover:bg-white/20 active:scale-95 transition-all rounded-lg border border-white/10"
             title="Exit Fullscreen Translation"
           >
-            <X className="w-5 h-5 text-white" />
+            <X className="w-4 h-4 md:w-5 md:h-5 text-white" />
           </button>
         </div>
       </header>
 
       {/* CORE DISPLAY CANVAS */}
-      <main className="flex-1 flex flex-col justify-center items-center px-6 md:px-24 min-h-0 relative">
+      <main className="flex-1 w-full flex flex-col justify-center items-center px-4 md:px-24 min-h-0 relative">
         {fullscreenLayoutMode === 'single' ? (
           /* FOCUS MODE (SINGLE VERSE) */
-          <div className="flex flex-col items-center justify-center text-center max-w-4xl h-full py-8">
+          <div className="flex flex-col items-center justify-center text-center max-w-4xl h-full py-6">
             {currentEnglishAyah ? (
               <div
-                key={estimatedAyahIndex}
-                className="animate-slide-up text-white leading-relaxed font-sans"
-                style={{ fontSize: `${translationFontSize}px` }}
+                key={activeIndex}
+                className="animate-slide-up text-white leading-relaxed font-sans px-4"
+                style={{ fontSize: `${displayFontSize}px` }}
               >
-                <p className="font-light tracking-wide max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar select-text">
+                <p className="font-light tracking-wide max-h-[55vh] overflow-y-auto pr-1 custom-scrollbar select-text animate-fade-in no-scrollbar">
                   {currentEnglishAyah.text}
                 </p>
                 
                 {/* Subtle contextual metadata */}
-                <p className="mt-8 text-xs font-mono text-neutral-500 tracking-widest opacity-60">
+                <p className="mt-6 md:mt-8 text-[10px] md:text-xs font-mono text-neutral-500 tracking-widest opacity-60">
                   {currentSurah.englishName} • {currentEnglishAyah.numberInSurah}
                 </p>
               </div>
@@ -255,26 +278,32 @@ const FullscreenTranslationView: React.FC = () => {
           /* CINEMATIC SCROLL MODE */
           <div
             ref={scrollContainerRef}
-            className="w-full h-full overflow-y-auto py-[40vh] space-y-24 scroll-smooth px-4 max-w-4xl no-scrollbar"
+            className="w-full h-full overflow-y-auto py-[30vh] md:py-[40vh] space-y-12 md:space-y-24 scroll-smooth px-4 max-w-4xl no-scrollbar"
           >
             {englishAyahs.map((ayah, index) => {
-              const isActive = index === estimatedAyahIndex;
+              const isActive = index === activeIndex;
+              const isNext = index === activeIndex + 1;
+              const isPrev = index === activeIndex - 1;
+
+              let opacityClass = 'opacity-25 text-neutral-600';
+              if (isActive) {
+                opacityClass = 'opacity-100 text-white font-normal scale-[1.01] md:scale-[1.03]';
+              } else if (isNext || isPrev) {
+                opacityClass = 'opacity-50 text-neutral-400';
+              }
+
               return (
                 <div
                   key={ayah.number}
                   ref={(el) => {
                     verseRefs.current[index] = el;
                   }}
-                  onClick={() => seek((index / englishAyahs.length) * 100)} // Approximate or triggers play
-                  className={`text-center leading-relaxed font-sans cursor-pointer transition-all duration-700 py-4 ${
-                    isActive
-                      ? 'text-white opacity-100 font-normal scale-[1.02]'
-                      : 'text-neutral-600 opacity-25 hover:opacity-50'
-                  }`}
-                  style={{ fontSize: `${translationFontSize}px` }}
+                  onClick={() => setUserFocusedIndex(index)}
+                  className={`text-center leading-relaxed font-sans cursor-pointer transition-all duration-700 py-3 md:py-4 ${opacityClass}`}
+                  style={{ fontSize: `${displayFontSize}px` }}
                 >
                   <p className="font-light select-text">{ayah.text}</p>
-                  <p className={`mt-3 text-[10px] font-mono tracking-widest transition-opacity duration-500 ${
+                  <p className={`mt-2 md:mt-3 text-[9px] md:text-[10px] font-mono tracking-widest transition-opacity duration-500 ${
                     isActive ? 'opacity-40 text-neutral-400' : 'opacity-0'
                   }`}>
                     Verse {ayah.numberInSurah}
@@ -284,16 +313,27 @@ const FullscreenTranslationView: React.FC = () => {
             })}
           </div>
         )}
+
+        {/* Floating Resume Sync Pill */}
+        {userFocusedIndex !== null && (
+          <button
+            onClick={() => setUserFocusedIndex(null)}
+            className="absolute bottom-6 md:bottom-12 bg-white text-black font-semibold text-[11px] md:text-xs py-2 px-4 rounded-full shadow-2xl border border-neutral-200 flex items-center gap-1.5 hover:bg-neutral-200 active:scale-95 transition-all z-[100] animate-bounce"
+          >
+            <Maximize2 className="w-3.5 h-3.5 rotate-45" />
+            <span>Sync to Audio</span>
+          </button>
+        )}
       </main>
 
       {/* FLOATING BOTTOM CONTROLS HUD */}
       <footer
-        className={`w-full p-6 bg-gradient-to-t from-black/80 to-transparent flex flex-col gap-4 items-center transition-opacity duration-500 z-50 ${
+        className={`w-full p-4 md:p-6 bg-gradient-to-t from-black/80 to-transparent flex flex-col gap-3 md:gap-4 items-center transition-opacity duration-500 z-50 ${
           showHUD ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       >
         {/* Scrubber and timings */}
-        <div className="w-full max-w-3xl flex items-center gap-4 text-xs font-mono text-neutral-400">
+        <div className="w-full max-w-3xl flex items-center gap-2 md:gap-4 text-[10px] md:text-xs font-mono text-neutral-400">
           <span>{formatTime(currentTime)}</span>
           <div className="flex-1 relative group cursor-pointer h-1 flex items-center">
             {/* Range Scrubber */}
@@ -310,36 +350,36 @@ const FullscreenTranslationView: React.FC = () => {
         </div>
 
         {/* Buttons */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 md:gap-6">
           <button
             onClick={prevAyah}
-            className="p-3 text-neutral-400 hover:text-white transition-colors active:scale-95"
+            className="p-2 md:p-3 text-neutral-400 hover:text-white transition-colors active:scale-95"
             title="Previous Verse"
           >
-            <SkipBack className="w-5 h-5" />
+            <SkipBack className="w-4 h-4 md:w-5 md:h-5" />
           </button>
 
           <button
             onClick={togglePlay}
             disabled={isBuffering}
-            className="w-12 h-12 bg-white text-black hover:bg-neutral-200 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all"
+            className="w-10 h-10 md:w-12 md:h-12 bg-white text-black hover:bg-neutral-200 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all"
             title={isPlaying ? 'Pause' : 'Play'}
           >
             {isBuffering ? (
               <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
             ) : isPlaying ? (
-              <Pause className="w-5 h-5 fill-current text-black" />
+              <Pause className="w-4 h-4 md:w-5 md:h-5 fill-current text-black" />
             ) : (
-              <Play className="w-5 h-5 ml-0.5 fill-current text-black" />
+              <Play className="w-4 h-4 md:w-5 md:h-5 ml-0.5 fill-current text-black" />
             )}
           </button>
 
           <button
             onClick={nextAyah}
-            className="p-3 text-neutral-400 hover:text-white transition-colors active:scale-95"
+            className="p-2 md:p-3 text-neutral-400 hover:text-white transition-colors active:scale-95"
             title="Next Verse"
           >
-            <SkipForward className="w-5 h-5" />
+            <SkipForward className="w-4 h-4 md:w-5 md:h-5" />
           </button>
         </div>
       </footer>
