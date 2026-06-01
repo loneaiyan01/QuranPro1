@@ -135,7 +135,7 @@ const PlayerControls: React.FC = () => {
           </div>
 
           {/* Buttons */}
-          <div className="flex items-center gap-6 md:gap-8 mx-auto">
+          <div className="flex items-center gap-3 md:gap-8 mx-auto">
             {/* Sleep Timer Button */}
             <button
               onClick={handleSleepTimerToggle}

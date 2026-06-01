@@ -47,7 +47,7 @@ const MainLayout: React.FC = () => {
             <div className={`flex-1 flex flex-col h-full transition-all duration-300 relative ${isSidebarOpen ? 'md:ml-80' : ''}`}>
 
                 {/* Top Mobile Bar */}
-                <div className="md:hidden absolute top-0 left-0 p-4 z-20 flex justify-between w-full pointer-events-none">
+                <div className="md:hidden absolute top-0 inset-x-0 p-4 z-20 flex justify-between pointer-events-none">
                     <button
                         onClick={() => setIsSidebarOpen(true)}
                         className="p-3 bg-accent text-white rounded-full shadow-lg shadow-accent/20 backdrop-blur-md active:scale-95 transition-transform pointer-events-auto"
