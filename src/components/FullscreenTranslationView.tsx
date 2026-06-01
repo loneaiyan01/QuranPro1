@@ -13,6 +13,7 @@ const FullscreenTranslationView: React.FC = () => {
     currentAyahIndex,
     progress,
     isBuffering,
+    isFullSurahAudio,
     actions: { togglePlay, nextAyah, prevAyah, seek }
   } = useAudio();
 
@@ -31,7 +32,13 @@ const FullscreenTranslationView: React.FC = () => {
   const verseRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const englishAyahs = surahText?.english?.ayahs || [];
-  const currentEnglishAyah = englishAyahs[currentAyahIndex];
+
+  // Estimate active verse when there is no verse-by-verse sync
+  const estimatedAyahIndex = (isFullSurahAudio && duration > 0)
+    ? Math.min(Math.floor((currentTime / duration) * englishAyahs.length), Math.max(0, englishAyahs.length - 1))
+    : currentAyahIndex;
+
+  const currentEnglishAyah = englishAyahs[estimatedAyahIndex];
 
   // Mouse idle detection
   useEffect(() => {
@@ -63,7 +70,7 @@ const FullscreenTranslationView: React.FC = () => {
   // Scrolling behavior for scroll mode
   useEffect(() => {
     if (fullscreenLayoutMode === 'scroll' && scrollContainerRef.current) {
-      const activeElement = verseRefs.current[currentAyahIndex];
+      const activeElement = verseRefs.current[estimatedAyahIndex];
       if (activeElement) {
         activeElement.scrollIntoView({
           behavior: 'smooth',
@@ -71,7 +78,14 @@ const FullscreenTranslationView: React.FC = () => {
         });
       }
     }
-  }, [currentAyahIndex, fullscreenLayoutMode]);
+  }, [estimatedAyahIndex, fullscreenLayoutMode]);
+
+  // If reciter has no verse sync, default to scroll mode
+  useEffect(() => {
+    if (isFullSurahAudio) {
+      setFullscreenLayoutMode('scroll');
+    }
+  }, [isFullSurahAudio, setFullscreenLayoutMode]);
 
   // Adjust font size helpers
   const increaseFontSize = () => {
@@ -126,6 +140,14 @@ const FullscreenTranslationView: React.FC = () => {
           cursor: pointer;
           -webkit-appearance: none;
         }
+        /* Hide scrollbars in fullscreen mode */
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
       `}</style>
 
       {/* TOP HEADER (HUD) */}
@@ -140,7 +162,7 @@ const FullscreenTranslationView: React.FC = () => {
             {currentSurah.englishName}
           </h2>
           <p className="text-xs text-neutral-400">
-            Verse {currentEnglishAyah ? currentEnglishAyah.numberInSurah : currentAyahIndex + 1} of {currentSurah.numberOfAyahs}
+            Verse {currentEnglishAyah ? currentEnglishAyah.numberInSurah : estimatedAyahIndex + 1} of {currentSurah.numberOfAyahs}
           </p>
         </div>
 
@@ -212,7 +234,7 @@ const FullscreenTranslationView: React.FC = () => {
           <div className="flex flex-col items-center justify-center text-center max-w-4xl h-full py-8">
             {currentEnglishAyah ? (
               <div
-                key={currentAyahIndex}
+                key={estimatedAyahIndex}
                 className="animate-slide-up text-white leading-relaxed font-sans"
                 style={{ fontSize: `${translationFontSize}px` }}
               >
@@ -233,10 +255,10 @@ const FullscreenTranslationView: React.FC = () => {
           /* CINEMATIC SCROLL MODE */
           <div
             ref={scrollContainerRef}
-            className="w-full h-full overflow-y-auto py-[40vh] space-y-24 scroll-smooth px-4 max-w-4xl"
+            className="w-full h-full overflow-y-auto py-[40vh] space-y-24 scroll-smooth px-4 max-w-4xl no-scrollbar"
           >
             {englishAyahs.map((ayah, index) => {
-              const isActive = index === currentAyahIndex;
+              const isActive = index === estimatedAyahIndex;
               return (
                 <div
                   key={ayah.number}
