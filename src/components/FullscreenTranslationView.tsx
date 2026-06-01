@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { X, Play, Pause, SkipBack, SkipForward, Type, List, Tv, Maximize2, Minimize2, Clock } from 'lucide-react';
+import { X, Play, Pause, SkipBack, SkipForward, Type, List, Tv, Maximize2, Minimize2, Clock, Lock, Unlock } from 'lucide-react';
 
 const FullscreenTranslationView: React.FC = () => {
   const { currentSurah, surahText, surahs, actions: quranActions } = useQuran();
@@ -29,7 +29,10 @@ const FullscreenTranslationView: React.FC = () => {
   // local UI states
   const [showHUD, setShowHUD] = useState<boolean>(true);
   const [userFocusedIndex, setUserFocusedIndex] = useState<number | null>(null);
+  const [isLocked, setIsLocked] = useState<boolean>(false);
+  const [showUnlockButton, setShowUnlockButton] = useState<boolean>(false);
   const hudTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const unlockTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const verseRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -51,9 +54,20 @@ const FullscreenTranslationView: React.FC = () => {
     setUserFocusedIndex(null);
   }, [currentSurah]);
 
-  // Mouse/Touch idle detection
+  // Reset lock when exiting fullscreen
   useEffect(() => {
-    const handleInteraction = () => {
+    return () => {
+      setIsLocked(false);
+      setShowUnlockButton(false);
+    };
+  }, []);
+
+  // Mouse/Touch idle detection and lock overlay controls
+  useEffect(() => {
+    const handleInteraction = (e: Event) => {
+      if (isLocked) {
+        return; // Don't show HUD when locked
+      }
       setShowHUD(true);
       if (hudTimeoutRef.current) {
         clearTimeout(hudTimeoutRef.current);
@@ -63,22 +77,48 @@ const FullscreenTranslationView: React.FC = () => {
       }, 3000);
     };
 
+    const handleWindowClick = () => {
+      if (isLocked) {
+        // Accidental tap protection: show the unlock button temporarily
+        setShowUnlockButton(true);
+        if (unlockTimeoutRef.current) {
+          clearTimeout(unlockTimeoutRef.current);
+        }
+        unlockTimeoutRef.current = setTimeout(() => {
+          setShowUnlockButton(false);
+        }, 3000);
+      }
+    };
+
     window.addEventListener('mousemove', handleInteraction);
     window.addEventListener('pointermove', handleInteraction);
     window.addEventListener('touchstart', handleInteraction, { passive: true });
+    window.addEventListener('click', handleWindowClick);
 
     // Initial trigger
-    handleInteraction();
+    if (!isLocked) {
+      setShowHUD(true);
+      if (hudTimeoutRef.current) {
+        clearTimeout(hudTimeoutRef.current);
+      }
+      hudTimeoutRef.current = setTimeout(() => {
+        setShowHUD(false);
+      }, 3000);
+    }
 
     return () => {
       window.removeEventListener('mousemove', handleInteraction);
       window.removeEventListener('pointermove', handleInteraction);
       window.removeEventListener('touchstart', handleInteraction);
+      window.removeEventListener('click', handleWindowClick);
       if (hudTimeoutRef.current) {
         clearTimeout(hudTimeoutRef.current);
       }
+      if (unlockTimeoutRef.current) {
+        clearTimeout(unlockTimeoutRef.current);
+      }
     };
-  }, []);
+  }, [isLocked]);
 
   // Scrolling behavior for scroll mode (auto-sync to playing audio)
   useEffect(() => {
@@ -148,7 +188,7 @@ const FullscreenTranslationView: React.FC = () => {
 
   return (
     <div
-      className={`fixed inset-0 w-screen h-screen bg-black text-white z-[9999] flex flex-col justify-between select-none transition-all duration-500 overflow-hidden ${
+      className={`fixed inset-0 w-screen h-screen bg-black text-white z-[9999] relative select-none transition-all duration-500 overflow-hidden ${
         showHUD ? 'cursor-default' : 'cursor-none'
       }`}
     >
@@ -193,7 +233,7 @@ const FullscreenTranslationView: React.FC = () => {
 
       {/* TOP HEADER (HUD) */}
       <header
-        className={`w-full flex flex-col sm:flex-row items-center justify-between p-4 md:p-6 gap-3 sm:gap-0 bg-gradient-to-b from-black/80 to-transparent transition-opacity duration-500 z-50 ${
+        className={`absolute top-0 inset-x-0 flex flex-col sm:flex-row items-center justify-between p-4 md:p-6 gap-3 sm:gap-0 bg-gradient-to-b from-black/80 to-transparent transition-opacity duration-500 z-50 ${
           showHUD ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       >
@@ -275,6 +315,26 @@ const FullscreenTranslationView: React.FC = () => {
             </button>
           </div>
 
+          {/* Lock Screen Button */}
+          <button
+            onClick={() => {
+              setIsLocked(true);
+              setShowHUD(false);
+              // Show unlock floating guide momentarily
+              setShowUnlockButton(true);
+              if (unlockTimeoutRef.current) {
+                clearTimeout(unlockTimeoutRef.current);
+              }
+              unlockTimeoutRef.current = setTimeout(() => {
+                setShowUnlockButton(false);
+              }, 3000);
+            }}
+            className="p-2 bg-white/5 hover:bg-white/10 active:scale-95 transition-all rounded-lg border border-white/10 text-neutral-400 hover:text-white"
+            title="Lock Controls"
+          >
+            <Lock className="w-4 h-4 md:w-5 md:h-5" />
+          </button>
+
           {/* Exit Button */}
           <button
             onClick={() => setIsFullscreenTranslation(false)}
@@ -287,7 +347,7 @@ const FullscreenTranslationView: React.FC = () => {
       </header>
 
       {/* CORE DISPLAY CANVAS */}
-      <main className="flex-1 w-full flex flex-col justify-center items-center px-4 md:px-24 min-h-0 relative">
+      <main className="w-full h-full flex flex-col justify-center items-center px-4 md:px-24 relative z-10">
         {fullscreenLayoutMode === 'single' ? (
           /* FOCUS MODE (SINGLE VERSE) */
           <div className="flex flex-col items-center justify-center text-center max-w-4xl h-full py-6">
@@ -297,7 +357,7 @@ const FullscreenTranslationView: React.FC = () => {
                 className="animate-slide-up text-white leading-relaxed font-sans px-4"
                 style={{ fontSize: `${displayFontSize}px` }}
               >
-                <p className="font-light tracking-wide max-h-[55vh] overflow-y-auto pr-1 custom-scrollbar select-text animate-fade-in no-scrollbar">
+                <p className="font-light tracking-wide max-h-[70vh] overflow-y-auto pr-1 custom-scrollbar select-text animate-fade-in no-scrollbar">
                   {currentEnglishAyah.text}
                 </p>
                 
@@ -334,7 +394,10 @@ const FullscreenTranslationView: React.FC = () => {
                   ref={(el) => {
                     verseRefs.current[index] = el;
                   }}
-                  onClick={() => setUserFocusedIndex(index)}
+                  onClick={() => {
+                    if (isLocked) return;
+                    setUserFocusedIndex(index);
+                  }}
                   className={`text-center leading-relaxed font-sans cursor-pointer transition-all duration-700 py-3 md:py-4 ${opacityClass}`}
                   style={{ fontSize: `${displayFontSize}px` }}
                 >
@@ -351,7 +414,7 @@ const FullscreenTranslationView: React.FC = () => {
         )}
 
         {/* Floating Resume Sync Pill */}
-        {userFocusedIndex !== null && (
+        {userFocusedIndex !== null && !isLocked && (
           <button
             onClick={() => setUserFocusedIndex(null)}
             className="absolute bottom-6 md:bottom-12 bg-white text-black font-semibold text-[11px] md:text-xs py-2 px-4 rounded-full shadow-2xl border border-neutral-200 flex items-center gap-1.5 hover:bg-neutral-200 active:scale-95 transition-all z-[100] animate-bounce"
@@ -364,7 +427,7 @@ const FullscreenTranslationView: React.FC = () => {
 
       {/* FLOATING BOTTOM CONTROLS HUD */}
       <footer
-        className={`w-full p-4 md:p-6 bg-gradient-to-t from-black/80 to-transparent flex flex-col gap-3 md:gap-4 items-center transition-opacity duration-500 z-50 ${
+        className={`absolute bottom-0 inset-x-0 p-4 md:p-6 bg-gradient-to-t from-black/80 to-transparent flex flex-col gap-3 md:gap-4 items-center transition-opacity duration-500 z-50 ${
           showHUD ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       >
@@ -438,6 +501,25 @@ const FullscreenTranslationView: React.FC = () => {
           </button>
         </div>
       </footer>
+
+      {/* FLOATING UNLOCK BUTTON FOR LOCKED MODE */}
+      {isLocked && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsLocked(false);
+            setShowHUD(true);
+            setShowUnlockButton(false);
+          }}
+          className={`fixed bottom-6 right-6 px-4 py-3 bg-black/80 hover:bg-black/90 text-white rounded-full shadow-2xl border border-white/20 backdrop-blur-md transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 z-[10000] ${
+            showUnlockButton ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-90 pointer-events-none'
+          }`}
+          title="Unlock Controls"
+        >
+          <Unlock className="w-4 h-4 md:w-5 md:h-5 text-[var(--accent)]" />
+          <span className="text-xs font-semibold pr-1">Unlock Screen</span>
+        </button>
+      )}
     </div>
   );
 };
