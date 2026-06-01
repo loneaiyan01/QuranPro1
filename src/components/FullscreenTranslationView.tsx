@@ -188,7 +188,7 @@ const FullscreenTranslationView: React.FC = () => {
 
   return (
     <div
-      className={`fixed inset-0 w-screen h-screen bg-black text-white z-[9999] relative select-none transition-all duration-500 overflow-hidden ${
+      className={`fixed inset-0 w-screen h-screen bg-black text-white z-[9999] select-none transition-all duration-500 overflow-hidden ${
         showHUD ? 'cursor-default' : 'cursor-none'
       }`}
     >
