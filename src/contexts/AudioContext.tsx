@@ -49,6 +49,8 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const ayahPlayCountRef = useRef<number>(0);
     const isTransitioning = useRef<boolean>(false);
     const fadeRef = useRef<number | null>(null);
+    const pendingNavRef = useRef<number>(0);
+    const isSeekingRef = useRef<boolean>(false);
 
     // Derived State
     const isFullSurahAudio = selectedReciter ? !selectedReciter.isVerseByVerse : false;
@@ -255,6 +257,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (!audio) return;
 
         const handleTimeUpdate = () => {
+            if (isSeekingRef.current) return;
             setCurrentTime(audio.currentTime);
             setDuration(audio.duration || 0);
             if (audio.duration) {
@@ -412,13 +415,12 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
 
         if (isPlaying) {
-            // Stop any active fading animations
-            if (fadeRef.current) {
-                clearInterval(fadeRef.current);
-                fadeRef.current = null;
-            }
-            audioRef.current.pause();
-            setIsPlaying(false);
+            fadeAudioOut(() => {
+                if (audioRef.current) {
+                    audioRef.current.pause();
+                }
+                setIsPlaying(false);
+            });
         } else {
             // Initialize volume to full immediately before playing on mobile to prevent muted play issues
             audioRef.current.volume = 1;
@@ -435,7 +437,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 setIsPlaying(true);
             }
         }
-    }, [audioData, isFullSurahAudio, currentAyahIndex, isPlaying, fadeAudioIn]);
+    }, [audioData, isFullSurahAudio, currentAyahIndex, isPlaying, fadeAudioIn, fadeAudioOut]);
 
     const play = useCallback(() => {
         if (audioRef.current) audioRef.current.play();
@@ -447,25 +449,81 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     const nextAyah = useCallback(() => {
         if (isFullSurahAudio) return;
-        if (surahText && currentAyahIndex < surahText.arabic.ayahs.length - 1) {
-            setCurrentAyahIndex(prev => prev + 1);
+        if (surahText && currentAyahIndex + pendingNavRef.current < surahText.arabic.ayahs.length - 1) {
+            pendingNavRef.current += 1;
+            if (isPlaying) {
+                if (!fadeRef.current) {
+                    fadeAudioOut(() => {
+                        setCurrentAyahIndex(prev => {
+                            const nextIndex = prev + pendingNavRef.current;
+                            pendingNavRef.current = 0;
+                            return Math.min(surahText.arabic.ayahs.length - 1, nextIndex);
+                        });
+                    });
+                }
+            } else {
+                setCurrentAyahIndex(prev => {
+                    const nextIndex = prev + pendingNavRef.current;
+                    pendingNavRef.current = 0;
+                    return Math.min(surahText.arabic.ayahs.length - 1, nextIndex);
+                });
+            }
         }
-    }, [isFullSurahAudio, surahText, currentAyahIndex]);
+    }, [isFullSurahAudio, surahText, currentAyahIndex, isPlaying, fadeAudioOut]);
 
     const prevAyah = useCallback(() => {
         if (isFullSurahAudio) return;
-        if (currentAyahIndex > 0) {
-            setCurrentAyahIndex(prev => prev - 1);
+        if (currentAyahIndex + pendingNavRef.current > 0) {
+            pendingNavRef.current -= 1;
+            if (isPlaying) {
+                if (!fadeRef.current) {
+                    fadeAudioOut(() => {
+                        setCurrentAyahIndex(prev => {
+                            const nextIndex = prev + pendingNavRef.current;
+                            pendingNavRef.current = 0;
+                            return Math.max(0, nextIndex);
+                        });
+                    });
+                }
+            } else {
+                setCurrentAyahIndex(prev => {
+                    const nextIndex = prev + pendingNavRef.current;
+                    pendingNavRef.current = 0;
+                    return Math.max(0, nextIndex);
+                });
+            }
         }
-    }, [isFullSurahAudio, currentAyahIndex]);
+    }, [isFullSurahAudio, currentAyahIndex, isPlaying, fadeAudioOut]);
 
     const seek = useCallback((value: number) => {
         if (audioRef.current && duration) {
             const time = (value / 100) * duration;
-            audioRef.current.currentTime = time;
+            isSeekingRef.current = true;
             setProgress(value);
+            setCurrentTime(time);
+
+            if (isPlaying) {
+                fadeAudioOut(() => {
+                    if (audioRef.current) {
+                        audioRef.current.currentTime = time;
+                        audioRef.current.volume = 0;
+                        audioRef.current.play().then(() => {
+                            isSeekingRef.current = false;
+                            fadeAudioIn();
+                        }).catch(e => {
+                            console.error(e);
+                            isSeekingRef.current = false;
+                        });
+                    } else {
+                        isSeekingRef.current = false;
+                    }
+                });
+            } else {
+                audioRef.current.currentTime = time;
+                isSeekingRef.current = false;
+            }
         }
-    }, [duration]);
+    }, [duration, isPlaying, fadeAudioOut, fadeAudioIn]);
 
     const setAyahIndex = useCallback((index: number) => {
         setCurrentAyahIndex(index);

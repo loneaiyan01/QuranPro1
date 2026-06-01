@@ -2,10 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { X, Play, Pause, SkipBack, SkipForward, Type, List, Tv, Maximize2, Minimize2 } from 'lucide-react';
+import { X, Play, Pause, SkipBack, SkipForward, Type, List, Tv, Maximize2, Minimize2, Clock } from 'lucide-react';
 
 const FullscreenTranslationView: React.FC = () => {
-  const { currentSurah, surahText } = useQuran();
+  const { currentSurah, surahText, surahs, actions: quranActions } = useQuran();
   const {
     isPlaying,
     currentTime,
@@ -14,7 +14,8 @@ const FullscreenTranslationView: React.FC = () => {
     progress,
     isBuffering,
     isFullSurahAudio,
-    actions: { togglePlay, nextAyah, prevAyah, seek }
+    sleepTimer,
+    actions: { togglePlay, nextAyah, prevAyah, seek, setSleepTimer }
   } = useAudio();
 
   const {
@@ -121,6 +122,21 @@ const FullscreenTranslationView: React.FC = () => {
     setTranslationFontSize(Math.max(translationFontSize - 2, 16));
   };
 
+  const handleSleepTimerToggle = () => {
+    // Cycle: null -> 15 -> 30 -> 45 -> 60 -> null
+    if (sleepTimer === null) {
+      setSleepTimer(15);
+    } else if (sleepTimer === 15) {
+      setSleepTimer(30);
+    } else if (sleepTimer === 30) {
+      setSleepTimer(45);
+    } else if (sleepTimer === 45) {
+      setSleepTimer(60);
+    } else {
+      setSleepTimer(null);
+    }
+  };
+
   const formatTime = (time: number) => {
     if (isNaN(time)) return '0:00';
     const minutes = Math.floor(time / 60);
@@ -182,10 +198,28 @@ const FullscreenTranslationView: React.FC = () => {
         }`}
       >
         {/* Info */}
-        <div className="flex flex-col gap-0.5 text-center sm:text-left">
-          <h2 className="text-sm md:text-lg font-semibold tracking-wide">
-            {currentSurah.englishName}
-          </h2>
+        <div className="flex flex-col gap-1 text-center sm:text-left items-center sm:items-start">
+          {/* Surah Selector Dropdown */}
+          <div className="relative inline-block text-left">
+            <select
+              value={currentSurah.number}
+              onChange={(e) => {
+                const surah = surahs.find(s => s.number === Number(e.target.value));
+                if (surah) {
+                  quranActions.selectSurah(surah);
+                  setUserFocusedIndex(null);
+                }
+              }}
+              className="bg-white/5 border border-white/10 hover:border-white/20 text-white rounded-lg pl-3 pr-8 py-1 text-xs md:text-sm font-semibold outline-none cursor-pointer appearance-none transition-colors"
+            >
+              {surahs.map(surah => (
+                <option key={surah.number} value={surah.number} className="bg-neutral-900 text-white">
+                  {surah.number}. {surah.englishName}
+                </option>
+              ))}
+            </select>
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[8px] text-neutral-400">▼</span>
+          </div>
           <p className="text-[10px] md:text-xs text-neutral-400">
             Verse {currentEnglishAyah ? currentEnglishAyah.numberInSurah : activeIndex + 1} of {currentSurah.numberOfAyahs}
           </p>
@@ -353,6 +387,25 @@ const FullscreenTranslationView: React.FC = () => {
 
         {/* Buttons */}
         <div className="flex items-center gap-4 md:gap-6">
+          {/* Sleep Timer Button */}
+          <button
+            onClick={handleSleepTimerToggle}
+            className={`p-2 md:p-3 transition-colors relative active:scale-95 transition-transform ${
+              sleepTimer 
+                ? 'text-white' 
+                : 'text-neutral-400 hover:text-white'
+            }`}
+            aria-label="Toggle sleep timer"
+            title={sleepTimer ? `Sleep timer: ${sleepTimer} mins remaining` : 'Set sleep timer'}
+          >
+            <Clock className="w-4 h-4 md:w-5 md:h-5" />
+            {sleepTimer && (
+              <span className="absolute top-0.5 right-0.5 text-[8px] md:text-[9px] font-mono bg-white text-black rounded-full w-3.5 h-3.5 md:w-4 md:h-4 flex items-center justify-center border border-black shadow-sm">
+                {sleepTimer}
+              </span>
+            )}
+          </button>
+
           <button
             onClick={prevAyah}
             className="p-2 md:p-3 text-neutral-400 hover:text-white transition-colors active:scale-95"
