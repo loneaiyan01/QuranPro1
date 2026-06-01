@@ -116,31 +116,70 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // Listen for browser native fullscreen changes
   useEffect(() => {
     const handleFullscreenChange = () => {
-      const isBrowserFullscreen = !!document.fullscreenElement;
+      const fullscreenElement = document.fullscreenElement || 
+                                (document as any).webkitFullscreenElement || 
+                                (document as any).mozFullScreenElement || 
+                                (document as any).msFullscreenElement;
+      const isBrowserFullscreen = !!fullscreenElement;
       if (!isBrowserFullscreen && isFullscreenTranslation) {
         setIsFullscreenTranslation(false);
       }
     };
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    const events = ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'];
+    events.forEach(event => {
+      document.addEventListener(event, handleFullscreenChange);
+    });
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      events.forEach(event => {
+        document.removeEventListener(event, handleFullscreenChange);
+      });
     };
   }, [isFullscreenTranslation]);
 
   // Synchronize internal state with native browser fullscreen
   useEffect(() => {
+    const fullscreenElement = document.fullscreenElement || 
+                              (document as any).webkitFullscreenElement || 
+                              (document as any).mozFullScreenElement || 
+                              (document as any).msFullscreenElement;
     if (isFullscreenTranslation) {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch((err) => {
-          console.warn('Error enabling fullscreen:', err);
-        });
+      if (!fullscreenElement) {
+        const docEl = document.documentElement as any;
+        const requestFS = docEl.requestFullscreen || 
+                          docEl.webkitRequestFullscreen || 
+                          docEl.mozRequestFullScreen || 
+                          docEl.msRequestFullscreen;
+        if (requestFS) {
+          try {
+            const p = requestFS.call(docEl);
+            if (p && typeof p.catch === 'function') {
+              p.catch((err: any) => console.warn('Fullscreen request rejected:', err));
+            }
+          } catch (err) {
+            console.warn('Error requesting fullscreen:', err);
+          }
+        } else {
+          console.info('Native Fullscreen API is not supported on this device/browser.');
+        }
       }
     } else {
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch((err) => {
-          console.warn('Error exiting fullscreen:', err);
-        });
+      if (fullscreenElement) {
+        const doc = document as any;
+        const exitFS = doc.exitFullscreen || 
+                       doc.webkitExitFullscreen || 
+                       doc.mozCancelFullScreen || 
+                       doc.msExitFullscreen;
+        if (exitFS) {
+          try {
+            const p = exitFS.call(doc);
+            if (p && typeof p.catch === 'function') {
+              p.catch((err: any) => console.warn('Fullscreen exit rejected:', err));
+            }
+          } catch (err) {
+            console.warn('Error exiting fullscreen:', err);
+          }
+        }
       }
     }
   }, [isFullscreenTranslation]);

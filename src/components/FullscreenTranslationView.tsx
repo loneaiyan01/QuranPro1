@@ -50,9 +50,9 @@ const FullscreenTranslationView: React.FC = () => {
     setUserFocusedIndex(null);
   }, [currentSurah]);
 
-  // Mouse idle detection
+  // Mouse/Touch idle detection
   useEffect(() => {
-    const handleMouseMove = () => {
+    const handleInteraction = () => {
       setShowHUD(true);
       if (hudTimeoutRef.current) {
         clearTimeout(hudTimeoutRef.current);
@@ -62,15 +62,17 @@ const FullscreenTranslationView: React.FC = () => {
       }, 3000);
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('pointermove', handleMouseMove);
+    window.addEventListener('mousemove', handleInteraction);
+    window.addEventListener('pointermove', handleInteraction);
+    window.addEventListener('touchstart', handleInteraction, { passive: true });
 
     // Initial trigger
-    handleMouseMove();
+    handleInteraction();
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('pointermove', handleMouseMove);
+      window.removeEventListener('mousemove', handleInteraction);
+      window.removeEventListener('pointermove', handleInteraction);
+      window.removeEventListener('touchstart', handleInteraction);
       if (hudTimeoutRef.current) {
         clearTimeout(hudTimeoutRef.current);
       }
