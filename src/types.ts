@@ -61,9 +61,6 @@ export enum DisplayMode {
 }
 
 export enum Theme {
-  DEFAULT = 'default',
-  MIDNIGHT_KABA = 'midnight-kaba',
-  EMERALD_MEDINA = 'emerald-medina',
   ROSE_GOLD = 'rose-gold'
 }
 

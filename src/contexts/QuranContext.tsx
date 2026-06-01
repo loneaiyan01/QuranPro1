@@ -53,12 +53,12 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 setSurahs(fetchedSurahs);
                 setReciters(fetchedReciters);
 
-                // Defaults — prefer saved reciter, then Sudais, then first
+                // Defaults — prefer saved reciter, then Muhammad Ayyub, then first
                 if (fetchedReciters.length > 0) {
                     const savedReciterId = localStorage.getItem('tarteela_reciter');
                     const savedReciter = savedReciterId ? fetchedReciters.find(r => r.identifier === savedReciterId) : null;
-                    const sudais = fetchedReciters.find(r => r.identifier === 'ar.abdurrahmaansudais');
-                    setSelectedReciter(savedReciter || sudais || fetchedReciters[0]);
+                    const ayyub = fetchedReciters.find(r => r.identifier === 'ar.muhammadayyoub');
+                    setSelectedReciter(savedReciter || ayyub || fetchedReciters[0]);
                 }
 
                 // Load Surah Al-Fatiha by default

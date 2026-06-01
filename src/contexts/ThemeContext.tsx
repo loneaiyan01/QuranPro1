@@ -17,39 +17,6 @@ interface ThemeContextType {
 }
 
 export const THEME_VARIABLES: Record<Theme, Record<string, string>> = {
-  [Theme.DEFAULT]: {
-    '--bg-main': '#000000',
-    '--bg-sidebar': '#1C1C1E',
-    '--bg-card-active': '#1C1C1E',
-    '--accent': '#0A84FF',
-    '--accent-muted': 'rgba(10, 132, 255, 0.15)',
-    '--border': '#38383A',
-    '--border-active': '#0A84FF',
-    '--ring': 'rgba(10, 132, 255, 0.3)',
-    '--glass-bg': 'rgba(28, 28, 30, 0.65)'
-  },
-  [Theme.MIDNIGHT_KABA]: {
-    '--bg-main': '#0B0B0C',
-    '--bg-sidebar': '#131315',
-    '--bg-card-active': '#19191C',
-    '--accent': '#D4AF37', // Elegant Gold
-    '--accent-muted': 'rgba(212, 175, 55, 0.15)',
-    '--border': '#252528',
-    '--border-active': '#D4AF37',
-    '--ring': 'rgba(212, 175, 55, 0.3)',
-    '--glass-bg': 'rgba(19, 19, 21, 0.65)'
-  },
-  [Theme.EMERALD_MEDINA]: {
-    '--bg-main': '#022C22', // Emerald 950
-    '--bg-sidebar': '#064E3B', // Emerald 900
-    '--bg-card-active': '#065F46',
-    '--accent': '#F59E0B', // Medina Gold Accent
-    '--accent-muted': 'rgba(245, 158, 11, 0.15)',
-    '--border': '#047857',
-    '--border-active': '#F59E0B',
-    '--ring': 'rgba(245, 158, 11, 0.3)',
-    '--glass-bg': 'rgba(6, 78, 59, 0.65)'
-  },
   [Theme.ROSE_GOLD]: {
     '--bg-main': '#191213',
     '--bg-sidebar': '#241B1C',
@@ -81,10 +48,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return saved !== null ? Number(saved) : 20;
   });
 
-  const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('tarteela_selected_theme');
-    return saved !== null ? (saved as Theme) : Theme.DEFAULT;
-  });
+  const [theme, setTheme] = useState<Theme>(Theme.ROSE_GOLD);
 
   const [isFullscreenTranslation, setIsFullscreenTranslation] = useState<boolean>(false);
   const [fullscreenLayoutMode, setFullscreenLayoutMode] = useState<FullscreenLayoutMode>(() => {
