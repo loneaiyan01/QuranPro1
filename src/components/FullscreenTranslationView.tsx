@@ -395,7 +395,6 @@ const FullscreenTranslationView: React.FC = () => {
                     verseRefs.current[index] = el;
                   }}
                   onClick={() => {
-                    if (isLocked) return;
                     setUserFocusedIndex(index);
                   }}
                   className={`text-center leading-relaxed font-sans cursor-pointer transition-all duration-700 py-3 md:py-4 ${opacityClass}`}
@@ -414,7 +413,7 @@ const FullscreenTranslationView: React.FC = () => {
         )}
 
         {/* Floating Resume Sync Pill */}
-        {userFocusedIndex !== null && !isLocked && (
+        {userFocusedIndex !== null && !isLocked && !isFullSurahAudio && (
           <button
             onClick={() => setUserFocusedIndex(null)}
             className="absolute bottom-6 md:bottom-12 bg-white text-black font-semibold text-[11px] md:text-xs py-2 px-4 rounded-full shadow-2xl border border-neutral-200 flex items-center gap-1.5 hover:bg-neutral-200 active:scale-95 transition-all z-[100] animate-bounce"
