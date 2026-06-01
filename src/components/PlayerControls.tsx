@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Repeat } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Repeat, Clock } from 'lucide-react';
 import { useAudio } from '../contexts/AudioContext';
 import { useQuran } from '../contexts/QuranContext';
 
@@ -14,7 +14,8 @@ const PlayerControls: React.FC = () => {
     currentAyahIndex,
     verseRepeatLimit,
     isFullSurahAudio,
-    actions: { togglePlay, nextAyah, prevAyah, seek, setVerseRepeatLimit }
+    sleepTimer,
+    actions: { togglePlay, nextAyah, prevAyah, seek, setVerseRepeatLimit, setSleepTimer }
   } = useAudio();
 
   const { currentSurah, selectedReciter, surahText } = useQuran();
@@ -32,6 +33,21 @@ const PlayerControls: React.FC = () => {
       setVerseRepeatLimit(-1);
     } else {
       setVerseRepeatLimit(1);
+    }
+  };
+
+  const handleSleepTimerToggle = () => {
+    // Cycle: null -> 15 -> 30 -> 45 -> 60 -> null
+    if (sleepTimer === null) {
+      setSleepTimer(15);
+    } else if (sleepTimer === 15) {
+      setSleepTimer(30);
+    } else if (sleepTimer === 30) {
+      setSleepTimer(45);
+    } else if (sleepTimer === 45) {
+      setSleepTimer(60);
+    } else {
+      setSleepTimer(null);
     }
   };
 
@@ -120,6 +136,25 @@ const PlayerControls: React.FC = () => {
 
           {/* Buttons */}
           <div className="flex items-center gap-6 md:gap-8 mx-auto">
+            {/* Sleep Timer Button */}
+            <button
+              onClick={handleSleepTimerToggle}
+              className={`p-4 md:p-2 transition-colors relative active:scale-95 transition-transform ${
+                sleepTimer 
+                  ? 'text-accent font-bold' 
+                  : 'text-muted hover:text-accent'
+              }`}
+              aria-label="Toggle sleep timer"
+              title={sleepTimer ? `Sleep timer: ${sleepTimer} mins remaining` : 'Set sleep timer'}
+            >
+              <Clock className="w-5 h-5" />
+              {sleepTimer && (
+                <span className="absolute top-1 right-1 text-[9px] font-mono bg-accent text-white rounded-full w-4.5 h-4.5 flex items-center justify-center border border-[var(--bg-main)] shadow-sm">
+                  {sleepTimer}
+                </span>
+              )}
+            </button>
+
             <button
               onClick={prevAyah}
               className="p-4 md:p-2 text-muted hover:text-accent transition-colors active:scale-95 transition-transform"
