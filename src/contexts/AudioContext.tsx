@@ -415,12 +415,15 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
 
         if (isPlaying) {
-            fadeAudioOut(() => {
-                if (audioRef.current) {
-                    audioRef.current.pause();
-                }
-                setIsPlaying(false);
-            });
+            if (fadeRef.current) {
+                clearInterval(fadeRef.current);
+                fadeRef.current = null;
+            }
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.volume = 1;
+            }
+            setIsPlaying(false);
         } else {
             // Initialize volume to full immediately before playing on mobile to prevent muted play issues
             audioRef.current.volume = 1;
