@@ -31,7 +31,7 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const [currentSurah, setCurrentSurah] = useState<Surah | null>(null);
     const [selectedReciter, setSelectedReciter] = useState<Reciter | null>(null);
     const [surahText, setSurahText] = useState<{ arabic: SurahContent; english: SurahContent } | null>(null);
-    const [isLoadingContent, setIsLoadingContent] = useState<boolean>(false);
+    const [isLoadingContent, setIsLoadingContent] = useState<boolean>(true);
     const [isRadioMode, setIsRadioMode] = useState<boolean>(false);
     const [contentError, setContentError] = useState<string | null>(null);
 
@@ -61,10 +61,13 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
                 // Load Surah Al-Fatiha by default
                 if (fetchedSurahs.length > 0) {
-                    selectSurah(fetchedSurahs[0]);
+                    await selectSurah(fetchedSurahs[0]);
+                } else {
+                    setIsLoadingContent(false);
                 }
             } catch (err) {
                 setContentError('Failed to connect to the Quran API. Please check your internet connection.');
+                setIsLoadingContent(false);
             }
         };
 
