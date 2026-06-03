@@ -4,8 +4,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tarteela</title>
-  <meta name="description" content="Minimalist Quran Player with verse focus" />
+  <title>HearQuran - Listen to Quran Online with Translation (Muhammad Ayoub)</title>
+  <meta name="description" content="HearQuran is a premium, minimalist Quran audio player. Listen to high-quality, beautiful Quran recitations by Muhammad Ayoub with English translation. Designed for focus, spiritual reflection, and active listening." />
+  <meta name="keywords" content="HearQuran, Quran player, Quran audio, Muhammad Ayoub, Quran English translation, online Quran, listen Quran, verse by verse Quran audio" />
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="HearQuran - Minimalist Quran Audio Player" />
+  <meta property="og:description" content="Listen to beautiful Quran recitations by Muhammad Ayoub with English translation. Designed for focus, memorization, and daily spiritual reflection." />
+  <meta property="og:image" content="/icon.svg" />
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:title" content="HearQuran - Minimalist Quran Audio Player" />
+  <meta property="twitter:description" content="Listen to beautiful Quran recitations by Muhammad Ayoub with English translation. Designed for focus, memorization, and daily spiritual reflection." />
+  <meta property="twitter:image" content="/icon.svg" />
+
+  <!-- GEO Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "HearQuran",
+    "operatingSystem": "Web",
+    "applicationCategory": "EducationalApplication",
+    "description": "A premium, minimalist Quran audio player featuring verse-by-verse recitation by Muhammad Ayoub, English translation, and focus tools.",
+    "browserRequirements": "Requires JavaScript. Requires HTML5 Audio.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0.00",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -57,7 +89,13 @@
 
 <body
   class="bg-[var(--bg-main)] text-[var(--text-main)] transition-colors duration-300 antialiased overflow-hidden">
-  <div id="root"></div>
+  <div id="root">
+    <!-- Fallback content for SEO, GEO and non-JS clients. React will replace this when it loads. -->
+    <div style="padding: 20px; font-family: sans-serif; max-width: 600px; margin: 0 auto; text-align: center;">
+      <h1>HearQuran - Quran Audio Player (Muhammad Ayoub Recitations)</h1>
+      <p>HearQuran is a premium, minimalist Quran audio player. Listen to high-quality Quran recitations by Muhammad Ayoub with English translation. Designed for focus, spiritual reflection, and active listening.</p>
+    </div>
+  </div>
   <script type="module" src="/src/index.tsx"></script>
 </body>
 

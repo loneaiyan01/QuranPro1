@@ -1,5 +1,5 @@
-const CACHE_NAME = 'tarteela-v2';
-const API_CACHE_NAME = 'tarteela-api-v1';
+const CACHE_NAME = 'hearquran-v2';
+const API_CACHE_NAME = 'hearquran-api-v1';
 
 const urlsToCache = [
     '/',

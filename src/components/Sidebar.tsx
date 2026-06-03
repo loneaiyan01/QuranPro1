@@ -43,6 +43,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const [activeTab, setActiveTab] = React.useState<'surahs' | 'settings' | 'radio' | 'bookmarks'>('surahs');
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [toastMessage, setToastMessage] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => {
+        setToastMessage(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
 
   const filteredSurahs = surahs.filter(s =>
     s.englishName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -63,8 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         {/* Header */}
         <div className="p-6 border-b border-[var(--border)] flex justify-between items-center bg-sidebar">
           <h2 className="text-xl font-serif font-bold text-accent flex items-center gap-2">
-            <BookOpen className="w-5 h-5" />
-            <span>Tarteela</span>
+            <span>HearQuran</span>
           </h2>
           <button
             type="button"
@@ -162,7 +171,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <Radio className={`w-12 h-12 ${isRadioMode ? 'text-accent animate-pulse' : 'text-muted'}`} />
               </div>
               <div className="space-y-2">
-                <h3 className="text-xl font-serif font-bold text-main">Tarteela Radio</h3>
+                <h3 className="text-xl font-serif font-bold text-main">HearQuran Radio</h3>
                 <p className="text-sm text-muted px-4">Immerse yourself in a random selection of the world's most beautiful recitations.</p>
               </div>
               <button
@@ -195,9 +204,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => {
-                      setDisplayMode(DisplayMode.ARABIC_ONLY);
+                      setToastMessage('Arabic Display Mode is coming soon!');
                     }}
-                    className={`px-3 py-2 text-sm rounded-md border transition-all ${displayMode === DisplayMode.ARABIC_ONLY ? 'bg-accent text-white border-accent shadow-sm' : 'border-[var(--border)] text-muted hover:bg-black/5'}`}
+                    className="px-3 py-2 text-sm rounded-md border border-[var(--border)] text-muted opacity-40 cursor-not-allowed transition-all"
                   >
                     Arabic
                   </button>
@@ -211,9 +220,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   </button>
                   <button
                     onClick={() => {
-                      setDisplayMode(DisplayMode.BOTH);
+                      setToastMessage('Both (Arabic & English) Display Mode is coming soon!');
                     }}
-                    className={`px-3 py-2 text-sm rounded-md border transition-all ${displayMode === DisplayMode.BOTH ? 'bg-accent text-white border-accent shadow-sm' : 'border-[var(--border)] text-muted hover:bg-black/5'}`}
+                    className="px-3 py-2 text-sm rounded-md border border-[var(--border)] text-muted opacity-40 cursor-not-allowed transition-all"
                   >
                     Both
                   </button>
@@ -237,11 +246,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     }}
                     className="w-full pl-9 pr-4 py-2 bg-[#1C1C1E] border border-[var(--border)] rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-accent/50 text-main"
                   >
-                    {reciters.map(reciter => (
-                      <option key={reciter.identifier} value={reciter.identifier}>
-                        {reciter.englishName}
-                      </option>
-                    ))}
+                    {reciters.map(reciter => {
+                      const isAyoub = reciter.identifier === 'ar.muhammadayyoub';
+                      return (
+                        <option
+                          key={reciter.identifier}
+                          value={reciter.identifier}
+                          disabled={!isAyoub}
+                        >
+                          {reciter.englishName}{!isAyoub ? ' (Coming Soon)' : ''}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>
@@ -401,11 +417,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           )}
         </div>
 
-        <div className="p-4 border-t border-[var(--border)] text-center">
+        <div className="p-4 border-t border-[var(--border)] text-center relative">
           <p className="text-xs text-[var(--text-muted)]">
             Data from Alquran.cloud
           </p>
         </div>
+        {toastMessage && (
+          <div className="absolute bottom-16 left-4 right-4 bg-accent/90 backdrop-blur-md text-white text-xs font-bold py-3 px-4 rounded-xl shadow-lg border border-accent/20 animate-in fade-in slide-in-from-bottom-2 duration-300 text-center z-[110]">
+            {toastMessage}
+          </div>
+        )}
       </div>
     </>
   );

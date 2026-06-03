@@ -53,12 +53,10 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 setSurahs(fetchedSurahs);
                 setReciters(fetchedReciters);
 
-                // Defaults — prefer saved reciter, then Muhammad Ayyub, then first
+                // Defaults — force Muhammad Ayyub for now
                 if (fetchedReciters.length > 0) {
-                    const savedReciterId = localStorage.getItem('tarteela_reciter');
-                    const savedReciter = savedReciterId ? fetchedReciters.find(r => r.identifier === savedReciterId) : null;
                     const ayyub = fetchedReciters.find(r => r.identifier === 'ar.muhammadayyoub');
-                    setSelectedReciter(savedReciter || ayyub || fetchedReciters[0]);
+                    setSelectedReciter(ayyub || fetchedReciters[0]);
                 }
 
                 // Load Surah Al-Fatiha by default
@@ -106,10 +104,11 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (surahs.length === 0 || reciters.length === 0) return;
 
         const randomSurah = surahs[Math.floor(Math.random() * surahs.length)];
-        const randomReciter = reciters[Math.floor(Math.random() * reciters.length)];
+        const ayyub = reciters.find(r => r.identifier === 'ar.muhammadayyoub');
+        const activeReciter = ayyub || reciters[0];
 
         // Update reciter first to avoid race condition in audio fetching
-        setSelectedReciter(randomReciter);
+        setSelectedReciter(activeReciter);
         selectSurah(randomSurah);
     }, [surahs, reciters, selectSurah]);
 

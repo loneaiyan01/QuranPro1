@@ -1,11 +1,11 @@
 {
-    "name": "Tarteela",
-    "short_name": "Tarteela",
+    "name": "HearQuran",
+    "short_name": "HearQuran",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#FCFCFA",
-    "theme_color": "#059669",
-    "description": "A minimalist, Zen-mode Quran player.",
+    "background_color": "#191213",
+    "theme_color": "#E0A899",
+    "description": "A premium, minimalist Quran audio player for spiritual listening.",
     "icons": [
         {
             "src": "/icon.svg",

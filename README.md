@@ -1,6 +1,6 @@
-# 📖 Tarteela - Quran Listening & Reading Player
+# 📖 HearQuran - Quran Listening & Reading Player
 
-Tarteela is a premium, modern Quran web player designed for immersive listening, reading, and memorization. Built with a focus on rich design aesthetics, responsive controls, and offline capabilities.
+HearQuran is a premium, modern Quran web player designed for immersive listening, reading, and memorization. Built with a focus on rich design aesthetics, responsive controls, and offline capabilities.
 
 ---
 
@@ -10,7 +10,7 @@ Tarteela is a premium, modern Quran web player designed for immersive listening,
 - **Reciter Selection**: Choose from leading global reciters (Sheikh Sudais, Maher Al-Muaiqly, Al-Shuraim, Hudhaify, Ayyub, Minshawi) or select high-fidelity manual streams (Luhaidan, Yasser Al-Dosari, Ahmed bin Talib).
 - **Verse-by-Verse (VBV) Repeating**: Loop specific verses (`1x`, `3x`, `5x`, or `∞` infinitely) to assist with memorization (Hifz).
 - **Auto-Advance**: Plays the next verse automatically once the previous one finishes.
-- **Tarteela Radio Mode**: Enter an ambient random stream that plays beautiful, continuous recitations.
+- **HearQuran Radio Mode**: Enter an ambient random stream that plays beautiful, continuous recitations.
 - **Sleep Timer**: Configure the player to automatically pause recitation after `15`, `30`, `45`, or `60` minutes.
 
 ### 📖 Reading & Customization

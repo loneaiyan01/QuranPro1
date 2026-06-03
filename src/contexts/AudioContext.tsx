@@ -377,7 +377,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: currentSurah.englishName,
                 artist: selectedReciter.name,
-                album: 'Tarteela',
+                album: 'HearQuran',
                 artwork: [
                     { src: artworkUrl, sizes: '512x512', type: 'image/png' },
                     { src: '/assets/reciters/default.png', sizes: '512x512', type: 'image/png' }
