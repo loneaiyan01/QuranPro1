@@ -100,7 +100,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
           <button
             onClick={() => {
-              actions.setCurrentPage('radio');
+              actions.toggleRadioMode(true);
               onClose();
             }}
             className={`w-full text-left px-4 py-2.5 rounded-lg flex items-center gap-3 transition-colors text-xs font-semibold ${

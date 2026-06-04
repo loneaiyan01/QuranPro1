@@ -1,12 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
-import { Radio, ChevronRight, Music, Play } from 'lucide-react';
+import { Radio, Music } from 'lucide-react';
 
 export const RadioPage: React.FC = () => {
-    const { currentSurah, selectedReciter, actions, isRadioMode } = useQuran();
-    const { isPlaying, isBuffering } = useAudio();
+    const { currentSurah, selectedReciter, surahText, actions, isRadioMode } = useQuran();
+    const { isPlaying, isBuffering, currentAyahIndex } = useAudio();
     const [randomSeed, setRandomSeed] = useState(0);
+
+    // Auto-activate radio mode when user lands on this page
+    useEffect(() => {
+        if (!isRadioMode) {
+            actions.toggleRadioMode(true);
+        }
+    }, [isRadioMode, actions]);
 
     // Update aesthetic animations periodically
     useEffect(() => {
@@ -16,32 +23,8 @@ export const RadioPage: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
-    // 1. Inactive State (Show Call to Action)
-    if (!isRadioMode) {
-        return (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 pt-24 pb-28 text-center max-w-xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="w-24 h-24 rounded-full bg-accent-muted flex items-center justify-center relative">
-                    <Radio className="w-12 h-12 text-accent" />
-                </div>
-                <div className="space-y-3">
-                    <h2 className="text-2xl md:text-4xl font-serif font-bold text-main">Quran Live Radio</h2>
-                    <p className="text-sm text-muted leading-relaxed px-4">
-                        Immerse yourself in a continuous stream of random Surahs. Ideal for reflective background listening, learning, or relaxing.
-                    </p>
-                </div>
-                <button
-                    onClick={() => actions.toggleRadioMode(true)}
-                    className="w-full py-4 bg-accent hover:bg-accent/90 text-white font-bold rounded-2xl shadow-xl shadow-accent/20 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
-                >
-                    <Play className="w-4 h-4 fill-current ml-0.5" />
-                    Enter Radio Mode
-                </button>
-            </div>
-        );
-    }
-
-    // 2. Loading State (If active but Surah hasn't loaded yet)
-    if (!currentSurah || !selectedReciter) {
+    // 1. Loading State (If active but Surah/text hasn't loaded yet)
+    if (!isRadioMode || !currentSurah || !selectedReciter || !surahText) {
         return (
             <div className="flex-1 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent)]"></div>
@@ -49,7 +32,10 @@ export const RadioPage: React.FC = () => {
         );
     }
 
-    // 3. Active State (Show Visualizer & Orbiting elements)
+    // Safely retrieve current ayah texts
+    const arabicAyah = surahText.arabic.ayahs[currentAyahIndex] || surahText.arabic.ayahs[0];
+    const englishAyah = surahText.english.ayahs[currentAyahIndex] || surahText.english.ayahs[0];
+
     return (
         <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-transparent to-accent/5 p-6 pt-24 pb-28 text-center">
 
@@ -65,65 +51,76 @@ export const RadioPage: React.FC = () => {
                 />
             </div>
 
-            {/* Main Content Card */}
-            <div className="z-10 max-w-2xl w-full flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700">
-
-                {/* Mode Indicator */}
-                <div className="flex items-center gap-2 px-4 py-2 bg-accent/10 rounded-full border border-accent/20">
-                    <Radio className="w-4 h-4 text-accent animate-pulse" />
-                    <span className="text-xs font-bold uppercase tracking-widest text-accent">Radio Mode Active</span>
-                </div>
-
-                {/* Reciter Avatar / Icon Area */}
-                <div className="relative">
-                    <div className={`w-32 h-32 md:w-48 md:h-48 rounded-full bg-[var(--bg-main)] shadow-2xl flex items-center justify-center border-4 border-[var(--border)] relative ${isPlaying && !isBuffering ? 'animate-[spin_12s_linear_infinite]' : ''}`}>
-                        <Music className="w-12 h-12 md:w-20 md:h-20 text-accent/20" />
-
-                        {/* Orbiting particles when playing */}
-                        {isPlaying && !isBuffering && [0, 1, 2].map(i => (
-                            <div
-                                key={i}
-                                className="absolute w-3 h-3 bg-accent rounded-full blur-sm"
-                                style={{
-                                    top: '50%',
-                                    left: '50%',
-                                    margin: '-6px',
-                                    animation: `orbit-${i} 4s linear infinite`,
-                                    animationDelay: `${i * 1.3}s`
-                                }}
-                            />
-                        ))}
+            {/* Main Content Area */}
+            <div className="z-10 w-full max-w-3xl flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-500">
+                
+                {/* Header Information */}
+                <div className="flex flex-col items-center gap-2">
+                    <div className="flex items-center gap-2 px-3 py-1 bg-accent/10 rounded-full border border-accent/20">
+                        <Radio className="w-3.5 h-3.5 text-accent animate-pulse" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-accent">Quran Live Radio</span>
                     </div>
-                </div>
-
-                {/* Info Text */}
-                <div className="space-y-4">
-                    <h2 className="text-4xl md:text-6xl font-serif font-bold text-main tracking-tight leading-tight">
+                    
+                    <h1 className="text-2xl md:text-3xl font-serif font-bold text-main mt-2 tracking-tight">
                         {currentSurah.englishName}
-                    </h2>
-                    <div className="flex flex-col items-center gap-1">
-                        <p className="text-lg md:text-2xl text-accent font-medium opacity-90">
-                            {selectedReciter.name}
-                        </p>
-                        <p className="text-sm text-muted font-sans tracking-wide">
-                            {currentSurah.englishNameTranslation}
-                        </p>
-                    </div>
+                    </h1>
+                    
+                    <p className="text-xs text-muted tracking-wide">
+                        Verse {currentAyahIndex + 1} of {currentSurah.numberOfAyahs} • Recitation by {selectedReciter.name}
+                    </p>
                 </div>
 
-                {/* Action Row */}
-                <div className="flex flex-col items-center gap-4 mt-8 w-full max-w-xs">
-                    <button
-                        onClick={() => actions.nextRadioSurah()}
-                        className="group flex items-center justify-center gap-3 w-full py-4 px-6 bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-3xl shadow-[var(--shadow-lg)] hover:shadow-[var(--accent)]/10 hover:border-[var(--border-active)] hover:bg-[var(--bg-card-active)] transition-all duration-300 active:scale-95"
+                {/* Verse Display Card */}
+                <div className="glass-panel w-full p-8 md:p-12 rounded-3xl border border-[var(--border)] shadow-[var(--shadow-lg)] relative overflow-hidden flex flex-col gap-6 md:gap-8 min-h-[280px] md:min-h-[320px] justify-center transition-all duration-500 hover:border-accent/30">
+                    
+                    {/* Arabic Verse text with CSS entry transitions */}
+                    <p 
+                        key={`ar-${currentAyahIndex}`}
+                        className="text-center md:text-right font-arabic text-2xl md:text-3xl lg:text-4xl leading-[1.8] md:leading-[2.0] text-main font-semibold select-none animate-in fade-in slide-in-from-top-4 duration-500"
+                        dir="rtl"
                     >
-                        <span className="font-bold text-main text-sm">Play Next Random</span>
-                        <ChevronRight className="w-5 h-5 text-accent group-hover:translate-x-1 transition-transform" />
-                    </button>
+                        {arabicAyah.text}
+                    </p>
+                    
+                    {/* Minimalist Accent Divider */}
+                    <div className="w-16 h-[2px] bg-accent/20 mx-auto rounded-full" />
+                    
+                    {/* English translation text with CSS entry transitions */}
+                    <p 
+                        key={`en-${currentAyahIndex}`}
+                        className="text-center font-serif text-sm md:text-base lg:text-lg leading-relaxed text-muted leading-[1.6] md:leading-[1.7] px-2 animate-in fade-in slide-in-from-bottom-4 duration-500"
+                    >
+                        {englishAyah.text}
+                    </p>
+                </div>
+
+                {/* Ambient Status & Deactivation Controls */}
+                <div className="flex flex-col items-center gap-4 mt-4">
+                    {/* Small visualizer element */}
+                    <div className="relative flex items-center justify-center">
+                        <div className={`w-12 h-12 rounded-full bg-[var(--bg-main)] shadow-md flex items-center justify-center border border-[var(--border)] relative ${isPlaying && !isBuffering ? 'animate-[spin_10s_linear_infinite]' : ''}`}>
+                            <Music className="w-4 h-4 text-accent/40" />
+                            
+                            {/* Orbiting visualizer elements */}
+                            {isPlaying && !isBuffering && [0, 1].map(i => (
+                                <div
+                                    key={i}
+                                    className="absolute w-2 h-2 bg-accent rounded-full blur-[2px]"
+                                    style={{
+                                        top: '50%',
+                                        left: '50%',
+                                        margin: '-4px',
+                                        animation: `orbit-${i} 3s linear infinite`,
+                                        animationDelay: `${i * 1.5}s`
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    </div>
 
                     <button
                         onClick={() => actions.toggleRadioMode(false)}
-                        className="text-xs font-semibold text-muted hover:text-accent transition-colors py-2"
+                        className="text-xs font-semibold text-muted hover:text-accent transition-colors bg-[var(--bg-sidebar)] px-5 py-2.5 rounded-full border border-[var(--border)] hover:border-accent/30 shadow-md active:scale-95 transition-transform"
                     >
                         Deactivate Radio Mode
                     </button>
@@ -132,30 +129,12 @@ export const RadioPage: React.FC = () => {
 
             <style>{`
                 @keyframes orbit-0 {
-                    from { transform: rotate(0deg) translateX(100px) rotate(0deg); }
-                    to { transform: rotate(360deg) translateX(100px) rotate(-360deg); }
+                    from { transform: rotate(0deg) translateX(30px) rotate(0deg); }
+                    to { transform: rotate(360deg) translateX(30px) rotate(-360deg); }
                 }
                 @keyframes orbit-1 {
-                    from { transform: rotate(120deg) translateX(110px) rotate(-120deg); }
-                    to { transform: rotate(480deg) translateX(110px) rotate(-480deg); }
-                }
-                @keyframes orbit-2 {
-                    from { transform: rotate(240deg) translateX(90px) rotate(-240deg); }
-                    to { transform: rotate(600deg) translateX(90px) rotate(-600deg); }
-                }
-                @media (max-width: 768px) {
-                    @keyframes orbit-0 {
-                        from { transform: rotate(0deg) translateX(70px) rotate(0deg); }
-                        to { transform: rotate(360deg) translateX(70px) rotate(-360deg); }
-                    }
-                    @keyframes orbit-1 {
-                        from { transform: rotate(120deg) translateX(75px) rotate(-120deg); }
-                        to { transform: rotate(480deg) translateX(75px) rotate(-480deg); }
-                    }
-                    @keyframes orbit-2 {
-                        from { transform: rotate(240deg) translateX(65px) rotate(-240deg); }
-                        to { transform: rotate(600deg) translateX(65px) rotate(-600deg); }
-                    }
+                    from { transform: rotate(180deg) translateX(32px) rotate(-180deg); }
+                    to { transform: rotate(540deg) translateX(32px) rotate(-540deg); }
                 }
             `}</style>
         </div>

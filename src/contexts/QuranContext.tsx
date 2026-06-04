@@ -26,9 +26,56 @@ interface QuranContextType {
         setCurrentPage: (page: PageType) => void;
     };
     isRadioMode: boolean;
+    radioStartAyahIndex: number | null;
 }
 
 const QuranContext = createContext<QuranContextType | undefined>(undefined);
+
+// Seeded Shuffle using Linear Congruential Generator (LCG) to generate deterministic order of Surahs (1 to 114)
+function getSeededShuffledSurahNumbers(seed: number): number[] {
+    const numbers = Array.from({ length: 114 }, (_, i) => i + 1);
+    let seedVal = seed;
+    const random = () => {
+        seedVal = (seedVal * 9301 + 49297) % 233280;
+        return seedVal / 233280;
+    };
+    let m = numbers.length, t, i;
+    while (m) {
+        i = Math.floor(random() * m--);
+        t = numbers[m];
+        numbers[m] = numbers[i];
+        numbers[i] = t;
+    }
+    return numbers;
+}
+
+export const SHUFFLED_SURAH_NUMBERS = getSeededShuffledSurahNumbers(12345); // Fixed seed for 24/7 radio sequence parity
+
+// Estimate Surah and Ayah index at the current Unix timestamp
+export function getRadioPosition(surahs: Surah[], secondsPerAyah = 20): { surah: Surah; ayahIndex: number } | null {
+    if (surahs.length === 0) return null;
+    
+    // Sum total verses in the Quran
+    const totalAyahs = surahs.reduce((sum, s) => sum + s.numberOfAyahs, 0);
+    const globalAyahIndex = Math.floor((Date.now() / 1000) / secondsPerAyah) % totalAyahs;
+
+    let accumulated = 0;
+    for (const surahNum of SHUFFLED_SURAH_NUMBERS) {
+        const surah = surahs.find(s => s.number === surahNum);
+        if (!surah) continue;
+        if (globalAyahIndex < accumulated + surah.numberOfAyahs) {
+            return {
+                surah,
+                ayahIndex: globalAyahIndex - accumulated
+            };
+        }
+        accumulated += surah.numberOfAyahs;
+    }
+    
+    // Fallback
+    const firstSurah = surahs.find(s => s.number === SHUFFLED_SURAH_NUMBERS[0]) || surahs[0];
+    return { surah: firstSurah, ayahIndex: 0 };
+}
 
 export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [surahs, setSurahs] = useState<Surah[]>([]);
@@ -38,6 +85,7 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const [surahText, setSurahText] = useState<{ arabic: SurahContent; english: SurahContent } | null>(null);
     const [isLoadingContent, setIsLoadingContent] = useState<boolean>(true);
     const [isRadioMode, setIsRadioMode] = useState<boolean>(false);
+    const [radioStartAyahIndex, setRadioStartAyahIndex] = useState<number | null>(null);
     const [contentError, setContentError] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState<PageType>('home');
 
@@ -117,24 +165,62 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const nextRadioSurah = useCallback(() => {
         if (surahs.length === 0 || reciters.length === 0) return;
 
-        const randomSurah = surahs[Math.floor(Math.random() * surahs.length)];
+        let nextSurah = surahs[0];
+        if (currentSurah) {
+            const currentShuffleIndex = SHUFFLED_SURAH_NUMBERS.indexOf(currentSurah.number);
+            const nextShuffleIndex = (currentShuffleIndex + 1) % SHUFFLED_SURAH_NUMBERS.length;
+            const nextSurahNum = SHUFFLED_SURAH_NUMBERS[nextShuffleIndex];
+            nextSurah = surahs.find(s => s.number === nextSurahNum) || surahs[0];
+        } else {
+            const firstSurahNum = SHUFFLED_SURAH_NUMBERS[0];
+            nextSurah = surahs.find(s => s.number === firstSurahNum) || surahs[0];
+        }
+
         const ayyub = reciters.find(r => r.identifier === 'ar.muhammadayyoub');
         const activeReciter = ayyub || reciters[0];
 
-        // Update reciter first to avoid race condition in audio fetching
         setSelectedReciter(activeReciter);
-        selectSurah(randomSurah);
-    }, [surahs, reciters, selectSurah]);
+        setRadioStartAyahIndex(0); // Sequence transitions play from verse 1 (index 0)
+        selectSurah(nextSurah);
+    }, [surahs, reciters, currentSurah, selectSurah]);
 
     const toggleRadioMode = useCallback((active: boolean) => {
         setIsRadioMode(active);
         if (active) {
-            nextRadioSurah();
             setCurrentPage('radio');
+            
+            // Enforce Sheikh Muhammad Ayyub for VBV accuracy
+            const ayyub = reciters.find(r => r.identifier === 'ar.muhammadayyoub');
+            const activeReciter = ayyub || reciters[0];
+            setSelectedReciter(activeReciter);
+
+            if (surahs.length > 0) {
+                const pos = getRadioPosition(surahs);
+                if (pos) {
+                    setRadioStartAyahIndex(pos.ayahIndex);
+                    selectSurah(pos.surah);
+                }
+            }
         } else {
+            setRadioStartAyahIndex(null);
             setCurrentPage('player');
         }
-    }, [nextRadioSurah]);
+    }, [surahs, reciters, selectSurah]);
+
+    // Auto-tune to correct live position if radio mode was loaded/selected before surahs fetched
+    useEffect(() => {
+        if (isRadioMode && !currentSurah && surahs.length > 0 && reciters.length > 0) {
+            const ayyub = reciters.find(r => r.identifier === 'ar.muhammadayyoub');
+            const activeReciter = ayyub || reciters[0];
+            setSelectedReciter(activeReciter);
+
+            const pos = getRadioPosition(surahs);
+            if (pos) {
+                setRadioStartAyahIndex(pos.ayahIndex);
+                selectSurah(pos.surah);
+            }
+        }
+    }, [isRadioMode, currentSurah, surahs, reciters, selectSurah]);
 
     const retryLoadContent = useCallback(() => {
         if (currentSurah) {
@@ -201,7 +287,8 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 bookmarks,
                 currentPage,
                 actions,
-                isRadioMode
+                isRadioMode,
+                radioStartAyahIndex
             }}
         >
             {children}

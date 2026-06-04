@@ -31,7 +31,7 @@ interface AudioContextType {
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
 
 export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const { currentSurah, selectedReciter, surahText, isRadioMode, actions } = useQuran();
+    const { currentSurah, selectedReciter, surahText, isRadioMode, actions, radioStartAyahIndex } = useQuran();
     const [audioData, setAudioData] = useState<AudioAyah[]>([]);
     const [currentAyahIndex, setCurrentAyahIndex] = useState<number>(0);
 
@@ -155,8 +155,13 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     // Effect: Reset state when Surah changes
     useEffect(() => {
         if (currentSurah) {
-            setCurrentAyahIndex(0);
-            if (!isRadioMode) setIsPlaying(false);
+            const startIndex = (isRadioMode && radioStartAyahIndex !== null) ? radioStartAyahIndex : 0;
+            setCurrentAyahIndex(startIndex);
+            if (isRadioMode) {
+                setIsPlaying(true);
+            } else {
+                setIsPlaying(false);
+            }
             setProgress(0);
             setBuffered(0);
             setCurrentTime(0);
@@ -167,7 +172,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 audioRef.current.src = "";
             }
         }
-    }, [currentSurah, isRadioMode]);
+    }, [currentSurah, isRadioMode, radioStartAyahIndex]);
 
     // Effect: Persist session progress to localStorage
     useEffect(() => {

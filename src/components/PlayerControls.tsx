@@ -19,7 +19,7 @@ const PlayerControls: React.FC = () => {
     actions: { togglePlay, nextAyah, prevAyah, seek, setVerseRepeatLimit, setSleepTimer }
   } = useAudio();
 
-  const { currentSurah, selectedReciter, surahText } = useQuran();
+  const { currentSurah, selectedReciter, surahText, isRadioMode } = useQuran();
 
   // Calculate verse number for display
   const verseNumber = surahText?.arabic.ayahs[currentAyahIndex]?.numberInSurah;
@@ -60,7 +60,7 @@ const PlayerControls: React.FC = () => {
   return (
     <div className="glass-panel border-t relative z-30">
       {/* Full-Width Dynamic Progress Bar */}
-      <div className="absolute top-0 left-0 w-full group cursor-pointer h-1 hover:h-1.5 transition-[height] duration-300 ease-in-out z-40 overflow-visible">
+      <div className={`absolute top-0 left-0 w-full h-1 overflow-visible z-40 ${isRadioMode ? 'pointer-events-none' : 'group cursor-pointer hover:h-1.5 transition-[height] duration-300 ease-in-out'}`}>
         {/* Background / Track */}
         <div className="absolute inset-0 bg-[var(--accent-muted)] opacity-30 group-hover:opacity-50 transition-opacity" />
 
@@ -86,20 +86,23 @@ const PlayerControls: React.FC = () => {
           max="100"
           value={progress}
           onChange={(e) => seek(Number(e.target.value))}
+          disabled={isRadioMode}
           aria-label="Seek timeline"
-          className="absolute -top-3 inset-x-0 w-full h-8 opacity-0 focus-visible:opacity-100 focus-visible:accent-[var(--accent)] cursor-pointer z-50"
+          className="absolute -top-3 inset-x-0 w-full h-8 opacity-0 focus-visible:opacity-100 focus-visible:accent-[var(--accent)] cursor-pointer z-50 disabled:cursor-not-allowed"
         />
 
         {/* Premium Scrubber Thumb */}
-        <div
-          className="absolute top-1/2 -translate-y-1/2 -ml-2 h-4 w-4 pointer-events-none transition-all duration-300 opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-110"
-          style={{ left: `${progress}%` }}
-        >
-          {/* External Halo */}
-          <div className="absolute inset-0 bg-accent/30 rounded-full animate-ping opacity-50" />
-          {/* Inner Solid Thumb */}
-          <div className="absolute inset-0 bg-accent rounded-full border-2 border-[var(--bg-main)] shadow-xl" />
-        </div>
+        {!isRadioMode && (
+          <div
+            className="absolute top-1/2 -translate-y-1/2 -ml-2 h-4 w-4 pointer-events-none transition-all duration-300 opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-110"
+            style={{ left: `${progress}%` }}
+          >
+            {/* External Halo */}
+            <div className="absolute inset-0 bg-accent/30 rounded-full animate-ping opacity-50" />
+            {/* Inner Solid Thumb */}
+            <div className="absolute inset-0 bg-accent rounded-full border-2 border-[var(--bg-main)] shadow-xl" />
+          </div>
+        )}
       </div>
 
       <div className="max-w-5xl mx-auto w-full flex flex-col gap-2 p-4 pb-6 md:pb-4">
@@ -150,7 +153,8 @@ const PlayerControls: React.FC = () => {
 
             <button
               onClick={prevAyah}
-              className="p-4 md:p-2 text-muted hover:text-accent transition-colors active:scale-95 transition-transform"
+              disabled={isRadioMode}
+              className={`p-4 md:p-2 text-muted hover:text-accent transition-colors active:scale-95 transition-transform ${isRadioMode ? 'opacity-20 cursor-not-allowed pointer-events-none' : ''}`}
               aria-label="Previous Verse"
             >
               <SkipBack className="w-6 h-6" />
@@ -172,7 +176,8 @@ const PlayerControls: React.FC = () => {
 
             <button
               onClick={nextAyah}
-              className="p-4 md:p-2 text-muted hover:text-accent transition-colors active:scale-95 transition-transform"
+              disabled={isRadioMode}
+              className={`p-4 md:p-2 text-muted hover:text-accent transition-colors active:scale-95 transition-transform ${isRadioMode ? 'opacity-20 cursor-not-allowed pointer-events-none' : ''}`}
               aria-label="Next Verse"
             >
               <SkipForward className="w-6 h-6" />
@@ -181,10 +186,10 @@ const PlayerControls: React.FC = () => {
             {/* Repeat / Loop Button */}
             <button
               onClick={handleRepeatToggle}
-              disabled={isFullSurahAudio}
+              disabled={isFullSurahAudio || isRadioMode}
               className={`p-4 md:p-2 transition-colors relative active:scale-95 transition-transform ${
-                isFullSurahAudio 
-                  ? 'opacity-30 cursor-not-allowed text-muted' 
+                isFullSurahAudio || isRadioMode
+                  ? 'opacity-20 cursor-not-allowed text-muted' 
                   : verseRepeatLimit > 1 || verseRepeatLimit === -1 
                     ? 'text-accent font-bold' 
                     : 'text-muted hover:text-accent'
@@ -193,11 +198,13 @@ const PlayerControls: React.FC = () => {
               title={
                 isFullSurahAudio 
                   ? 'Repeat mode not available for full surah audio' 
-                  : `Verse repeat limit: ${getRepeatText(verseRepeatLimit)}`
+                  : isRadioMode
+                    ? 'Repeat mode not available in radio mode'
+                    : `Verse repeat limit: ${getRepeatText(verseRepeatLimit)}`
               }
             >
               <Repeat className="w-5 h-5" />
-              {verseRepeatLimit !== 1 && !isFullSurahAudio && (
+              {verseRepeatLimit !== 1 && !isFullSurahAudio && !isRadioMode && (
                 <span className="absolute top-1 right-1 text-[9px] font-mono bg-accent text-white rounded-full w-4.5 h-4.5 flex items-center justify-center border border-[var(--bg-main)] shadow-sm">
                   {verseRepeatLimit === -1 ? '∞' : `${verseRepeatLimit}`}
                 </span>
