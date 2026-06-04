@@ -15,7 +15,7 @@ interface QuranContextType {
     bookmarks: Bookmark[];
     currentPage: PageType;
     actions: {
-        selectSurah: (surah: Surah) => Promise<void>;
+        selectSurah: (surah: Surah, isRadio?: boolean) => Promise<void>;
         selectReciter: (reciter: Reciter) => void;
         toggleRadioMode: (active: boolean) => void;
         nextRadioSurah: () => void;
@@ -137,11 +137,13 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         init();
     }, []);
 
-    const selectSurah = useCallback(async (surah: Surah) => {
+    const selectSurah = useCallback(async (surah: Surah, isRadio = false) => {
         setIsLoadingContent(true);
         setContentError(null);
         setCurrentSurah(surah);
-        setCurrentPage('player');
+        if (!isRadio) {
+            setCurrentPage('player');
+        }
 
         try {
             const textData = await fetchSurahText(surah.number);
@@ -181,7 +183,7 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
         setSelectedReciter(activeReciter);
         setRadioStartAyahIndex(0); // Sequence transitions play from verse 1 (index 0)
-        selectSurah(nextSurah);
+        selectSurah(nextSurah, true);
     }, [surahs, reciters, currentSurah, selectSurah]);
 
     const toggleRadioMode = useCallback((active: boolean) => {
@@ -198,7 +200,7 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 const pos = getRadioPosition(surahs);
                 if (pos) {
                     setRadioStartAyahIndex(pos.ayahIndex);
-                    selectSurah(pos.surah);
+                    selectSurah(pos.surah, true);
                 }
             }
         } else {
@@ -217,18 +219,18 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             const pos = getRadioPosition(surahs);
             if (pos) {
                 setRadioStartAyahIndex(pos.ayahIndex);
-                selectSurah(pos.surah);
+                selectSurah(pos.surah, true);
             }
         }
     }, [isRadioMode, currentSurah, surahs, reciters, selectSurah]);
 
     const retryLoadContent = useCallback(() => {
         if (currentSurah) {
-            selectSurah(currentSurah);
+            selectSurah(currentSurah, isRadioMode);
         } else if (surahs.length > 0) {
-            selectSurah(surahs[0]);
+            selectSurah(surahs[0], isRadioMode);
         }
-    }, [currentSurah, surahs, selectSurah]);
+    }, [currentSurah, surahs, selectSurah, isRadioMode]);
 
     const resetToHome = useCallback(() => {
         setCurrentSurah(null);
