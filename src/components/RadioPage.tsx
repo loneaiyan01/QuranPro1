@@ -71,24 +71,12 @@ export const RadioPage: React.FC = () => {
                 </div>
 
                 {/* Verse Display Card */}
-                <div className="glass-panel w-full p-8 md:p-12 rounded-3xl border border-[var(--border)] shadow-[var(--shadow-lg)] relative overflow-hidden flex flex-col gap-6 md:gap-8 min-h-[280px] md:min-h-[320px] justify-center transition-all duration-500 hover:border-accent/30">
-                    
-                    {/* Arabic Verse text with CSS entry transitions */}
-                    <p 
-                        key={`ar-${currentAyahIndex}`}
-                        className="text-center md:text-right font-arabic text-2xl md:text-3xl lg:text-4xl leading-[1.8] md:leading-[2.0] text-main font-semibold select-none animate-in fade-in slide-in-from-top-4 duration-500"
-                        dir="rtl"
-                    >
-                        {arabicAyah.text}
-                    </p>
-                    
-                    {/* Minimalist Accent Divider */}
-                    <div className="w-16 h-[2px] bg-accent/20 mx-auto rounded-full" />
+                <div className="glass-panel w-full p-8 md:p-12 rounded-3xl border border-[var(--border)] shadow-[var(--shadow-lg)] relative overflow-hidden flex flex-col gap-6 md:gap-8 min-h-[180px] md:min-h-[220px] justify-center transition-all duration-500 hover:border-accent/30">
                     
                     {/* English translation text with CSS entry transitions */}
                     <p 
                         key={`en-${currentAyahIndex}`}
-                        className="text-center font-serif text-sm md:text-base lg:text-lg leading-relaxed text-muted leading-[1.6] md:leading-[1.7] px-2 animate-in fade-in slide-in-from-bottom-4 duration-500"
+                        className="text-center font-serif text-base md:text-lg lg:text-xl leading-relaxed text-main px-2 animate-in fade-in slide-in-from-bottom-4 duration-500"
                     >
                         {englishAyah.text}
                     </p>
