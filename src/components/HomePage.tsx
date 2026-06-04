@@ -102,7 +102,7 @@ export const HomePage: React.FC = () => {
           {/* Radio Mode Card */}
           <div 
             onClick={() => quranActions.toggleRadioMode(true)}
-            className="group cursor-pointer relative overflow-hidden rounded-2xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] p-6 shadow-md transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between"
+            className="group cursor-pointer relative overflow-hidden rounded-2xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] p-6 shadow-md transition-all duration-300 hover:scale-[1.01] active:scale-[0.98] flex flex-col justify-between"
           >
             <div className="flex justify-between items-start gap-4">
               <div className="space-y-2">
@@ -128,7 +128,7 @@ export const HomePage: React.FC = () => {
           {sessionData ? (
             <div 
               onClick={handleResume}
-              className="group cursor-pointer relative overflow-hidden rounded-2xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] p-6 shadow-md transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between"
+              className="group cursor-pointer relative overflow-hidden rounded-2xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] p-6 shadow-md transition-all duration-300 hover:scale-[1.01] active:scale-[0.98] flex flex-col justify-between"
             >
               <div className="flex justify-between items-start gap-4">
                 <div className="space-y-2">
@@ -189,7 +189,7 @@ export const HomePage: React.FC = () => {
                         audioActions.setAyahIndex(bookmark.ayahNumberInSurah - 1);
                       }
                     }}
-                    className="group cursor-pointer p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] hover:border-accent/30 transition-all duration-200 flex items-center justify-between shadow-sm"
+                    className="group cursor-pointer p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] hover:border-accent/30 transition-all duration-200 active:scale-[0.97] flex items-center justify-between shadow-sm"
                   >
                     <div>
                       <h4 className="text-sm font-semibold text-main">{bookmark.surahEnglishName}</h4>
@@ -216,7 +216,7 @@ export const HomePage: React.FC = () => {
               <div
                 key={surah.number}
                 onClick={() => handlePlaySurah(surah)}
-                className="group cursor-pointer p-5 rounded-2xl border border-[var(--border)] bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 shadow-sm transition-all duration-300 hover:scale-[1.03] flex flex-col justify-between items-center text-center gap-3 relative"
+                className="group cursor-pointer p-5 rounded-2xl border border-[var(--border)] bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 shadow-sm transition-all duration-300 hover:scale-[1.03] active:scale-[0.96] flex flex-col justify-between items-center text-center gap-3 relative"
               >
                 <span className="w-8 h-8 rounded-full bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold transition-colors group-hover:bg-accent group-hover:text-white">
                   {surah.number}
@@ -273,7 +273,7 @@ export const HomePage: React.FC = () => {
                 <div
                   key={surah.number}
                   onClick={() => handlePlaySurah(surah)}
-                  className="group cursor-pointer p-4 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 hover:scale-[1.01] flex items-center justify-between gap-3"
+                  className="group cursor-pointer p-4 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-[0.97] flex items-center justify-between gap-3"
                 >
                   <div className="flex items-center gap-3">
                     <span className="w-9 h-9 rounded-xl bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold group-hover:scale-105 transition-transform">

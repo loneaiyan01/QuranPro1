@@ -172,7 +172,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           )}
 
           {activeTab === 'radio' && (
-            <div className="p-8 flex flex-col items-center justify-center text-center h-[calc(100vh-200px)] space-y-6">
+            <div className="p-8 flex flex-col items-center justify-center text-center h-[calc(100dvh-200px)] space-y-6">
               <div className={`w-24 h-24 rounded-full bg-accent/20 flex items-center justify-center relative ${isRadioMode ? 'after:content-[""] after:absolute after:inset-0 after:rounded-full after:border-2 after:border-accent after:animate-ping' : ''}`}>
                 <Radio className={`w-12 h-12 ${isRadioMode ? 'text-accent animate-pulse' : 'text-muted'}`} />
               </div>

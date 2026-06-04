@@ -18,6 +18,34 @@ const MainLayout: React.FC = () => {
     const { isRadioMode, currentSurah, actions: quranActions } = useQuran();
     const { isFullscreenTranslation, setIsFullscreenTranslation } = useTheme();
 
+    // Swipe gestures on mobile
+    const [touchStartX, setTouchStartX] = useState<number | null>(null);
+    const [touchEndX, setTouchEndX] = useState<number | null>(null);
+
+    const onTouchStart = useCallback((e: React.TouchEvent) => {
+        setTouchEndX(null);
+        setTouchStartX(e.targetTouches[0].clientX);
+    }, []);
+
+    const onTouchMove = useCallback((e: React.TouchEvent) => {
+        setTouchEndX(e.targetTouches[0].clientX);
+    }, []);
+
+    const onTouchEnd = useCallback(() => {
+        if (touchStartX === null || touchEndX === null) return;
+        const distance = touchStartX - touchEndX;
+        const minSwipeDistance = 60; // minimum distance in px to trigger swipe
+
+        // Left swipe (close sidebar)
+        if (distance > minSwipeDistance && isSidebarOpen) {
+            setIsSidebarOpen(false);
+        }
+        // Right swipe (open sidebar - only if player is active)
+        if (distance < -minSwipeDistance && !isSidebarOpen && currentSurah) {
+            setIsSidebarOpen(true);
+        }
+    }, [touchStartX, touchEndX, isSidebarOpen, currentSurah]);
+
     // Initial sidebar state based on screen width (checking on mount)
     React.useEffect(() => {
         if (window.innerWidth >= 768) {
@@ -31,7 +59,12 @@ const MainLayout: React.FC = () => {
     useKeyboardShortcuts({ togglePlay, prevAyah, nextAyah, toggleSidebar, toggleFullscreen });
 
     return (
-        <div className="flex h-screen w-full relative overflow-hidden">
+        <div 
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+            className="flex h-[100dvh] w-full relative overflow-hidden"
+        >
             {/* Fullscreen Translation Overlay */}
             {isFullscreenTranslation && <FullscreenTranslationView />}
 
