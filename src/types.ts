@@ -16,7 +16,7 @@ export interface Ayah {
   page: number;
   ruku: number;
   hizbQuarter: number;
-  sajda: boolean | any;
+  sajda: boolean | { id: number; recommended: boolean; obligatory: boolean };
 }
 
 export interface Edition {

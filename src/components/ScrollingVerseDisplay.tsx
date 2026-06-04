@@ -1,13 +1,14 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { DisplayMode } from '../types';
+import { useIsMobile } from '../hooks/useIsMobile';
+import { DisplayMode, Ayah } from '../types';
 import { AlertTriangle, RefreshCw, Copy, Share2, Check, Search, X, Bookmark as BookmarkIcon } from 'lucide-react';
 
 interface VerseItemProps {
-    ayah: any;
-    englishAyah: any;
+    ayah: Ayah;
+    englishAyah: Ayah | undefined;
     isActive: boolean;
     isPlaying: boolean;
     isBuffering: boolean;
@@ -38,8 +39,8 @@ const VerseItem = React.memo<VerseItemProps>(({
 }) => {
     const [copied, setCopied] = React.useState(false);
     
-    // Mobile optimizations: cap sizes dynamically for small viewports
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    // Responsive mobile detection (updates on resize/rotation)
+    const isMobile = useIsMobile();
     const displayArabicSize = isMobile ? Math.min(arabicFontSize, 36) : arabicFontSize;
     const displayTranslationSize = isMobile ? Math.min(translationFontSize, 17) : translationFontSize;
 
@@ -166,8 +167,9 @@ function highlightText(text: string, query: string): React.ReactNode {
     const regex = new RegExp(`(${escapedQuery})`, 'gi');
     const parts = text.split(regex);
     if (parts.length === 1) return text;
+    const queryLower = query.toLowerCase();
     return parts.map((part, i) =>
-        regex.test(part)
+        part.toLowerCase() === queryLower
             ? <mark key={i} className="bg-accent/30 text-accent rounded px-0.5">{part}</mark>
             : part
     );
@@ -199,9 +201,19 @@ const ScrollingVerseDisplay: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
 
+    // Memoized match count to avoid O(n²) recalculation on every keystroke
+    const searchMatchCount = useMemo(() => {
+        if (!searchQuery.trim() || !arabicSurah) return 0;
+        const q = searchQuery.toLowerCase();
+        return arabicSurah.ayahs.reduce((count, ayah, index) => {
+            const arabicMatch = ayah.text.toLowerCase().includes(q);
+            const englishMatch = (englishSurah?.ayahs[index]?.text || '').toLowerCase().includes(q);
+            return count + (arabicMatch || englishMatch ? 1 : 0);
+        }, 0);
+    }, [searchQuery, arabicSurah, englishSurah]);
+
     const containerRef = useRef<HTMLDivElement>(null);
     const verseRefs = useRef<(HTMLDivElement | null)[]>([]);
-    const [totalWords, setTotalWords] = useState(0);
 
     // Initialize/Update verse refs array
     useEffect(() => {
@@ -210,23 +222,13 @@ const ScrollingVerseDisplay: React.FC = () => {
         }
     }, [arabicSurah]);
 
-    // Calculate total words when content loads to estimate scroll speed (for full-surah mode)
-    useEffect(() => {
-        if (arabicSurah) {
-            const words = arabicSurah.ayahs.reduce((count, ayah) => {
-                return count + ayah.text.split(' ').length;
-            }, 0);
-            setTotalWords(words);
-        }
-    }, [arabicSurah]);
-
     const isUserInteracting = useRef(false);
     const isAutoScrolling = useRef(false);
-    const interactionTimeout = useRef<NodeJS.Timeout | null>(null);
+    const interactionTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
     const scrollOffset = useRef(0);
 
     // Handle manual scroll detection
-    const handleScroll = () => {
+    const handleScroll = useCallback(() => {
         if (isAutoScrolling.current) {
             isAutoScrolling.current = false; // Reset flag
             return;
@@ -252,7 +254,7 @@ const ScrollingVerseDisplay: React.FC = () => {
                 scrollOffset.current = container.scrollTop - calculatedPos;
             }
         }, 4000);
-    };
+    }, [isVerseByVerse, duration, currentTime]);
 
     // Auto-scroll logic for Continuous Mode
     useEffect(() => {
@@ -362,10 +364,7 @@ const ScrollingVerseDisplay: React.FC = () => {
                             />
                             {searchQuery && (
                                 <span className="text-[10px] text-muted whitespace-nowrap">
-                                    {arabicSurah.ayahs.filter(a =>
-                                        a.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                        (englishSurah?.ayahs[arabicSurah.ayahs.indexOf(a)]?.text || '').toLowerCase().includes(searchQuery.toLowerCase())
-                                    ).length} matches
+                                    {searchMatchCount} matches
                                 </span>
                             )}
                             <button
@@ -396,8 +395,8 @@ const ScrollingVerseDisplay: React.FC = () => {
                             ayah={ayah}
                             englishAyah={englishSurah?.ayahs[index]}
                             isActive={isActive}
-                            isPlaying={isPlaying}
-                            isBuffering={isBuffering}
+                            isPlaying={isActive && isPlaying}
+                            isBuffering={isActive && isBuffering}
                             displayMode={displayMode}
                             arabicFontSize={arabicFontSize}
                             translationFontSize={translationFontSize}

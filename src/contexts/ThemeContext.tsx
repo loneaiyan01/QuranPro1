@@ -39,12 +39,20 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   
   const [arabicFontSize, setArabicFontSize] = useState<number>(() => {
     const saved = localStorage.getItem('tarteela_arabicFontSize');
-    return saved !== null ? Number(saved) : 64;
+    if (saved !== null) {
+      const num = Number(saved);
+      return !isNaN(num) && num >= 32 && num <= 120 ? num : 64;
+    }
+    return 64;
   });
   
   const [translationFontSize, setTranslationFontSize] = useState<number>(() => {
     const saved = localStorage.getItem('tarteela_translationFontSize');
-    return saved !== null ? Number(saved) : 20;
+    if (saved !== null) {
+      const num = Number(saved);
+      return !isNaN(num) && num >= 14 && num <= 48 ? num : 20;
+    }
+    return 20;
   });
 
   const [theme, setTheme] = useState<Theme>(Theme.ROSE_GOLD);
@@ -52,7 +60,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [isFullscreenTranslation, setIsFullscreenTranslation] = useState<boolean>(false);
   const [fullscreenLayoutMode, setFullscreenLayoutMode] = useState<FullscreenLayoutMode>(() => {
     const saved = localStorage.getItem('tarteela_fullscreenLayoutMode');
-    return saved !== null ? (saved as FullscreenLayoutMode) : 'single';
+    return saved === 'single' || saved === 'scroll' ? saved : 'single';
   });
 
   // Persist settings to localStorage on change

@@ -8,7 +8,7 @@ import { SettingsPage } from './SettingsPage';
 import { RadioPage } from './RadioPage';
 import { MiniPlayer } from './MiniPlayer';
 import { ResumePrompt } from './ResumePrompt';
-import { Menu, Tv, Home, BookOpen, Radio, Bookmark, Settings } from 'lucide-react';
+import { Menu, Tv, Home, BookOpen } from 'lucide-react';
 import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
 import { useTheme } from '../contexts/ThemeContext';

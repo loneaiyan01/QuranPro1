@@ -103,18 +103,22 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
         const audio = audioRef.current;
         audio.volume = 0;
-        const duration = 400; // ms
-        const step = 0.05;
-        const interval = duration * step;
+        const fadeDuration = 400; // ms
+        const steps = 20;
+        const stepValue = 1 / steps;
+        const intervalTime = fadeDuration / steps;
+        let currentStep = 0;
 
         fadeRef.current = window.setInterval(() => {
-            if (audio.volume < 1) {
-                audio.volume = Math.min(1, audio.volume + step);
-            } else {
+            currentStep++;
+            if (currentStep >= steps) {
+                audio.volume = 1;
                 clearInterval(fadeRef.current!);
                 fadeRef.current = null;
+            } else {
+                audio.volume = Math.min(1, currentStep * stepValue);
             }
-        }, interval);
+        }, intervalTime);
     }, []);
 
     // Helper: Fade Out Audio
@@ -239,7 +243,11 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (sleepTimer === null) return;
 
         if (sleepTimer <= 0) {
-            if (isPlaying) togglePlay();
+            // Directly pause audio instead of calling togglePlay to avoid circular dependency
+            if (audioRef.current) {
+                audioRef.current.pause();
+            }
+            setIsPlaying(false);
             setSleepTimer(null);
             return;
         }
@@ -249,7 +257,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }, 60000); // 1 minute
 
         return () => clearInterval(interval);
-    }, [sleepTimer, isPlaying]);
+    }, [sleepTimer]);
 
     // Audio Event Listeners
     useEffect(() => {
@@ -259,15 +267,20 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const handleTimeUpdate = () => {
             if (isSeekingRef.current) return;
             setCurrentTime(audio.currentTime);
-            setDuration(audio.duration || 0);
-            if (audio.duration) {
-                setProgress((audio.currentTime / audio.duration) * 100);
+            const audioDuration = audio.duration || 0;
+            if (audioDuration) {
+                setProgress((audio.currentTime / audioDuration) * 100);
+            }
+
+            // Only update duration when it actually changes (usually once per track load)
+            if (audioDuration && audioDuration !== duration) {
+                setDuration(audioDuration);
             }
 
             // Update buffered amount
-            if (audio.buffered.length > 0 && audio.duration) {
+            if (audio.buffered.length > 0 && audioDuration) {
                 const lastBuffered = audio.buffered.end(audio.buffered.length - 1);
-                setBuffered((lastBuffered / audio.duration) * 100);
+                setBuffered((lastBuffered / audioDuration) * 100);
             }
         };
 
@@ -567,7 +580,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         >
             {/* Hidden Audio Elements */}
             <audio ref={audioRef} preload="auto" />
-            <audio ref={preloadAudioRef} preload="auto" />
+            {!isFullSurahAudio && <audio ref={preloadAudioRef} preload="auto" />}
 
             {children}
         </AudioContext.Provider>

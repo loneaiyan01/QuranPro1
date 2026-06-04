@@ -2,6 +2,7 @@ import React from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Repeat, Clock } from 'lucide-react';
 import { useAudio } from '../contexts/AudioContext';
 import { useQuran } from '../contexts/QuranContext';
+import { formatTime, getRepeatText } from '../utils/formatTime';
 
 const PlayerControls: React.FC = () => {
   const {
@@ -38,31 +39,23 @@ const PlayerControls: React.FC = () => {
 
   const handleSleepTimerToggle = () => {
     // Cycle: null -> 15 -> 30 -> 45 -> 60 -> null
+    // Use <= so toggling during countdown advances to the next preset
     if (sleepTimer === null) {
       setSleepTimer(15);
-    } else if (sleepTimer === 15) {
+    } else if (sleepTimer <= 15) {
       setSleepTimer(30);
-    } else if (sleepTimer === 30) {
+    } else if (sleepTimer <= 30) {
       setSleepTimer(45);
-    } else if (sleepTimer === 45) {
+    } else if (sleepTimer <= 45) {
       setSleepTimer(60);
     } else {
       setSleepTimer(null);
     }
   };
 
-  const getRepeatText = (limit: number) => {
-    if (limit === 1) return 'Play once (No repeat)';
-    if (limit === -1) return 'Repeat infinitely';
-    return `Repeat ${limit} times`;
-  };
 
-  const formatTime = (time: number) => {
-    if (isNaN(time)) return "0:00";
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
+
+
 
   return (
     <div className="glass-panel border-t relative z-30">

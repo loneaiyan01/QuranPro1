@@ -3,14 +3,14 @@ import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { DisplayMode } from '../types';
+import { getRepeatText } from '../utils/formatTime';
 import { 
   Settings, 
   Type, 
   Layout, 
   User, 
   Clock, 
-  Repeat, 
-  SlidersHorizontal 
+  Repeat
 } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
@@ -36,11 +36,7 @@ export const SettingsPage: React.FC = () => {
     setVerseRepeatLimit(limit);
   };
 
-  const getRepeatText = (limit: number) => {
-    if (limit === 1) return 'Play Once';
-    if (limit === -1) return 'Repeat Infinitely';
-    return `Repeat ${limit}x`;
-  };
+
 
   return (
     <div className="flex-1 overflow-y-auto px-4 pt-24 pb-28 md:py-12 lg:px-12 custom-scrollbar">
@@ -79,7 +75,7 @@ export const SettingsPage: React.FC = () => {
                 max="120"
                 value={arabicFontSize}
                 onChange={(e) => setArabicFontSize(parseInt(e.target.value))}
-                className="w-full h-1.5 bg-[#1C1C1E] rounded-lg appearance-none cursor-pointer accent-accent"
+                className="w-full h-1.5 bg-[var(--bg-sidebar)] rounded-lg appearance-none cursor-pointer accent-accent"
               />
             </div>
 
@@ -95,7 +91,7 @@ export const SettingsPage: React.FC = () => {
                 max="48"
                 value={translationFontSize}
                 onChange={(e) => setTranslationFontSize(parseInt(e.target.value))}
-                className="w-full h-1.5 bg-[#1C1C1E] rounded-lg appearance-none cursor-pointer accent-accent"
+                className="w-full h-1.5 bg-[var(--bg-sidebar)] rounded-lg appearance-none cursor-pointer accent-accent"
               />
             </div>
           </div>
@@ -115,7 +111,7 @@ export const SettingsPage: React.FC = () => {
                 className={`py-3 text-xs font-semibold rounded-xl border transition-all active:scale-95 ${
                   displayMode === DisplayMode.ENGLISH_ONLY
                     ? 'bg-accent text-white border-accent shadow-md shadow-accent/15'
-                    : 'border-[var(--border)] bg-[#1C1C1E] text-muted hover:bg-white/5'
+                    : 'border-[var(--border)] bg-[var(--bg-sidebar)] text-muted hover:bg-white/5'
                 }`}
               >
                 English Only
@@ -159,7 +155,7 @@ export const SettingsPage: React.FC = () => {
                       ? 'opacity-30 cursor-not-allowed text-muted border-[var(--border)] bg-black/10' 
                       : verseRepeatLimit === limit
                         ? 'bg-accent text-white border-accent shadow-md shadow-accent/15'
-                        : 'border-[var(--border)] bg-[#1C1C1E] text-muted hover:bg-white/5'
+                        : 'border-[var(--border)] bg-[var(--bg-sidebar)] text-muted hover:bg-white/5'
                   }`}
                 >
                   {getRepeatText(limit)}
@@ -185,7 +181,7 @@ export const SettingsPage: React.FC = () => {
                   className={`py-2 text-xs font-semibold rounded-xl border transition-all active:scale-95 ${
                     sleepTimer === mins
                       ? 'bg-accent text-white border-accent shadow-md shadow-accent/15'
-                      : 'border-[var(--border)] bg-[#1C1C1E] text-muted hover:bg-white/5'
+                      : 'border-[var(--border)] bg-[var(--bg-sidebar)] text-muted hover:bg-white/5'
                   }`}
                 >
                   {mins}m
@@ -224,7 +220,7 @@ export const SettingsPage: React.FC = () => {
                       isSelected
                         ? 'border-accent bg-accent-muted text-accent shadow-md'
                         : isAyoub
-                          ? 'border-[var(--border)] bg-[#1C1C1E] text-main hover:bg-white/5'
+                          ? 'border-[var(--border)] bg-[var(--bg-sidebar)] text-main hover:bg-white/5'
                           : 'border-[var(--border)] bg-black/20 text-muted opacity-40 cursor-not-allowed'
                     }`}
                   >

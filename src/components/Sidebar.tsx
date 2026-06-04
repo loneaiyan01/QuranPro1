@@ -154,7 +154,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <input
               type="text"
               placeholder="Filter Surahs..."
-              className="w-full pl-9 pr-4 py-2 bg-[#1C1C1E] border border-[var(--border)] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-accent/50 text-main"
+              className="w-full pl-9 pr-4 py-2 bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-accent/50 text-main"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -177,7 +177,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   <span className={`text-[10px] w-6 h-6 rounded-md flex items-center justify-center ${
                     currentSurah?.number === surah.number
                       ? 'bg-accent text-white'
-                      : 'bg-[#1C1C1E] text-muted'
+                      : 'bg-[var(--bg-sidebar)] text-muted'
                   }`}>
                     {surah.number}
                   </span>

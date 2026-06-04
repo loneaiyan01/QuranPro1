@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
-import { Bookmark as BookmarkIcon, Play, Trash2, Search, Sparkles } from 'lucide-react';
+import { Bookmark as BookmarkIcon, Play, Trash2, Search } from 'lucide-react';
 
 export const BookmarksPage: React.FC = () => {
   const { bookmarks, surahs, actions: quranActions } = useQuran();
@@ -58,7 +58,7 @@ export const BookmarksPage: React.FC = () => {
                 placeholder="Search bookmarks..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-[#1C1C1E] border border-[var(--border)] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-accent/50 text-main"
+                className="w-full pl-9 pr-4 py-2 bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-accent/50 text-main"
               />
             </div>
           )}

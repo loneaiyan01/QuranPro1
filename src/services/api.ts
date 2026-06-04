@@ -6,6 +6,9 @@ const BASE_URL = 'https://api.alquran.cloud/v1';
 export const fetchSurahs = async (): Promise<Surah[]> => {
   try {
     const response = await fetch(`${BASE_URL}/surah`);
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
     const data = await response.json();
     return data.data;
   } catch (error) {
@@ -17,6 +20,9 @@ export const fetchSurahs = async (): Promise<Surah[]> => {
 export const fetchReciters = async (): Promise<Reciter[]> => {
   try {
     const response = await fetch(`${BASE_URL}/edition?format=audio&type=versebyverse`);
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
     const data = await response.json();
 
     if (!data.data) return [];
@@ -48,6 +54,9 @@ export const fetchReciters = async (): Promise<Reciter[]> => {
 export const fetchSurahText = async (surahNumber: number): Promise<{ arabic: SurahContent; english: SurahContent } | null> => {
   try {
     const response = await fetch(`${BASE_URL}/surah/${surahNumber}/editions/quran-uthmani,en.hilali`);
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
     const data = await response.json();
     // data.data is an array of 2 editions
     return {
@@ -83,6 +92,9 @@ export const fetchSurahAudio = async (surahNumber: number, reciterIdentifier: st
 
     // Default VBV fetch
     const response = await fetch(`${BASE_URL}/surah/${surahNumber}/${reciterIdentifier}`);
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
     const data = await response.json();
     return data.data.ayahs;
   } catch (error) {

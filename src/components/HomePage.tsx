@@ -253,7 +253,7 @@ export const HomePage: React.FC = () => {
                 placeholder="Search by name or number..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 bg-[#1C1C1E] border border-[var(--border)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 text-main placeholder-muted"
+                className="w-full pl-9 pr-8 py-2 bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 text-main placeholder-muted"
               />
               {searchQuery && (
                 <button

@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { X, Play, Pause, SkipBack, SkipForward, Type, List, Tv, Maximize2, Minimize2, Clock, Lock, Unlock } from 'lucide-react';
+import { useIsMobile } from '../hooks/useIsMobile';
+import { formatTime } from '../utils/formatTime';
+import { X, Play, Pause, SkipBack, SkipForward, Type, List, Tv, Maximize2, Clock, Lock, Unlock } from 'lucide-react';
 
 const FullscreenTranslationView: React.FC = () => {
   const { currentSurah, surahText, surahs, actions: quranActions } = useQuran();
@@ -31,8 +33,8 @@ const FullscreenTranslationView: React.FC = () => {
   const [userFocusedIndex, setUserFocusedIndex] = useState<number | null>(null);
   const [isLocked, setIsLocked] = useState<boolean>(false);
   const [showUnlockButton, setShowUnlockButton] = useState<boolean>(false);
-  const hudTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const unlockTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hudTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const unlockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const verseRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -46,7 +48,7 @@ const FullscreenTranslationView: React.FC = () => {
   const activeIndex = userFocusedIndex !== null ? userFocusedIndex : estimatedAyahIndex;
   const currentEnglishAyah = englishAyahs[activeIndex];
 
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const isMobile = useIsMobile();
   const displayFontSize = isMobile ? Math.min(translationFontSize, 24) : translationFontSize;
 
   // Reset focus when surah changes
@@ -164,25 +166,21 @@ const FullscreenTranslationView: React.FC = () => {
 
   const handleSleepTimerToggle = () => {
     // Cycle: null -> 15 -> 30 -> 45 -> 60 -> null
+    // Use <= so toggling during countdown advances to the next preset
     if (sleepTimer === null) {
       setSleepTimer(15);
-    } else if (sleepTimer === 15) {
+    } else if (sleepTimer <= 15) {
       setSleepTimer(30);
-    } else if (sleepTimer === 30) {
+    } else if (sleepTimer <= 30) {
       setSleepTimer(45);
-    } else if (sleepTimer === 45) {
+    } else if (sleepTimer <= 45) {
       setSleepTimer(60);
     } else {
       setSleepTimer(null);
     }
   };
 
-  const formatTime = (time: number) => {
-    if (isNaN(time)) return '0:00';
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
+
 
   if (!currentSurah || !surahText) return null;
 

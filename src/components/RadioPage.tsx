@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
-import { Radio, ChevronRight, Volume2, Music, Play, AlertCircle } from 'lucide-react';
+import { Radio, ChevronRight, Music, Play } from 'lucide-react';
 
 export const RadioPage: React.FC = () => {
     const { currentSurah, selectedReciter, actions, isRadioMode } = useQuran();

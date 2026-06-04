@@ -33,8 +33,10 @@ self.addEventListener('fetch', (event) => {
             caches.open(API_CACHE_NAME).then((cache) => {
                 return fetch(event.request)
                     .then((networkResponse) => {
-                        // Network succeeded – cache the fresh response and return it
-                        cache.put(event.request, networkResponse.clone());
+                        // Only cache successful responses to avoid persisting errors
+                        if (networkResponse.ok) {
+                            cache.put(event.request, networkResponse.clone());
+                        }
                         return networkResponse;
                     })
                     .catch(() => {

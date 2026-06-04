@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from 'react';
 import { Surah, Reciter, SurahContent, Bookmark } from '../types';
 import { fetchSurahs, fetchReciters, fetchSurahText } from '../services/api';
 
@@ -43,8 +43,16 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     // Bookmarks State
     const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => {
-        const saved = localStorage.getItem('tarteela_bookmarks');
-        return saved !== null ? JSON.parse(saved) : [];
+        try {
+            const saved = localStorage.getItem('tarteela_bookmarks');
+            if (saved !== null) {
+                const parsed = JSON.parse(saved);
+                return Array.isArray(parsed) ? parsed : [];
+            }
+        } catch (e) {
+            console.error('Failed to parse bookmarks from localStorage:', e);
+        }
+        return [];
     });
 
     // Sync bookmarks to localStorage
@@ -159,9 +167,14 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         });
     }, []);
 
-    const isBookmarked = useCallback((surahNumber: number, ayahNumberInSurah: number) => {
-        return bookmarks.some(b => b.surahNumber === surahNumber && b.ayahNumberInSurah === ayahNumberInSurah);
+    // O(1) bookmark lookups via Set (PERF-2)
+    const bookmarkSet = useMemo(() => {
+        return new Set(bookmarks.map(b => `${b.surahNumber}:${b.ayahNumberInSurah}`));
     }, [bookmarks]);
+
+    const isBookmarked = useCallback((surahNumber: number, ayahNumberInSurah: number) => {
+        return bookmarkSet.has(`${surahNumber}:${ayahNumberInSurah}`);
+    }, [bookmarkSet]);
 
     const actions = useMemo(() => ({
         selectSurah,
