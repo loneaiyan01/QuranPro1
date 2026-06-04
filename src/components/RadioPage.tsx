@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
-import { Radio, ChevronRight, Volume2, Music } from 'lucide-react';
+import { Radio, ChevronRight, Volume2, Music, Play, AlertCircle } from 'lucide-react';
 
-const RadioInterface: React.FC = () => {
+export const RadioPage: React.FC = () => {
     const { currentSurah, selectedReciter, actions, isRadioMode } = useQuran();
     const { isPlaying, isBuffering } = useAudio();
     const [randomSeed, setRandomSeed] = useState(0);
 
-    // Update aesthetic animations periodicially
+    // Update aesthetic animations periodically
     useEffect(() => {
         const interval = setInterval(() => {
             setRandomSeed(prev => (prev + 1) % 100);
@@ -16,8 +16,40 @@ const RadioInterface: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
-    if (!isRadioMode || !currentSurah || !selectedReciter) return null;
+    // 1. Inactive State (Show Call to Action)
+    if (!isRadioMode) {
+        return (
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="w-24 h-24 rounded-full bg-accent-muted flex items-center justify-center relative">
+                    <Radio className="w-12 h-12 text-accent" />
+                </div>
+                <div className="space-y-3">
+                    <h2 className="text-2xl md:text-4xl font-serif font-bold text-main">Quran Live Radio</h2>
+                    <p className="text-sm text-muted leading-relaxed px-4">
+                        Immerse yourself in a continuous stream of random Surahs. Ideal for reflective background listening, learning, or relaxing.
+                    </p>
+                </div>
+                <button
+                    onClick={() => actions.toggleRadioMode(true)}
+                    className="w-full py-4 bg-accent hover:bg-accent/90 text-white font-bold rounded-2xl shadow-xl shadow-accent/20 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+                >
+                    <Play className="w-4 h-4 fill-current ml-0.5" />
+                    Enter Radio Mode
+                </button>
+            </div>
+        );
+    }
 
+    // 2. Loading State (If active but Surah hasn't loaded yet)
+    if (!currentSurah || !selectedReciter) {
+        return (
+            <div className="flex-1 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent)]"></div>
+            </div>
+        );
+    }
+
+    // 3. Active State (Show Visualizer & Orbiting elements)
     return (
         <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-transparent to-accent/5 p-6 text-center">
 
@@ -34,7 +66,7 @@ const RadioInterface: React.FC = () => {
             </div>
 
             {/* Main Content Card */}
-            <div className="z-10 max-w-2xl w-full flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-1000">
+            <div className="z-10 max-w-2xl w-full flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700">
 
                 {/* Mode Indicator */}
                 <div className="flex items-center gap-2 px-4 py-2 bg-accent/10 rounded-full border border-accent/20">
@@ -44,7 +76,7 @@ const RadioInterface: React.FC = () => {
 
                 {/* Reciter Avatar / Icon Area */}
                 <div className="relative">
-                    <div className={`w-32 h-32 md:w-48 md:h-48 rounded-full bg-[var(--bg-main)] shadow-2xl flex items-center justify-center border-4 border-[var(--border)] relative ${isPlaying && !isBuffering ? 'animate-[spin_10s_linear_infinite]' : ''}`}>
+                    <div className={`w-32 h-32 md:w-48 md:h-48 rounded-full bg-[var(--bg-main)] shadow-2xl flex items-center justify-center border-4 border-[var(--border)] relative ${isPlaying && !isBuffering ? 'animate-[spin_12s_linear_infinite]' : ''}`}>
                         <Music className="w-12 h-12 md:w-20 md:h-20 text-accent/20" />
 
                         {/* Orbiting particles when playing */}
@@ -83,17 +115,17 @@ const RadioInterface: React.FC = () => {
                 <div className="flex flex-col items-center gap-4 mt-8 w-full max-w-xs">
                     <button
                         onClick={() => actions.nextRadioSurah()}
-                        className="group flex items-center justify-center gap-3 w-full py-4 px-6 bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl shadow-[var(--shadow-lg)] hover:shadow-[var(--accent)]/10 hover:border-[var(--border-active)] transition-all duration-500"
+                        className="group flex items-center justify-center gap-3 w-full py-4 px-6 bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-3xl shadow-[var(--shadow-lg)] hover:shadow-[var(--accent)]/10 hover:border-[var(--border-active)] hover:bg-[var(--bg-card-active)] transition-all duration-300 active:scale-95"
                     >
-                        <span className="font-bold text-main">Play Next Random</span>
+                        <span className="font-bold text-main text-sm">Play Next Random</span>
                         <ChevronRight className="w-5 h-5 text-accent group-hover:translate-x-1 transition-transform" />
                     </button>
 
                     <button
                         onClick={() => actions.toggleRadioMode(false)}
-                        className="text-sm font-medium text-muted hover:text-accent transition-colors"
+                        className="text-xs font-semibold text-muted hover:text-accent transition-colors py-2"
                     >
-                        Return to Reading View
+                        Deactivate Radio Mode
                     </button>
                 </div>
             </div>
@@ -129,5 +161,3 @@ const RadioInterface: React.FC = () => {
         </div>
     );
 };
-
-export default RadioInterface;

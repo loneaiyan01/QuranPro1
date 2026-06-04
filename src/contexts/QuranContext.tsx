@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { Surah, Reciter, SurahContent, Bookmark } from '../types';
 import { fetchSurahs, fetchReciters, fetchSurahText } from '../services/api';
 
+export type PageType = 'home' | 'player' | 'radio' | 'bookmarks' | 'settings';
+
 interface QuranContextType {
     surahs: Surah[];
     reciters: Reciter[];
@@ -11,6 +13,7 @@ interface QuranContextType {
     isLoadingContent: boolean;
     contentError: string | null;
     bookmarks: Bookmark[];
+    currentPage: PageType;
     actions: {
         selectSurah: (surah: Surah) => Promise<void>;
         selectReciter: (reciter: Reciter) => void;
@@ -20,6 +23,7 @@ interface QuranContextType {
         toggleBookmark: (surahNumber: number, surahEnglishName: string, ayahNumberInSurah: number) => void;
         isBookmarked: (surahNumber: number, ayahNumberInSurah: number) => boolean;
         resetToHome: () => void;
+        setCurrentPage: (page: PageType) => void;
     };
     isRadioMode: boolean;
 }
@@ -35,12 +39,18 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const [isLoadingContent, setIsLoadingContent] = useState<boolean>(true);
     const [isRadioMode, setIsRadioMode] = useState<boolean>(false);
     const [contentError, setContentError] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState<PageType>('home');
 
     // Bookmarks State
     const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => {
         const saved = localStorage.getItem('tarteela_bookmarks');
         return saved !== null ? JSON.parse(saved) : [];
     });
+
+    // Sync bookmarks to localStorage
+    useEffect(() => {
+        localStorage.setItem('tarteela_bookmarks', JSON.stringify(bookmarks));
+    }, [bookmarks]);
 
     // Initialization
     useEffect(() => {
@@ -71,15 +81,11 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         init();
     }, []);
 
-    // Sync bookmarks to localStorage
-    useEffect(() => {
-        localStorage.setItem('tarteela_bookmarks', JSON.stringify(bookmarks));
-    }, [bookmarks]);
-
     const selectSurah = useCallback(async (surah: Surah) => {
         setIsLoadingContent(true);
         setContentError(null);
         setCurrentSurah(surah);
+        setCurrentPage('player');
 
         try {
             const textData = await fetchSurahText(surah.number);
@@ -116,6 +122,9 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setIsRadioMode(active);
         if (active) {
             nextRadioSurah();
+            setCurrentPage('radio');
+        } else {
+            setCurrentPage('player');
         }
     }, [nextRadioSurah]);
 
@@ -130,6 +139,7 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const resetToHome = useCallback(() => {
         setCurrentSurah(null);
         setIsRadioMode(false);
+        setCurrentPage('home');
     }, []);
 
     // Bookmark Actions
@@ -161,8 +171,9 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         retryLoadContent,
         toggleBookmark,
         isBookmarked,
-        resetToHome
-    }), [selectSurah, selectReciter, toggleRadioMode, nextRadioSurah, retryLoadContent, toggleBookmark, isBookmarked, resetToHome]);
+        resetToHome,
+        setCurrentPage
+    }), [selectSurah, selectReciter, toggleRadioMode, nextRadioSurah, retryLoadContent, toggleBookmark, isBookmarked, resetToHome, setCurrentPage]);
 
     return (
         <QuranContext.Provider
@@ -175,6 +186,7 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 isLoadingContent,
                 contentError,
                 bookmarks,
+                currentPage,
                 actions,
                 isRadioMode
             }}
