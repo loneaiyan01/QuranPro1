@@ -19,6 +19,7 @@ interface QuranContextType {
         retryLoadContent: () => void;
         toggleBookmark: (surahNumber: number, surahEnglishName: string, ayahNumberInSurah: number) => void;
         isBookmarked: (surahNumber: number, ayahNumberInSurah: number) => boolean;
+        resetToHome: () => void;
     };
     isRadioMode: boolean;
 }
@@ -59,12 +60,8 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                     setSelectedReciter(ayyub || fetchedReciters[0]);
                 }
 
-                // Load Surah Al-Fatiha by default
-                if (fetchedSurahs.length > 0) {
-                    await selectSurah(fetchedSurahs[0]);
-                } else {
-                    setIsLoadingContent(false);
-                }
+                // Do not load any Surah by default (go to home page)
+                setIsLoadingContent(false);
             } catch (err) {
                 setContentError('Failed to connect to the Quran API. Please check your internet connection.');
                 setIsLoadingContent(false);
@@ -130,6 +127,11 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
     }, [currentSurah, surahs, selectSurah]);
 
+    const resetToHome = useCallback(() => {
+        setCurrentSurah(null);
+        setIsRadioMode(false);
+    }, []);
+
     // Bookmark Actions
     const toggleBookmark = useCallback((surahNumber: number, surahEnglishName: string, ayahNumberInSurah: number) => {
         setBookmarks(prev => {
@@ -158,8 +160,9 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         nextRadioSurah,
         retryLoadContent,
         toggleBookmark,
-        isBookmarked
-    }), [selectSurah, selectReciter, toggleRadioMode, nextRadioSurah, retryLoadContent, toggleBookmark, isBookmarked]);
+        isBookmarked,
+        resetToHome
+    }), [selectSurah, selectReciter, toggleRadioMode, nextRadioSurah, retryLoadContent, toggleBookmark, isBookmarked, resetToHome]);
 
     return (
         <QuranContext.Provider

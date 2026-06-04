@@ -3,8 +3,9 @@ import Sidebar from './Sidebar';
 import ScrollingVerseDisplay from './ScrollingVerseDisplay';
 import PlayerControls from './PlayerControls';
 import RadioInterface from './RadioInterface';
+import { HomePage } from './HomePage';
 import { ResumePrompt } from './ResumePrompt';
-import { Menu, Tv } from 'lucide-react';
+import { Menu, Tv, Home } from 'lucide-react';
 import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -14,7 +15,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 const MainLayout: React.FC = () => {
     // Local UI State for Sidebar visibility
     const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
-    const { isRadioMode } = useQuran();
+    const { isRadioMode, currentSurah, actions: quranActions } = useQuran();
     const { isFullscreenTranslation, setIsFullscreenTranslation } = useTheme();
 
     // Initial sidebar state based on screen width (checking on mount)
@@ -48,23 +49,36 @@ const MainLayout: React.FC = () => {
 
                 {/* Top Mobile Bar */}
                 <div className="md:hidden absolute top-0 inset-x-0 p-4 z-20 flex justify-between pointer-events-none">
-                    <button
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="p-3 bg-accent text-white rounded-full shadow-lg shadow-accent/20 backdrop-blur-md active:scale-95 transition-transform pointer-events-auto"
-                    >
-                        <Menu className="w-6 h-6" />
-                    </button>
-                    <button
-                        onClick={() => setIsFullscreenTranslation(true)}
-                        className="p-3 bg-accent text-white rounded-full shadow-lg shadow-accent/20 backdrop-blur-md active:scale-95 transition-transform pointer-events-auto"
-                        title="Fullscreen Translation Mode"
-                    >
-                        <Tv className="w-6 h-6" />
-                    </button>
+                    <div className="flex gap-2 pointer-events-auto">
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="p-3 bg-accent text-white rounded-full shadow-lg shadow-accent/20 backdrop-blur-md active:scale-95 transition-transform"
+                        >
+                            <Menu className="w-6 h-6" />
+                        </button>
+                        {currentSurah && (
+                            <button
+                                onClick={() => quranActions.resetToHome()}
+                                className="p-3 bg-accent text-white rounded-full shadow-lg shadow-accent/20 backdrop-blur-md active:scale-95 transition-transform"
+                                title="Go to Homepage"
+                            >
+                                <Home className="w-6 h-6" />
+                            </button>
+                        )}
+                    </div>
+                    {currentSurah && (
+                        <button
+                            onClick={() => setIsFullscreenTranslation(true)}
+                            className="p-3 bg-accent text-white rounded-full shadow-lg shadow-accent/20 backdrop-blur-md active:scale-95 transition-transform pointer-events-auto"
+                            title="Fullscreen Translation Mode"
+                        >
+                            <Tv className="w-6 h-6" />
+                        </button>
+                    )}
                 </div>
 
-                {/* Desktop/Tablet Sidebar Toggle */}
-                <div className="hidden md:block absolute top-4 left-4 z-20">
+                {/* Desktop/Tablet Sidebar Toggle & Home Button */}
+                <div className="hidden md:flex items-center gap-2 absolute top-4 left-4 z-20">
                     <button
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                         className="p-2 bg-transparent hover:bg-[var(--bg-card-active)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
@@ -72,26 +86,41 @@ const MainLayout: React.FC = () => {
                     >
                         <Menu className="w-6 h-6" />
                     </button>
+                    {currentSurah && (
+                        <button
+                            onClick={() => quranActions.resetToHome()}
+                            className="p-2 bg-transparent hover:bg-[var(--bg-card-active)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                            title="Go to Homepage"
+                        >
+                            <Home className="w-6 h-6" />
+                        </button>
+                    )}
                 </div>
 
                 {/* Desktop/Tablet Fullscreen Translation Toggle */}
                 <div className="hidden md:block absolute top-4 right-4 z-20">
-                    <button
-                        onClick={() => setIsFullscreenTranslation(true)}
-                        className="p-2 bg-transparent hover:bg-[var(--bg-card-active)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
-                        title="Fullscreen Translation Mode"
-                    >
-                        <Tv className="w-6 h-6" />
-                    </button>
+                    {currentSurah && (
+                        <button
+                            onClick={() => setIsFullscreenTranslation(true)}
+                            className="p-2 bg-transparent hover:bg-[var(--bg-card-active)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                            title="Fullscreen Translation Mode"
+                        >
+                            <Tv className="w-6 h-6" />
+                        </button>
+                    )}
                 </div>
 
-                {/* Verse Display Area / Radio Interface */}
+                {/* Verse Display Area / Radio Interface / Homepage */}
                 <main className="flex-1 flex flex-col relative min-h-0 overflow-hidden">
-                    {isRadioMode ? <RadioInterface /> : <ScrollingVerseDisplay />}
+                    {currentSurah ? (
+                        isRadioMode ? <RadioInterface /> : <ScrollingVerseDisplay />
+                    ) : (
+                        <HomePage />
+                    )}
                 </main>
 
                 {/* Player Controls */}
-                <PlayerControls />
+                {currentSurah && <PlayerControls />}
             </div>
         </div>
     );

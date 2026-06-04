@@ -72,9 +72,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
         {/* Header */}
         <div className="p-6 border-b border-[var(--border)] flex justify-between items-center bg-sidebar">
-          <h2 className="text-xl font-serif font-bold text-accent flex items-center gap-2">
-            <span>HearQuran</span>
-          </h2>
+          <button
+            onClick={() => {
+              actions.resetToHome();
+              onClose();
+            }}
+            className="text-xl font-serif font-bold text-accent hover:opacity-80 transition-opacity text-left bg-transparent border-none p-0 cursor-pointer"
+          >
+            HearQuran
+          </button>
           <button
             type="button"
             onClick={(e) => {
