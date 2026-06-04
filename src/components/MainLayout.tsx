@@ -193,8 +193,8 @@ const MainLayout: React.FC = () => {
                     {renderPage()}
                 </main>
 
-                {/* Player Controls (visible on Player/Radio views only) */}
-                {(currentPage === 'player' || currentPage === 'radio') && currentSurah && (
+                {/* Player Controls (visible on Player view only) */}
+                {currentPage === 'player' && currentSurah && (
                     <PlayerControls />
                 )}
 
