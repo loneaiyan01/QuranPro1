@@ -89,7 +89,7 @@ export const RadioPage: React.FC = () => {
                         {/* English translation text with CSS entry transitions */}
                         <p 
                             key={`en-${currentAyahIndex}`}
-                            className="text-center font-serif text-sm sm:text-base md:text-lg leading-relaxed text-main px-1 animate-in fade-in slide-in-from-bottom-4 duration-500"
+                            className="text-center font-sans text-sm sm:text-base md:text-lg leading-relaxed text-main px-1 animate-in fade-in slide-in-from-bottom-4 duration-500"
                         >
                             {englishAyah.text}
                         </p>
