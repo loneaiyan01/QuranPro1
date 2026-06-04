@@ -333,9 +333,9 @@ const ScrollingVerseDisplay: React.FC = () => {
         <div
             ref={containerRef}
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto px-2 py-4 lg:px-12 scroll-smooth"
+            className="flex-1 overflow-y-auto px-2 pt-24 pb-44 lg:px-12 scroll-smooth"
         >
-            <div className="max-w-4xl mx-auto space-y-4 pb-32">
+            <div className="max-w-4xl mx-auto space-y-4 pb-12">
                 <div className="text-center mb-6">
                     <span className="inline-block px-3 py-1 bg-[var(--accent-muted)] text-xs rounded-full text-[var(--accent)] mb-2">
                         {isVerseByVerse ? 'Verse-by-Verse Mode' : 'Scrolling Mode'}

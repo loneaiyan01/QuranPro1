@@ -19,7 +19,7 @@ export const RadioPage: React.FC = () => {
     // 1. Inactive State (Show Call to Action)
     if (!isRadioMode) {
         return (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex-1 flex flex-col items-center justify-center p-6 pt-24 pb-44 text-center max-w-xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="w-24 h-24 rounded-full bg-accent-muted flex items-center justify-center relative">
                     <Radio className="w-12 h-12 text-accent" />
                 </div>
@@ -51,7 +51,7 @@ export const RadioPage: React.FC = () => {
 
     // 3. Active State (Show Visualizer & Orbiting elements)
     return (
-        <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-transparent to-accent/5 p-6 text-center">
+        <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-transparent to-accent/5 p-6 pt-24 pb-44 text-center">
 
             {/* Ambient Background Elements */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">

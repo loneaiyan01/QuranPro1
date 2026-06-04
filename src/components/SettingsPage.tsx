@@ -43,8 +43,8 @@ export const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-8 md:py-12 lg:px-12 custom-scrollbar">
-      <div className="max-w-3xl mx-auto space-y-10 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="flex-1 overflow-y-auto px-4 pt-24 pb-44 md:py-12 lg:px-12 custom-scrollbar">
+      <div className="max-w-3xl mx-auto space-y-10 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
         
         {/* Header section */}
         <div className="border-b border-[var(--border)] pb-6">
