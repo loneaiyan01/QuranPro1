@@ -21,7 +21,7 @@ export const MiniPlayer: React.FC = () => {
     return (
         <div 
             onClick={handleContainerClick}
-            className="fixed bottom-20 left-4 right-4 md:left-auto md:right-8 md:bottom-8 md:w-80 z-40 glass-panel hover:bg-[var(--bg-card-active)] hover:border-accent/30 rounded-2xl shadow-xl border border-[var(--border)] overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] flex flex-col animate-in slide-in-from-bottom-6 duration-500"
+            className="fixed bottom-4 left-4 right-4 md:left-auto md:right-8 md:bottom-8 md:w-80 z-40 glass-panel hover:bg-[var(--bg-card-active)] hover:border-accent/30 rounded-2xl shadow-xl border border-[var(--border)] overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] flex flex-col animate-in slide-in-from-bottom-6 duration-500"
         >
             {/* Top thin progress bar */}
             <div className="w-full bg-accent-muted h-1 relative">

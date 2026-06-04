@@ -43,18 +43,20 @@ const MainLayout: React.FC = () => {
         if (distance > minSwipeDistance && isSidebarOpen) {
             setIsSidebarOpen(false);
         }
-        // Right swipe (open sidebar - only if not on homepage)
-        if (distance < -minSwipeDistance && !isSidebarOpen && currentPage !== 'home') {
+        // Right swipe (open sidebar)
+        if (distance < -minSwipeDistance && !isSidebarOpen) {
             setIsSidebarOpen(true);
         }
-    }, [touchStartX, touchEndX, isSidebarOpen, currentPage]);
+    }, [touchStartX, touchEndX, isSidebarOpen]);
 
-    // Initial sidebar state based on screen width (checking on mount)
+    // Update sidebar state when page changes (closed on home, open on other pages on desktop)
     React.useEffect(() => {
-        if (window.innerWidth >= 768) {
+        if (window.innerWidth >= 768 && currentPage !== 'home') {
             setIsSidebarOpen(true);
+        } else {
+            setIsSidebarOpen(false);
         }
-    }, []);
+    }, [currentPage]);
 
     const { actions: { togglePlay, nextAyah, prevAyah } } = useAudio();
     const toggleSidebar = useCallback(() => setIsSidebarOpen(prev => !prev), []);
@@ -115,27 +117,23 @@ const MainLayout: React.FC = () => {
             <ResumePrompt />
 
             {/* Sidebar (Desktop navigation menu) */}
-            {!isHome && (
-                <Sidebar
-                    isOpen={isSidebarOpen}
-                    onClose={() => setIsSidebarOpen(false)}
-                />
-            )}
+            <Sidebar
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+            />
 
             {/* Main Content */}
-            <div className={`flex-1 flex flex-col h-full transition-all duration-300 relative ${!isHome && isSidebarOpen ? 'md:ml-80' : ''}`}>
+            <div className={`flex-1 flex flex-col h-full transition-all duration-300 relative ${isSidebarOpen ? 'md:ml-80' : ''}`}>
 
                 {/* Top Mobile Bar */}
                 <div className="md:hidden absolute top-0 inset-x-0 p-4 z-20 flex justify-between pointer-events-none">
                     <div className="flex gap-2 pointer-events-auto">
-                        {!isHome && (
-                            <button
-                                onClick={() => setIsSidebarOpen(true)}
-                                className="p-3 bg-accent text-white rounded-full shadow-lg shadow-accent/20 backdrop-blur-md active:scale-95 transition-transform"
-                            >
-                                <Menu className="w-6 h-6" />
-                            </button>
-                        )}
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="p-3 bg-accent text-white rounded-full shadow-lg shadow-accent/20 backdrop-blur-md active:scale-95 transition-transform"
+                        >
+                            <Menu className="w-6 h-6" />
+                        </button>
                         {!isHome && (
                             <button
                                 onClick={() => quranActions.resetToHome()}
@@ -159,15 +157,13 @@ const MainLayout: React.FC = () => {
 
                 {/* Desktop/Tablet Sidebar Toggle & Home Button */}
                 <div className="hidden md:flex items-center gap-2 absolute top-4 left-4 z-20">
-                    {!isHome && (
-                        <button
-                            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                            className="p-2 bg-transparent hover:bg-[var(--bg-card-active)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
-                            title={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
-                        >
-                            <Menu className="w-6 h-6" />
-                        </button>
-                    )}
+                    <button
+                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                        className="p-2 bg-transparent hover:bg-[var(--bg-card-active)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                        title={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
+                    >
+                        <Menu className="w-6 h-6" />
+                    </button>
                     {!isHome && (
                         <button
                             onClick={() => quranActions.resetToHome()}
@@ -193,7 +189,7 @@ const MainLayout: React.FC = () => {
                 </div>
 
                 {/* Dynamic Page Container */}
-                <main className="flex-1 flex flex-col relative min-h-0 overflow-hidden pb-16 md:pb-0">
+                <main className="flex-1 flex flex-col relative min-h-0 overflow-hidden">
                     {renderPage()}
                 </main>
 
@@ -206,55 +202,6 @@ const MainLayout: React.FC = () => {
                 {currentSurah && currentPage !== 'player' && currentPage !== 'radio' && (
                     <MiniPlayer />
                 )}
-
-                {/* Mobile Bottom Navigation Bar */}
-                <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#1C1C1E] border-t border-[var(--border)] flex justify-around items-center z-40 px-2 pb-safe shadow-[0_-2px_10px_rgba(0,0,0,0.3)]">
-                    <button
-                        onClick={() => quranActions.setCurrentPage('home')}
-                        className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg transition-colors active:scale-95 ${
-                            currentPage === 'home' ? 'text-accent' : 'text-muted hover:text-main'
-                        }`}
-                    >
-                        <Home className="w-5 h-5" />
-                        <span className="text-[9px] font-bold">Home</span>
-                    </button>
-                    <button
-                        onClick={() => quranActions.setCurrentPage('player')}
-                        className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg transition-colors active:scale-95 ${
-                            currentPage === 'player' ? 'text-accent' : 'text-muted hover:text-main'
-                        }`}
-                    >
-                        <BookOpen className="w-5 h-5" />
-                        <span className="text-[9px] font-bold">Player</span>
-                    </button>
-                    <button
-                        onClick={() => quranActions.setCurrentPage('radio')}
-                        className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg transition-colors active:scale-95 ${
-                            currentPage === 'radio' ? 'text-accent' : 'text-muted hover:text-main'
-                        }`}
-                    >
-                        <Radio className="w-5 h-5" />
-                        <span className="text-[9px] font-bold">Radio</span>
-                    </button>
-                    <button
-                        onClick={() => quranActions.setCurrentPage('bookmarks')}
-                        className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg transition-colors active:scale-95 ${
-                            currentPage === 'bookmarks' ? 'text-accent' : 'text-muted hover:text-main'
-                        }`}
-                    >
-                        <Bookmark className="w-5 h-5" />
-                        <span className="text-[9px] font-bold">Saved</span>
-                    </button>
-                    <button
-                        onClick={() => quranActions.setCurrentPage('settings')}
-                        className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg transition-colors active:scale-95 ${
-                            currentPage === 'settings' ? 'text-accent' : 'text-muted hover:text-main'
-                        }`}
-                    >
-                        <Settings className="w-5 h-5" />
-                        <span className="text-[9px] font-bold">Settings</span>
-                    </button>
-                </div>
             </div>
         </div>
     );

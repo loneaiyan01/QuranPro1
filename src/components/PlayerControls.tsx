@@ -65,7 +65,7 @@ const PlayerControls: React.FC = () => {
   };
 
   return (
-    <div className="glass-panel border-t relative z-30 pb-16 md:pb-0">
+    <div className="glass-panel border-t relative z-30">
       {/* Full-Width Dynamic Progress Bar */}
       <div className="absolute top-0 left-0 w-full group cursor-pointer h-1 hover:h-1.5 transition-[height] duration-300 ease-in-out z-40 overflow-visible">
         {/* Background / Track */}

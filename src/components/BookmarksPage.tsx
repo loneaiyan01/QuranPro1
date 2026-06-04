@@ -34,7 +34,7 @@ export const BookmarksPage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 pt-24 pb-44 md:py-12 lg:px-12 custom-scrollbar">
+    <div className="flex-1 overflow-y-auto px-4 pt-24 pb-28 md:py-12 lg:px-12 custom-scrollbar">
       <div className="max-w-4xl mx-auto space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
         
         {/* Header section */}
