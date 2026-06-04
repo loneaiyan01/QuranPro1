@@ -39,23 +39,27 @@ const MainLayout: React.FC = () => {
             <ResumePrompt />
 
             {/* Sidebar */}
-            <Sidebar
-                isOpen={isSidebarOpen}
-                onClose={() => setIsSidebarOpen(false)}
-            />
+            {currentSurah && (
+                <Sidebar
+                    isOpen={isSidebarOpen}
+                    onClose={() => setIsSidebarOpen(false)}
+                />
+            )}
 
             {/* Main Content */}
-            <div className={`flex-1 flex flex-col h-full transition-all duration-300 relative ${isSidebarOpen ? 'md:ml-80' : ''}`}>
+            <div className={`flex-1 flex flex-col h-full transition-all duration-300 relative ${currentSurah && isSidebarOpen ? 'md:ml-80' : ''}`}>
 
                 {/* Top Mobile Bar */}
                 <div className="md:hidden absolute top-0 inset-x-0 p-4 z-20 flex justify-between pointer-events-none">
                     <div className="flex gap-2 pointer-events-auto">
-                        <button
-                            onClick={() => setIsSidebarOpen(true)}
-                            className="p-3 bg-accent text-white rounded-full shadow-lg shadow-accent/20 backdrop-blur-md active:scale-95 transition-transform"
-                        >
-                            <Menu className="w-6 h-6" />
-                        </button>
+                        {currentSurah && (
+                            <button
+                                onClick={() => setIsSidebarOpen(true)}
+                                className="p-3 bg-accent text-white rounded-full shadow-lg shadow-accent/20 backdrop-blur-md active:scale-95 transition-transform"
+                            >
+                                <Menu className="w-6 h-6" />
+                            </button>
+                        )}
                         {currentSurah && (
                             <button
                                 onClick={() => quranActions.resetToHome()}
@@ -79,13 +83,15 @@ const MainLayout: React.FC = () => {
 
                 {/* Desktop/Tablet Sidebar Toggle & Home Button */}
                 <div className="hidden md:flex items-center gap-2 absolute top-4 left-4 z-20">
-                    <button
-                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        className="p-2 bg-transparent hover:bg-[var(--bg-card-active)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
-                        title={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
-                    >
-                        <Menu className="w-6 h-6" />
-                    </button>
+                    {currentSurah && (
+                        <button
+                            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                            className="p-2 bg-transparent hover:bg-[var(--bg-card-active)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                            title={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
+                        >
+                            <Menu className="w-6 h-6" />
+                        </button>
+                    )}
                     {currentSurah && (
                         <button
                             onClick={() => quranActions.resetToHome()}
