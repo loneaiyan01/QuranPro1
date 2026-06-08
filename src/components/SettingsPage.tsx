@@ -205,21 +205,21 @@ export const SettingsPage: React.FC = () => {
               Active Reciter
             </h3>
             <p className="text-xs text-muted leading-relaxed">
-              Select your preferred recitation audio. Currently, Muhammad Ayoub is supported for verse-by-verse playback.
+              Select your preferred recitation audio. Currently, Muhammad Ayoub and Ali Al Hudaify are supported for verse-by-verse playback.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
               {reciters.map((reciter) => {
-                const isAyoub = reciter.identifier === 'ar.muhammadayyoub';
+                const isEnabled = reciter.identifier === 'ar.muhammadayyoub' || reciter.identifier === 'ar.hudhaify';
                 const isSelected = selectedReciter?.identifier === reciter.identifier;
                 return (
                   <button
                     key={reciter.identifier}
-                    disabled={!isAyoub}
+                    disabled={!isEnabled}
                     onClick={() => quranActions.selectReciter(reciter)}
                     className={`p-4 rounded-xl border text-left flex justify-between items-center transition-all active:scale-[0.99] ${
                       isSelected
                         ? 'border-accent bg-accent-muted text-accent shadow-md'
-                        : isAyoub
+                        : isEnabled
                           ? 'border-[var(--border)] bg-[var(--bg-sidebar)] text-main hover:bg-white/5'
                           : 'border-[var(--border)] bg-black/20 text-muted opacity-40 cursor-not-allowed'
                     }`}
