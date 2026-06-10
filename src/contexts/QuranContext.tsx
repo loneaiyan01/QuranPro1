@@ -148,6 +148,14 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         try {
             const textData = await fetchSurahText(surah.number);
             if (textData) {
+                // Strip Bismillah prefix from first ayah of Arabic text (except Al-Fatiha and At-Tawbah)
+                if (surah.number !== 1 && surah.number !== 9 && textData.arabic?.ayahs?.[0]) {
+                    const firstAyahText = textData.arabic.ayahs[0].text;
+                    const bismillahPrefix = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
+                    if (firstAyahText.startsWith(bismillahPrefix)) {
+                        textData.arabic.ayahs[0].text = firstAyahText.slice(bismillahPrefix.length).trim();
+                    }
+                }
                 setSurahText(textData);
             } else {
                 setContentError('Failed to load Surah content. The server may be unavailable.');

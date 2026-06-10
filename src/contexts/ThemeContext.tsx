@@ -34,7 +34,10 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [displayMode, setDisplayMode] = useState<DisplayMode>(() => {
-    return DisplayMode.ENGLISH_ONLY;
+    const saved = localStorage.getItem('tarteela_displayMode');
+    return saved === DisplayMode.BOTH || saved === DisplayMode.ARABIC_ONLY || saved === DisplayMode.ENGLISH_ONLY
+      ? (saved as DisplayMode)
+      : DisplayMode.BOTH;
   });
   
   const [arabicFontSize, setArabicFontSize] = useState<number>(() => {

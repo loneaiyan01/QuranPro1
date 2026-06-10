@@ -4,6 +4,7 @@ import { useAudio } from '../contexts/AudioContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { formatTime } from '../utils/formatTime';
+import { DisplayMode } from '../types';
 import { X, Play, Pause, SkipBack, SkipForward, Type, List, Tv, Maximize2, Clock, Lock, Unlock } from 'lucide-react';
 
 const FullscreenTranslationView: React.FC = () => {
@@ -21,6 +22,8 @@ const FullscreenTranslationView: React.FC = () => {
   } = useAudio();
 
   const {
+    displayMode,
+    arabicFontSize,
     translationFontSize,
     setTranslationFontSize,
     fullscreenLayoutMode,
@@ -39,14 +42,17 @@ const FullscreenTranslationView: React.FC = () => {
   const verseRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const englishAyahs = surahText?.english?.ayahs || [];
+  const arabicAyahs = surahText?.arabic?.ayahs || [];
+  const totalAyahs = Math.max(englishAyahs.length, arabicAyahs.length);
 
   // Estimate active verse when there is no verse-by-verse sync
   const estimatedAyahIndex = (isFullSurahAudio && duration > 0)
-    ? Math.min(Math.floor((currentTime / duration) * englishAyahs.length), Math.max(0, englishAyahs.length - 1))
+    ? Math.min(Math.floor((currentTime / duration) * totalAyahs), Math.max(0, totalAyahs - 1))
     : currentAyahIndex;
 
   const activeIndex = userFocusedIndex !== null ? userFocusedIndex : estimatedAyahIndex;
   const currentEnglishAyah = englishAyahs[activeIndex];
+  const currentArabicAyah = arabicAyahs[activeIndex];
 
   const isMobile = useIsMobile();
   const displayFontSize = isMobile ? Math.min(translationFontSize, 24) : translationFontSize;
@@ -349,37 +355,54 @@ const FullscreenTranslationView: React.FC = () => {
         {fullscreenLayoutMode === 'single' ? (
           /* FOCUS MODE (SINGLE VERSE) */
           <div className="flex flex-col items-center justify-center text-center max-w-4xl h-full py-6">
-            {currentEnglishAyah ? (
+            {(currentArabicAyah || currentEnglishAyah) ? (
               <div
                 key={activeIndex}
-                className="animate-slide-up text-white leading-relaxed font-sans px-4"
-                style={{ fontSize: `${displayFontSize}px` }}
+                className="animate-slide-up text-white leading-[2.0] px-4 space-y-6 md:space-y-8 flex flex-col items-center"
               >
-                <p className="font-light tracking-wide max-h-[70vh] overflow-y-auto pr-1 custom-scrollbar select-text animate-fade-in no-scrollbar">
-                  {currentEnglishAyah.text}
-                </p>
+                {/* Arabic text block */}
+                {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ARABIC_ONLY) && currentArabicAyah && (
+                  <p 
+                    className="font-quran leading-[2.2] tracking-wide max-h-[30vh] sm:max-h-[45vh] overflow-y-auto pr-1 custom-scrollbar select-text animate-fade-in no-scrollbar text-center"
+                    dir="rtl"
+                    style={{ fontSize: `${isMobile ? Math.min(arabicFontSize, 38) : arabicFontSize}px` }}
+                  >
+                    {currentArabicAyah.text}
+                  </p>
+                )}
+
+                {/* English text block */}
+                {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ENGLISH_ONLY) && currentEnglishAyah && (
+                  <p 
+                    className="font-light font-sans tracking-wide max-h-[20vh] sm:max-h-[35vh] overflow-y-auto pr-1 custom-scrollbar select-text animate-fade-in no-scrollbar text-center opacity-85 leading-relaxed"
+                    style={{ fontSize: `${displayFontSize}px` }}
+                  >
+                    {currentEnglishAyah.text}
+                  </p>
+                )}
                 
                 {/* Subtle contextual metadata */}
-                <p className="mt-6 md:mt-8 text-[10px] md:text-xs font-mono text-neutral-500 tracking-widest opacity-60">
-                  {currentSurah.englishName} • {currentEnglishAyah.numberInSurah}
+                <p className="mt-2 text-[10px] md:text-xs font-mono text-neutral-500 tracking-widest opacity-60">
+                  {currentSurah.englishName} • {currentArabicAyah ? currentArabicAyah.numberInSurah : (currentEnglishAyah ? currentEnglishAyah.numberInSurah : activeIndex + 1)}
                 </p>
               </div>
             ) : (
-              <p className="text-neutral-500 italic">No translation data</p>
+              <p className="text-neutral-500 italic">No data available</p>
             )}
           </div>
         ) : (
           /* CINEMATIC SCROLL MODE */
           <div
             ref={scrollContainerRef}
-            className="w-full h-full overflow-y-auto py-[30vh] md:py-[40vh] space-y-12 md:space-y-24 scroll-smooth px-4 max-w-4xl no-scrollbar"
+            className="w-full h-full overflow-y-auto py-[15vh] sm:py-[30vh] md:py-[40vh] space-y-8 md:space-y-24 scroll-smooth px-4 max-w-4xl no-scrollbar"
           >
-            {englishAyahs.map((ayah, index) => {
+            {arabicAyahs.map((ayah, index) => {
+              const englishAyah = englishAyahs[index];
               const isActive = index === activeIndex;
               const isNext = index === activeIndex + 1;
               const isPrev = index === activeIndex - 1;
 
-              let opacityClass = 'opacity-25 text-neutral-600';
+              let opacityClass = 'opacity-25 text-neutral-600 scale-[0.98]';
               if (isActive) {
                 opacityClass = 'opacity-100 text-white font-normal scale-[1.01] md:scale-[1.03]';
               } else if (isNext || isPrev) {
@@ -395,11 +418,31 @@ const FullscreenTranslationView: React.FC = () => {
                   onClick={() => {
                     setUserFocusedIndex(index);
                   }}
-                  className={`text-center leading-relaxed font-sans cursor-pointer transition-all duration-700 py-3 md:py-4 ${opacityClass}`}
-                  style={{ fontSize: `${displayFontSize}px` }}
+                  className={`text-center cursor-pointer transition-all duration-700 py-4 md:py-6 flex flex-col items-center gap-3 md:gap-4 ${opacityClass}`}
                 >
-                  <p className="font-light select-text">{ayah.text}</p>
-                  <p className={`mt-2 md:mt-3 text-[9px] md:text-[10px] font-mono tracking-widest transition-opacity duration-500 ${
+                  {/* Arabic text */}
+                  {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ARABIC_ONLY) && (
+                    <p 
+                      className="font-quran leading-[2.2] tracking-wide text-center"
+                      dir="rtl"
+                      style={{ fontSize: `${isMobile ? Math.min(arabicFontSize, 32) : arabicFontSize - 8}px` }}
+                    >
+                      {ayah.text}
+                    </p>
+                  )}
+
+                  {/* English text */}
+                  {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ENGLISH_ONLY) && englishAyah && (
+                    <p 
+                      className="font-light font-sans leading-relaxed text-center opacity-90 max-w-3xl"
+                      style={{ fontSize: `${displayFontSize}px` }}
+                    >
+                      {englishAyah.text}
+                    </p>
+                  )}
+
+                  {/* Metadata */}
+                  <p className={`text-[8px] md:text-[9px] font-mono tracking-widest transition-opacity duration-500 ${
                     isActive ? 'opacity-40 text-neutral-400' : 'opacity-0'
                   }`}>
                     Verse {ayah.numberInSurah}

@@ -11,13 +11,14 @@
   
   --font-sans: "Inter", "sans-serif";
   --font-amiri: "Amiri", "serif";
-  --font-quran: "KFGQPC_V2", "KFGQPC_V1", "Uthmani_Hafs", "Amiri", "serif";
+  --font-quran: KFGQPC_V2, KFGQPC_V1, Uthmani_Hafs, Amiri, serif;
 }
 
 /* Quranic Fonts */
 @font-face {
   font-family: 'KFGQPC_V2';
-  src: url('/fonts/hafssmart.8.ttf') format('truetype');
+  src: url('/fonts/kfgqpc-hafs.woff2') format('woff2'),
+       url('/fonts/kfgqpc-hafs.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -25,7 +26,8 @@
 
 @font-face {
   font-family: 'KFGQPC_V1';
-  src: url('/fonts/hafssmart.8.ttf') format('truetype');
+  src: url('/fonts/kfgqpc-hafs.woff2') format('woff2'),
+       url('/fonts/kfgqpc-hafs.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -33,10 +35,19 @@
 
 @font-face {
   font-family: 'Uthmani_Hafs';
-  src: url('/fonts/hafssmart.8.ttf') format('truetype');
+  src: url('/fonts/kfgqpc-hafs.woff2') format('woff2'),
+       url('/fonts/kfgqpc-hafs.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
+}
+
+/* Optimization for Arabic text and Quran fonts */
+.font-quran, [class*="font-quran"], [dir="rtl"] {
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "liga" on, "clig" on;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 :root {

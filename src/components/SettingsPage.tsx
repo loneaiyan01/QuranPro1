@@ -105,10 +105,10 @@ export const SettingsPage: React.FC = () => {
             <p className="text-[11px] text-muted leading-relaxed">
               Select which language views to display in the main reading view.
             </p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
               <button
                 onClick={() => setDisplayMode(DisplayMode.ENGLISH_ONLY)}
-                className={`py-3 text-xs font-semibold rounded-xl border transition-all active:scale-95 ${
+                className={`py-3 text-[10px] sm:text-xs px-1 sm:px-2 font-semibold rounded-xl border transition-all active:scale-95 ${
                   displayMode === DisplayMode.ENGLISH_ONLY
                     ? 'bg-accent text-white border-accent shadow-md shadow-accent/15'
                     : 'border-[var(--border)] bg-[var(--bg-sidebar)] text-muted hover:bg-white/5'
@@ -118,19 +118,25 @@ export const SettingsPage: React.FC = () => {
               </button>
               
               <button
-                disabled
-                className="py-3 text-xs font-semibold rounded-xl border border-[var(--border)] bg-black/20 text-muted opacity-40 cursor-not-allowed"
-                title="Arabic Mode Coming Soon"
+                onClick={() => setDisplayMode(DisplayMode.ARABIC_ONLY)}
+                className={`py-3 text-[10px] sm:text-xs px-1 sm:px-2 font-semibold rounded-xl border transition-all active:scale-95 ${
+                  displayMode === DisplayMode.ARABIC_ONLY
+                    ? 'bg-accent text-white border-accent shadow-md shadow-accent/15'
+                    : 'border-[var(--border)] bg-[var(--bg-sidebar)] text-muted hover:bg-white/5'
+                }`}
               >
-                Arabic (Soon)
+                Arabic Only
               </button>
               
               <button
-                disabled
-                className="py-3 text-xs font-semibold rounded-xl border border-[var(--border)] bg-black/20 text-muted opacity-40 cursor-not-allowed"
-                title="Split Mode Coming Soon"
+                onClick={() => setDisplayMode(DisplayMode.BOTH)}
+                className={`py-3 text-[10px] sm:text-xs px-1 sm:px-2 font-semibold rounded-xl border transition-all active:scale-95 ${
+                  displayMode === DisplayMode.BOTH
+                    ? 'bg-accent text-white border-accent shadow-md shadow-accent/15'
+                    : 'border-[var(--border)] bg-[var(--bg-sidebar)] text-muted hover:bg-white/5'
+                }`}
               >
-                Both (Soon)
+                Both
               </button>
             </div>
           </div>
