@@ -58,7 +58,7 @@ Custom spiritual dark palettes designed to minimize eye strain and match spiritu
    ```
 2. Navigate to the project directory:
    ```bash
-   cd "Quran Player"
+   cd QuranPro1
    ```
 3. Install dependencies:
    ```bash
