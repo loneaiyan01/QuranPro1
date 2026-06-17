@@ -4,7 +4,7 @@ import { useAudio } from '../contexts/AudioContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { DisplayMode, Ayah } from '../types';
-import { AlertTriangle, RefreshCw, Copy, Share2, Check, Search, X, Bookmark as BookmarkIcon } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Copy, Share2, Check, Search, X, Bookmark as BookmarkIcon, Play, Pause } from 'lucide-react';
 
 interface VerseItemProps {
     ayah: Ayah;
@@ -20,6 +20,8 @@ interface VerseItemProps {
     searchQuery: string;
     isBookmarked: boolean;
     onToggleBookmark: (e: React.MouseEvent) => void;
+    isVerseByVerse: boolean;
+    onClick?: () => void;
 }
 
 const VerseItem = React.memo<VerseItemProps>(({
@@ -35,7 +37,9 @@ const VerseItem = React.memo<VerseItemProps>(({
     surahName,
     searchQuery,
     isBookmarked,
-    onToggleBookmark
+    onToggleBookmark,
+    isVerseByVerse,
+    onClick
 }) => {
     const [copied, setCopied] = React.useState(false);
     
@@ -76,7 +80,10 @@ const VerseItem = React.memo<VerseItemProps>(({
     return (
         <div
             ref={innerRef}
-            className={`group p-5 md:p-10 rounded-2xl md:rounded-3xl transition-all duration-700 border ${isActive
+            onClick={isVerseByVerse ? onClick : undefined}
+            className={`group p-5 md:p-10 rounded-2xl md:rounded-3xl transition-all duration-700 border ${
+                isVerseByVerse ? 'cursor-pointer' : ''
+            } ${isActive
                 ? 'bg-[var(--bg-card-active)] border-[var(--border-active)] shadow-[var(--shadow-lg)] border-l-4'
                 : 'bg-transparent border-transparent hover:bg-white/5 active:bg-white/10'
                 }`}
@@ -84,11 +91,22 @@ const VerseItem = React.memo<VerseItemProps>(({
             {/* Header: Verse Number */}
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
-                    <span className={`w-10 h-10 flex items-center justify-center text-xs font-mono rounded-xl transition-all duration-500 shadow-sm border ${isActive
+                    <span className={`w-10 h-10 flex items-center justify-center text-xs font-mono rounded-xl transition-all duration-500 shadow-sm border relative overflow-hidden ${isActive
                         ? 'bg-accent text-white rotate-0 scale-110 border-accent'
                         : 'bg-[var(--bg-main)] text-accent rotate-45 group-hover:rotate-0 border-[var(--border)]'
                         }`}>
-                        <span className={isActive ? '' : '-rotate-45'}>{ayah.numberInSurah}</span>
+                        {isVerseByVerse && (
+                            <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-accent text-white rounded-xl">
+                                {isActive && isPlaying ? (
+                                    <Pause className="w-4 h-4 fill-current" />
+                                ) : (
+                                    <Play className="w-4 h-4 fill-current ml-0.5" />
+                                )}
+                            </span>
+                        )}
+                        <span className={`transition-opacity duration-300 ${isVerseByVerse ? 'group-hover:opacity-0' : ''} ${isActive ? '' : '-rotate-45'}`}>
+                            {ayah.numberInSurah}
+                        </span>
                     </span>
                     {isActive && isPlaying && (
                         <div className="flex items-center gap-2">
@@ -184,7 +202,8 @@ const ScrollingVerseDisplay: React.FC = () => {
         duration,
         currentAyahIndex,
         isFullSurahAudio,
-        isBuffering
+        isBuffering,
+        actions: audioActions
     } = useAudio();
     const {
         displayMode,
@@ -389,26 +408,44 @@ const ScrollingVerseDisplay: React.FC = () => {
                 {arabicSurah.ayahs.map((ayah, index) => {
                     const isActive = isVerseByVerse && index === currentAyahIndex;
                     const bookmarked = actions.isBookmarked(arabicSurah.number, ayah.numberInSurah);
+                    const currentJuz = ayah.juz;
+                    const prevJuz = index > 0 ? arabicSurah.ayahs[index - 1].juz : null;
+                    const showJuzHeader = prevJuz === null || prevJuz !== currentJuz;
+
                     return (
-                        <VerseItem
-                            key={ayah.number}
-                            ayah={ayah}
-                            englishAyah={englishSurah?.ayahs[index]}
-                            isActive={isActive}
-                            isPlaying={isActive && isPlaying}
-                            isBuffering={isActive && isBuffering}
-                            displayMode={displayMode}
-                            arabicFontSize={arabicFontSize}
-                            translationFontSize={translationFontSize}
-                            innerRef={el => { verseRefs.current[index] = el; }}
-                            surahName={arabicSurah.englishName}
-                            searchQuery={searchQuery}
-                            isBookmarked={bookmarked}
-                            onToggleBookmark={(e) => {
-                                e.stopPropagation();
-                                actions.toggleBookmark(arabicSurah.number, arabicSurah.englishName, ayah.numberInSurah);
-                            }}
-                        />
+                        <React.Fragment key={ayah.number}>
+                            {showJuzHeader && (
+                                <div className="flex items-center gap-4 py-6 px-4 select-none">
+                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--border)] to-[var(--border)]" />
+                                    <span className="px-4 py-1.5 rounded-full bg-accent-muted text-accent text-xs font-serif font-bold tracking-wider uppercase border border-accent/20 flex items-center gap-2">
+                                        <span>Juz {currentJuz}</span>
+                                        <span className="text-[10px] opacity-60">•</span>
+                                        <span className="font-sans font-medium text-[10px]">الجزء {currentJuz}</span>
+                                    </span>
+                                    <div className="h-px flex-1 bg-gradient-to-l from-transparent via-[var(--border)] to-[var(--border)]" />
+                                </div>
+                            )}
+                            <VerseItem
+                                ayah={ayah}
+                                englishAyah={englishSurah?.ayahs[index]}
+                                isActive={isActive}
+                                isPlaying={isActive && isPlaying}
+                                isBuffering={isActive && isBuffering}
+                                displayMode={displayMode}
+                                arabicFontSize={arabicFontSize}
+                                translationFontSize={translationFontSize}
+                                innerRef={el => { verseRefs.current[index] = el; }}
+                                surahName={arabicSurah.englishName}
+                                searchQuery={searchQuery}
+                                isBookmarked={bookmarked}
+                                onToggleBookmark={(e) => {
+                                    e.stopPropagation();
+                                    actions.toggleBookmark(arabicSurah.number, arabicSurah.englishName, ayah.numberInSurah);
+                                }}
+                                isVerseByVerse={isVerseByVerse}
+                                onClick={() => audioActions.playVerse(index)}
+                            />
+                        </React.Fragment>
                     );
                 })}
             </div>

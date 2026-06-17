@@ -25,6 +25,7 @@ interface AudioContextType {
         setAyahIndex: (index: number) => void;
         setSleepTimer: (minutes: number | null) => void;
         setVerseRepeatLimit: (limit: number) => void;
+        playVerse: (index: number) => void;
     };
 }
 
@@ -554,6 +555,32 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setSleepTimer(minutes);
     }, []);
 
+    const playVerse = useCallback((index: number) => {
+        if (isFullSurahAudio) return;
+
+        if (currentAyahIndex === index) {
+            togglePlay();
+        } else {
+            setCurrentAyahIndex(index);
+            setIsPlaying(true);
+            
+            if (audioRef.current && audioData[index]) {
+                const targetSrc = audioData[index].audio;
+                if (audioRef.current.src !== targetSrc) {
+                    audioRef.current.src = targetSrc;
+                    audioRef.current.load();
+                }
+                audioRef.current.volume = 0;
+                audioRef.current.play().then(() => {
+                    fadeAudioIn();
+                }).catch(e => {
+                    console.error("Play verse failed", e);
+                    setIsPlaying(false);
+                });
+            }
+        }
+    }, [isFullSurahAudio, currentAyahIndex, togglePlay, audioData, fadeAudioIn]);
+
     const audioActions = useMemo(() => ({
         togglePlay,
         play,
@@ -563,8 +590,9 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         seek,
         setAyahIndex,
         setSleepTimer: handleSetSleepTimer,
-        setVerseRepeatLimit
-    }), [togglePlay, play, pause, nextAyah, prevAyah, seek, setAyahIndex, handleSetSleepTimer]);
+        setVerseRepeatLimit,
+        playVerse
+    }), [togglePlay, play, pause, nextAyah, prevAyah, seek, setAyahIndex, handleSetSleepTimer, playVerse]);
 
     return (
         <AudioContext.Provider

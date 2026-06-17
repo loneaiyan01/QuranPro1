@@ -15,11 +15,13 @@ import {
   Heart
 } from 'lucide-react';
 import { Surah } from '../types';
+import { JUZ_LIST } from '../utils/juzData';
 
 export const HomePage: React.FC = () => {
   const { surahs, bookmarks, actions: quranActions } = useQuran();
   const { actions: audioActions } = useAudio();
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'surah' | 'juz'>('surah');
   
   // Last played session state
   const [sessionData, setSessionData] = useState<{
@@ -56,6 +58,17 @@ export const HomePage: React.FC = () => {
     await quranActions.selectSurah(surah);
   };
 
+  const handlePlayJuz = async (juz: typeof JUZ_LIST[0]) => {
+    const targetSurah = surahs.find(s => s.number === juz.startSurahNumber);
+    if (targetSurah) {
+      await quranActions.selectSurah(targetSurah);
+      audioActions.setAyahIndex(juz.startAyahNumber - 1);
+      setTimeout(() => {
+        audioActions.play();
+      }, 300);
+    }
+  };
+
   const popularSurahsList = useMemo(() => {
     const popularNumbers = [1, 18, 36, 55, 56, 67]; // Al-Fatiha, Al-Kahf, Yaseen, Ar-Rahman, Al-Waqi'ah, Al-Mulk
     return surahs.filter(s => popularNumbers.includes(s.number))
@@ -69,6 +82,18 @@ export const HomePage: React.FC = () => {
       s.number.toString().includes(searchQuery)
     );
   }, [surahs, searchQuery]);
+
+  const filteredJuzs = useMemo(() => {
+    if (!searchQuery) return JUZ_LIST;
+    const q = searchQuery.toLowerCase();
+    return JUZ_LIST.filter(j =>
+      j.number.toString().includes(q) ||
+      j.nameEnglish.toLowerCase().includes(q) ||
+      j.startSurahName.toLowerCase().includes(q) ||
+      j.endSurahName.toLowerCase().includes(q) ||
+      j.description.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
 
   return (
     <div className="flex-1 overflow-y-auto px-4 pt-24 pb-28 md:py-12 lg:px-12 custom-scrollbar">
@@ -237,12 +262,32 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
 
-        {/* All Surahs Grid with Search */}
+        {/* All Surahs/Juzs Grid with Search */}
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border)] pb-4">
-            <div className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-accent" />
-              <h2 className="text-xl font-serif font-bold text-main">All Surahs</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border)] pb-2">
+            <div className="flex items-center gap-6">
+              <button
+                onClick={() => { setActiveTab('surah'); setSearchQuery(''); }}
+                className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-serif font-bold text-lg md:text-xl transition-all duration-300 ${
+                  activeTab === 'surah'
+                    ? 'border-accent text-accent'
+                    : 'border-transparent text-muted hover:text-main'
+                }`}
+              >
+                <BookOpen className="w-5 h-5" />
+                <span>All Surahs</span>
+              </button>
+              <button
+                onClick={() => { setActiveTab('juz'); setSearchQuery(''); }}
+                className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-serif font-bold text-lg md:text-xl transition-all duration-300 ${
+                  activeTab === 'juz'
+                    ? 'border-accent text-accent'
+                    : 'border-transparent text-muted hover:text-main'
+                }`}
+              >
+                <Compass className="w-5 h-5" />
+                <span>All Juzs</span>
+              </button>
             </div>
             
             {/* Search Input */}
@@ -250,7 +295,7 @@ export const HomePage: React.FC = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
               <input
                 type="text"
-                placeholder="Search by name or number..."
+                placeholder={activeTab === 'surah' ? "Search by name or number..." : "Search Juz by number or surah name..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-8 py-2 bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 text-main placeholder-muted"
@@ -266,47 +311,93 @@ export const HomePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Surah List Grid */}
-          {filteredSurahs.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredSurahs.map((surah) => (
-                <div
-                  key={surah.number}
-                  onClick={() => handlePlaySurah(surah)}
-                  className="group cursor-pointer p-4 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-[0.97] flex items-center justify-between gap-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 rounded-xl bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold group-hover:scale-105 transition-transform">
-                      {surah.number}
-                    </span>
-                    <div>
-                      <h4 className="font-semibold text-sm text-main group-hover:text-accent transition-colors line-clamp-1">
-                        {surah.englishName}
-                      </h4>
-                      <p className="text-[11px] text-muted line-clamp-1 mt-0.5">
-                        {surah.englishNameTranslation}
-                      </p>
+          {/* List Grid based on Active Tab */}
+          {activeTab === 'surah' ? (
+            filteredSurahs.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredSurahs.map((surah) => (
+                  <div
+                    key={surah.number}
+                    onClick={() => handlePlaySurah(surah)}
+                    className="group cursor-pointer p-4 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-[0.97] flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="w-9 h-9 rounded-xl bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold group-hover:scale-105 transition-transform">
+                        {surah.number}
+                      </span>
+                      <div>
+                        <h4 className="font-semibold text-sm text-main group-hover:text-accent transition-colors line-clamp-1">
+                          {surah.englishName}
+                        </h4>
+                        <p className="text-[11px] text-muted line-clamp-1 mt-0.5">
+                          {surah.englishNameTranslation}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <span className="inline-block px-1.5 py-0.5 rounded bg-white/5 text-[9px] font-medium text-muted uppercase tracking-wider">
+                        {surah.revelationType}
+                      </span>
+                      <p className="text-[10px] text-muted mt-1">{surah.numberOfAyahs} ayahs</p>
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <span className="inline-block px-1.5 py-0.5 rounded bg-white/5 text-[9px] font-medium text-muted uppercase tracking-wider">
-                      {surah.revelationType}
-                    </span>
-                    <p className="text-[10px] text-muted mt-1">{surah.numberOfAyahs} ayahs</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 px-4 space-y-3">
+                <p className="text-sm text-muted">No Surahs found matching "{searchQuery}"</p>
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="text-xs font-medium text-accent hover:underline"
+                >
+                  Clear Search Query
+                </button>
+              </div>
+            )
           ) : (
-            <div className="text-center py-16 px-4 space-y-3">
-              <p className="text-sm text-muted">No Surahs found matching "{searchQuery}"</p>
-              <button 
-                onClick={() => setSearchQuery('')}
-                className="text-xs font-medium text-accent hover:underline"
-              >
-                Clear Search Query
-              </button>
-            </div>
+            filteredJuzs.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredJuzs.map((juz) => (
+                  <div
+                    key={juz.number}
+                    onClick={() => handlePlayJuz(juz)}
+                    className="group cursor-pointer p-4 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-[0.97] flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="w-9 h-9 rounded-xl bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold group-hover:scale-105 transition-transform flex-shrink-0">
+                        {juz.number}
+                      </span>
+                      <div>
+                        <h4 className="font-semibold text-sm text-main group-hover:text-accent transition-colors line-clamp-1">
+                          {juz.nameEnglish}
+                        </h4>
+                        <p className="text-[11px] text-muted line-clamp-1 mt-0.5">
+                          {juz.description}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0 flex items-center gap-2">
+                      <span className="inline-block px-1.5 py-0.5 rounded bg-white/5 text-[9px] font-medium text-muted uppercase tracking-wider font-mono">
+                        {juz.nameArabic}
+                      </span>
+                      <span className="p-1.5 rounded-lg bg-accent-muted text-accent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
+                        <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 px-4 space-y-3">
+                <p className="text-sm text-muted">No Juzs found matching "{searchQuery}"</p>
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="text-xs font-medium text-accent hover:underline"
+                >
+                  Clear Search Query
+                </button>
+              </div>
+            )
           )}
         </div>
 

@@ -7,8 +7,12 @@ import {
   Bookmark as BookmarkIcon, 
   Settings, 
   X, 
-  Search 
+  Search,
+  Compass,
+  Play
 } from 'lucide-react';
+import { useAudio } from '../contexts/AudioContext';
+import { JUZ_LIST } from '../utils/juzData';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -22,13 +26,34 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     currentPage,
     actions
   } = useQuran();
+  
+  const { actions: audioActions } = useAudio();
 
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [activeTab, setActiveTab] = React.useState<'surah' | 'juz'>('surah');
 
   const filteredSurahs = surahs.filter(s =>
     s.englishName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.number.toString().includes(searchQuery)
   );
+
+  const filteredJuzs = JUZ_LIST.filter(j =>
+    j.nameEnglish.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    j.number.toString().includes(searchQuery) ||
+    j.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleSelectJuz = async (juz: typeof JUZ_LIST[0]) => {
+    const targetSurah = surahs.find(s => s.number === juz.startSurahNumber);
+    if (targetSurah) {
+      await actions.selectSurah(targetSurah);
+      audioActions.setAyahIndex(juz.startAyahNumber - 1);
+      setTimeout(() => {
+        audioActions.play();
+      }, 300);
+      onClose();
+    }
+  };
 
   return (
     <>
@@ -144,50 +169,90 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        {/* Scrollable Quick Browse Surahs */}
+        {/* Scrollable Quick Browse Surahs / Juzs */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col min-h-0">
-          <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted mb-3 px-1">
-            Quick Browse Surahs
-          </h3>
+          <div className="flex border-b border-[var(--border)] mb-3 flex-shrink-0">
+            <button
+              onClick={() => { setActiveTab('surah'); setSearchQuery(''); }}
+              className={`flex-1 text-center pb-2 text-[11px] font-bold uppercase tracking-wider transition-all duration-300 border-b-2 ${
+                activeTab === 'surah'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-muted hover:text-main'
+              }`}
+            >
+              Surahs
+            </button>
+            <button
+              onClick={() => { setActiveTab('juz'); setSearchQuery(''); }}
+              className={`flex-1 text-center pb-2 text-[11px] font-bold uppercase tracking-wider transition-all duration-300 border-b-2 ${
+                activeTab === 'juz'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-muted hover:text-main'
+              }`}
+            >
+              Juzs
+            </button>
+          </div>
           <div className="relative mb-3 flex-shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" />
             <input
               type="text"
-              placeholder="Filter Surahs..."
+              placeholder={activeTab === 'surah' ? "Filter Surahs..." : "Filter Juzs..."}
               className="w-full pl-9 pr-4 py-2 bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-accent/50 text-main"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <div className="space-y-1 overflow-y-auto flex-1 custom-scrollbar">
-            {filteredSurahs.map((surah) => (
-              <button
-                key={surah.number}
-                onClick={() => {
-                  actions.selectSurah(surah);
-                  onClose();
-                }}
-                className={`w-full text-left px-3 py-2 rounded-lg flex items-center justify-between transition-colors ${
-                  currentSurah?.number === surah.number
-                    ? 'bg-accent-muted text-accent font-semibold'
-                    : 'hover:bg-accent-muted/30 text-main'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className={`text-[10px] w-6 h-6 rounded-md flex items-center justify-center ${
+            {activeTab === 'surah' ? (
+              filteredSurahs.map((surah) => (
+                <button
+                  key={surah.number}
+                  onClick={() => {
+                    actions.selectSurah(surah);
+                    onClose();
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-lg flex items-center justify-between transition-colors ${
                     currentSurah?.number === surah.number
-                      ? 'bg-accent text-white'
-                      : 'bg-[var(--bg-sidebar)] text-muted'
-                  }`}>
-                    {surah.number}
-                  </span>
-                  <div>
-                    <p className="text-xs font-semibold">{surah.englishName}</p>
-                    <p className="text-[9px] opacity-70">{surah.englishNameTranslation}</p>
+                      ? 'bg-accent-muted text-accent font-semibold'
+                      : 'hover:bg-accent-muted/30 text-main'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className={`text-[10px] w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 ${
+                      currentSurah?.number === surah.number
+                        ? 'bg-accent text-white'
+                        : 'bg-[var(--bg-sidebar)] text-muted'
+                    }`}>
+                      {surah.number}
+                    </span>
+                    <div>
+                      <p className="text-xs font-semibold">{surah.englishName}</p>
+                      <p className="text-[9px] opacity-70">{surah.englishNameTranslation}</p>
+                    </div>
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              ))
+            ) : (
+              filteredJuzs.map((juz) => (
+                <button
+                  key={juz.number}
+                  onClick={() => handleSelectJuz(juz)}
+                  className="w-full text-left px-3 py-2 rounded-lg flex items-center justify-between transition-colors hover:bg-accent-muted/30 text-main"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="text-[10px] w-6 h-6 rounded-md flex items-center justify-center bg-[var(--bg-sidebar)] text-muted flex-shrink-0">
+                      {juz.number}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold truncate">{juz.nameEnglish}</p>
+                      <p className="text-[9px] opacity-70 truncate">{juz.description}</p>
+                    </div>
+                  </div>
+                  <span className="text-[9px] font-mono text-muted flex-shrink-0">{juz.nameArabic}</span>
+                </button>
+              ))
+            )}
           </div>
         </div>
 
