@@ -19,6 +19,8 @@ interface QuranContextType {
         selectReciter: (reciter: Reciter) => void;
         toggleRadioMode: (active: boolean) => void;
         nextRadioSurah: () => void;
+        nextSurah: () => Promise<void>;
+        prevSurah: () => Promise<void>;
         retryLoadContent: () => void;
         toggleBookmark: (surahNumber: number, surahEnglishName: string, ayahNumberInSurah: number) => void;
         isBookmarked: (surahNumber: number, ayahNumberInSurah: number) => boolean;
@@ -272,17 +274,39 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         return bookmarkSet.has(`${surahNumber}:${ayahNumberInSurah}`);
     }, [bookmarkSet]);
 
+    const nextSurah = useCallback(async () => {
+        if (!currentSurah || surahs.length === 0) return;
+        if (currentSurah.number < 114) {
+            const next = surahs.find(s => s.number === currentSurah.number + 1);
+            if (next) {
+                await selectSurah(next, isRadioMode);
+            }
+        }
+    }, [currentSurah, surahs, selectSurah, isRadioMode]);
+
+    const prevSurah = useCallback(async () => {
+        if (!currentSurah || surahs.length === 0) return;
+        if (currentSurah.number > 1) {
+            const prev = surahs.find(s => s.number === currentSurah.number - 1);
+            if (prev) {
+                await selectSurah(prev, isRadioMode);
+            }
+        }
+    }, [currentSurah, surahs, selectSurah, isRadioMode]);
+
     const actions = useMemo(() => ({
         selectSurah,
         selectReciter,
         toggleRadioMode,
         nextRadioSurah,
+        nextSurah,
+        prevSurah,
         retryLoadContent,
         toggleBookmark,
         isBookmarked,
         resetToHome,
         setCurrentPage
-    }), [selectSurah, selectReciter, toggleRadioMode, nextRadioSurah, retryLoadContent, toggleBookmark, isBookmarked, resetToHome, setCurrentPage]);
+    }), [selectSurah, selectReciter, toggleRadioMode, nextRadioSurah, nextSurah, prevSurah, retryLoadContent, toggleBookmark, isBookmarked, resetToHome, setCurrentPage]);
 
     return (
         <QuranContext.Provider
