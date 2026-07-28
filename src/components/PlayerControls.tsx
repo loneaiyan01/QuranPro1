@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Repeat, Clock, Hourglass } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Repeat, Clock, Hourglass, SlidersHorizontal, X } from 'lucide-react';
 import { useAudio } from '../contexts/AudioContext';
 import { useQuran } from '../contexts/QuranContext';
 import { formatTime, getRepeatText } from '../utils/formatTime';
@@ -18,7 +18,8 @@ const PlayerControls: React.FC = () => {
     pauseCountdown,
     isFullSurahAudio,
     sleepTimer,
-    actions: { togglePlay, nextAyah, prevAyah, seek, setVerseRepeatLimit, setSleepTimer }
+    playbackRange,
+    actions: { togglePlay, nextAyah, prevAyah, seek, setVerseRepeatLimit, setSleepTimer, setPlaybackRange }
   } = useAudio();
 
   const { currentSurah, selectedReciter, surahText, isRadioMode } = useQuran();
@@ -56,6 +57,24 @@ const PlayerControls: React.FC = () => {
 
   return (
     <div className="glass-panel border-t relative z-30">
+      {/* Active Range Indicator Banner */}
+      {playbackRange && (
+        <div className="bg-accent/15 border-b border-accent/20 py-1 px-4 text-center flex items-center justify-center gap-2.5 animate-in fade-in duration-300">
+          <span className="text-[11px] text-accent font-semibold flex items-center gap-1.5">
+            <SlidersHorizontal className="w-3 h-3 flex-shrink-0" />
+            <span>Range: Ayah {playbackRange.startAyah + 1} – {playbackRange.endAyah + 1}</span>
+          </span>
+          <button
+            onClick={() => setPlaybackRange(null)}
+            className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-accent/20 hover:bg-accent/30 text-accent uppercase tracking-wider transition-colors flex items-center gap-1"
+            title="Clear range"
+          >
+            <X className="w-2.5 h-2.5" />
+            <span>Clear</span>
+          </button>
+        </div>
+      )}
+
       {/* Reflection Pause Indicator */}
       {isPausingBetweenVerses && (
         <div className="bg-accent/15 border-b border-accent/20 py-1 px-4 text-center animate-in fade-in duration-300">

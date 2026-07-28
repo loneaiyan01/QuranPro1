@@ -11,18 +11,21 @@ import {
   ChevronRight, 
   X,
   History,
-  Layers
+  Layers,
+  SlidersHorizontal
 } from 'lucide-react';
 import { Surah, RecentSurahItem } from '../types';
 import { JUZ_LIST } from '../utils/juzData';
 import { HIZB_LIST } from '../utils/hizbData';
 import { formatRelativeTime } from '../utils/formatTime';
+import { RangeModal } from './RangeModal';
 
 export const HomePage: React.FC = () => {
   const { surahs, actions: quranActions } = useQuran();
   const { actions: audioActions } = useAudio();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'surah' | 'juz' | 'hizb'>('surah');
+  const [isRangeModalOpen, setIsRangeModalOpen] = useState(false);
   
   // Last played session & Recently played Surahs state
   const [sessionData, setSessionData] = useState<{
@@ -164,28 +167,25 @@ export const HomePage: React.FC = () => {
             <Play className="w-3.5 h-3.5 text-accent fill-current flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
           </button>
 
-          {/* Resume Session Button (if active session exists) */}
-          {sessionData && (
-            <button
-              onClick={handleResume}
-              className="group flex-1 flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 active:scale-[0.98] text-left min-w-0"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="w-8 h-8 rounded-lg bg-accent-muted text-accent flex items-center justify-center flex-shrink-0 group-hover:bg-accent group-hover:text-white transition-colors">
-                  <Clock className="w-4 h-4" />
-                </span>
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-main group-hover:text-accent transition-colors">
-                    Resume Session
-                  </div>
-                  <p className="text-[10px] text-muted truncate mt-0.5">
-                    Surah {sessionData.surahEnglishName} • Verse {sessionData.ayahIndex + 1}
-                  </p>
+          {/* Play Verse Range Button */}
+          <button
+            onClick={() => setIsRangeModalOpen(true)}
+            className="group flex-1 flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 active:scale-[0.98] text-left min-w-0"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="w-8 h-8 rounded-lg bg-accent-muted text-accent flex items-center justify-center flex-shrink-0 group-hover:bg-accent group-hover:text-white transition-colors">
+                <SlidersHorizontal className="w-4 h-4" />
+              </span>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-main group-hover:text-accent transition-colors flex items-center gap-2">
+                  <span>Play Verse Range</span>
+                  <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-accent/15 text-accent uppercase tracking-wider flex-shrink-0">Custom</span>
                 </div>
+                <p className="text-[10px] text-muted truncate mt-0.5">Play any range from verse to verse</p>
               </div>
-              <Play className="w-3.5 h-3.5 text-accent fill-current flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
-            </button>
-          )}
+            </div>
+            <Play className="w-3.5 h-3.5 text-accent fill-current flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
+          </button>
 
           {/* Top Search Bar */}
           <div className="flex-1 sm:flex-[1.2] relative min-w-0 w-full">
@@ -449,6 +449,12 @@ export const HomePage: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Play Verse Range Modal */}
+      <RangeModal 
+        isOpen={isRangeModalOpen} 
+        onClose={() => setIsRangeModalOpen(false)} 
+      />
     </div>
   );
 };

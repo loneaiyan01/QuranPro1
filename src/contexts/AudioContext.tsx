@@ -5,6 +5,11 @@ import { fetchSurahAudio } from '../services/api';
 
 export type VersePauseDelay = number | 'equal';
 
+export interface PlaybackRange {
+    startAyah: number; // 0-indexed
+    endAyah: number;   // 0-indexed
+}
+
 interface AudioContextType {
     isPlaying: boolean;
     progress: number;
@@ -20,6 +25,7 @@ interface AudioContextType {
     versePauseDelay: VersePauseDelay;
     isPausingBetweenVerses: boolean;
     pauseCountdown: number;
+    playbackRange: PlaybackRange | null;
     actions: {
         togglePlay: () => void;
         play: () => void;
@@ -33,6 +39,7 @@ interface AudioContextType {
         setVersePauseDelay: (delay: VersePauseDelay) => void;
         cancelVersePause: () => void;
         playVerse: (index: number) => void;
+        setPlaybackRange: (range: PlaybackRange | null) => void;
     };
 }
 
@@ -54,6 +61,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const [isBuffering, setIsBuffering] = useState<boolean>(false);
     const [sleepTimer, setSleepTimer] = useState<number | null>(null);
     const [verseRepeatLimit, setVerseRepeatLimit] = useState<number>(1);
+    const [playbackRange, setPlaybackRange] = useState<PlaybackRange | null>(null);
 
     // Verse Pause Delay State
     const [versePauseDelay, setVersePauseDelayState] = useState<VersePauseDelay>(() => {
@@ -121,7 +129,9 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         surahs,
         selectSurah: actions.selectSurah,
         nextSurah: actions.nextSurah,
-        prevSurah: actions.prevSurah
+        prevSurah: actions.prevSurah,
+        playbackRange,
+        setPlaybackRange
     });
 
     useEffect(() => {
@@ -139,9 +149,11 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             surahs,
             selectSurah: actions.selectSurah,
             nextSurah: actions.nextSurah,
-            prevSurah: actions.prevSurah
+            prevSurah: actions.prevSurah,
+            playbackRange,
+            setPlaybackRange
         };
-    }, [isRadioMode, isFullSurahAudio, currentAyahIndex, surahText, isPlaying, actions.nextRadioSurah, verseRepeatLimit, versePauseDelay, cancelVersePause, currentSurah, surahs, actions.selectSurah, actions.nextSurah, actions.prevSurah]);
+    }, [isRadioMode, isFullSurahAudio, currentAyahIndex, surahText, isPlaying, actions.nextRadioSurah, verseRepeatLimit, versePauseDelay, cancelVersePause, currentSurah, surahs, actions.selectSurah, actions.nextSurah, actions.prevSurah, playbackRange]);
 
     // Effect: Clean up intervals on unmount
     useEffect(() => {
@@ -395,8 +407,20 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 currentSurah,
                 surahs,
                 selectSurah,
-                nextSurah
+                nextSurah,
+                playbackRange,
+                setPlaybackRange
             } = stateRef.current;
+
+            // Check if current verse reached end of playback range
+            if (playbackRange && currentAyahIndex >= playbackRange.endAyah) {
+                if (audioRef.current) {
+                    audioRef.current.pause();
+                }
+                setIsPlaying(false);
+                setPlaybackRange(null);
+                return;
+            }
 
             // Check if we need to repeat the current verse (only in verse-by-verse mode)
             if (!isFullSurahAudio && surahText) {
@@ -810,8 +834,9 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setVerseRepeatLimit,
         setVersePauseDelay,
         cancelVersePause,
-        playVerse
-    }), [togglePlay, play, pause, nextAyah, prevAyah, seek, setAyahIndex, handleSetSleepTimer, setVerseRepeatLimit, setVersePauseDelay, cancelVersePause, playVerse]);
+        playVerse,
+        setPlaybackRange
+    }), [togglePlay, play, pause, nextAyah, prevAyah, seek, setAyahIndex, handleSetSleepTimer, setVerseRepeatLimit, setVersePauseDelay, cancelVersePause, playVerse, setPlaybackRange]);
 
     return (
         <AudioContext.Provider
@@ -830,6 +855,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 versePauseDelay,
                 isPausingBetweenVerses,
                 pauseCountdown,
+                playbackRange,
                 actions: audioActions
             }}
         >
