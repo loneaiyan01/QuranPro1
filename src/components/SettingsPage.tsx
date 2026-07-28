@@ -11,7 +11,8 @@ import {
   User, 
   Clock, 
   Repeat,
-  Hourglass
+  Hourglass,
+  Volume2
 } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
@@ -240,36 +241,43 @@ export const SettingsPage: React.FC = () => {
 
           {/* Reciter Configuration */}
           <div className="glass-panel p-6 rounded-2xl border border-[var(--border)] space-y-6 md:col-span-2">
-            <h3 className="text-sm font-bold text-main flex items-center gap-2 border-b border-[var(--border)] pb-3">
-              <User className="w-4 h-4 text-accent" />
-              Active Reciter
-            </h3>
-            <p className="text-xs text-muted leading-relaxed">
-              Select your preferred recitation audio. Currently, Muhammad Ayoub and Ali Al Hudaify are supported for verse-by-verse playback.
-            </p>
+            <div className="border-b border-[var(--border)] pb-3">
+              <h3 className="text-[15px] font-bold text-main flex items-center gap-2">
+                <Volume2 className="w-4 h-4 text-accent" />
+                Active Reciter
+              </h3>
+              <p className="text-xs text-muted leading-relaxed mt-0.5">
+                Select your preferred Qari. Reciters with <span className="text-accent font-semibold">Sync</span> automatically highlight and scroll each Ayah in real-time.
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
               {reciters.map((reciter) => {
-                const isEnabled = reciter.identifier === 'ar.muhammadayyoub' || reciter.identifier === 'ar.hudhaify';
+                const isVBV = reciter.isVerseByVerse !== false;
                 const isSelected = selectedReciter?.identifier === reciter.identifier;
                 return (
                   <button
                     key={reciter.identifier}
-                    disabled={!isEnabled}
                     onClick={() => quranActions.selectReciter(reciter)}
-                    className={`p-4 rounded-xl border text-left flex justify-between items-center transition-all active:scale-[0.99] ${
+                    className={`p-4 rounded-xl border text-left flex justify-between items-center transition-all active:scale-[0.99] cursor-pointer ${
                       isSelected
                         ? 'border-accent bg-accent-muted text-accent shadow-md'
-                        : isEnabled
-                          ? 'border-[var(--border)] bg-[var(--bg-sidebar)] text-main hover:bg-white/5'
-                          : 'border-[var(--border)] bg-black/20 text-muted opacity-40 cursor-not-allowed'
+                        : 'border-[var(--border)] bg-[var(--bg-sidebar)] text-main hover:bg-white/5'
                     }`}
                   >
-                    <div>
-                      <h4 className="font-semibold text-sm">{reciter.englishName}</h4>
-                      <p className="text-[10px] opacity-75">{reciter.name}</p>
+                    <div className="space-y-0.5 min-w-0 pr-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-semibold text-sm truncate">{reciter.englishName}</h4>
+                        {isVBV ? (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-accent/15 text-accent uppercase tracking-wider flex-shrink-0">Sync</span>
+                        ) : (
+                          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-white/10 text-muted uppercase tracking-wider flex-shrink-0">Surah</span>
+                        )}
+                      </div>
+                      <p className="text-[10px] opacity-75 truncate">{reciter.name}</p>
                     </div>
                     {isSelected && (
-                      <span className="w-2.5 h-2.5 rounded-full bg-accent animate-ping" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-accent animate-ping flex-shrink-0 ml-2" />
                     )}
                   </button>
                 );

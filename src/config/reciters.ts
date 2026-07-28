@@ -1,15 +1,21 @@
 import { Reciter } from '../types';
 
 export const ALLOWED_IDENTIFIERS = [
-  'ar.abdurrahmaansudais',  // Sudais
-  'ar.saoodshuraym',        // Shuraim
-  'ar.mahermuaiqly',        // Maher
   'ar.muhammadayyoub',      // Muhammad Ayyub
-  'ar.hudhaify',            // Hudhaify
-  'ar.minshawi',            // Minshawi (Murattal)
-  'ar.yasseraldosari',      // Yasser Al-Dosari (Manual)
-  'ar.muhammadalluhaidan',  // Luhaidan (Manual)
-  'ar.ahmedtalib'           // Ahmed bin Talib (Manual)
+  'ar.hudhaify',            // Ali Al-Hudhaify
+  'ar.alafasy',             // Mishary Rashid Alafasy
+  'ar.abdurrahmaansudais',  // Abdur-Rahman As-Sudais
+  'ar.saoodshuraym',        // Sa'ood Ash-Shuraym
+  'ar.mahermuaiqly',        // Maher Al-Muaiqly
+  'ar.minshawi',            // Mohamed Siddiq Al-Minshawi (Murattal)
+  'ar.husary',              // Mahmoud Khalil Al-Husary
+  'ar.abdulbasitmurattal',  // Abdul Basit Abdul Samad (Murattal)
+  'ar.shaatree',            // Abu Bakr Al-Shatri
+  'ar.hanrifai',            // Hani Ar-Rifai
+  'ar.gammed',              // Saad Al-Ghamdi
+  'ar.yasseraldosari',      // Yasser Al-Dosari (Manual Surah-level)
+  'ar.muhammadalluhaidan',  // Luhaidan (Manual Surah-level)
+  'ar.ahmedtalib'           // Ahmed bin Talib (Manual Surah-level)
 ];
 
 export const MANUAL_RECITERS: Reciter[] = [
