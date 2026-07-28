@@ -65,6 +65,20 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const [verseRepeatLimit, setVerseRepeatLimit] = useState<number>(1);
     const [playbackRange, setPlaybackRange] = useState<PlaybackRange | null>(null);
 
+    // Auto-clear malformed or legacy playbackRange objects
+    useEffect(() => {
+        if (playbackRange) {
+            if (
+                typeof playbackRange.startSurahNumber !== 'number' ||
+                typeof playbackRange.startAyahIndex !== 'number' ||
+                typeof playbackRange.endSurahNumber !== 'number' ||
+                typeof playbackRange.endAyahIndex !== 'number'
+            ) {
+                setPlaybackRange(null);
+            }
+        }
+    }, [playbackRange]);
+
     // Verse Pause Delay State
     const [versePauseDelay, setVersePauseDelayState] = useState<VersePauseDelay>(() => {
         try {

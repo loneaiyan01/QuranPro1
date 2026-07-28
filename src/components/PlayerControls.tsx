@@ -55,13 +55,21 @@ const PlayerControls: React.FC = () => {
     }
   };
 
-  const startSurahObj = playbackRange ? surahs.find(s => s.number === playbackRange.startSurahNumber) : null;
-  const endSurahObj = playbackRange ? surahs.find(s => s.number === playbackRange.endSurahNumber) : null;
+  const isValidPlaybackRange = Boolean(
+    playbackRange &&
+    typeof playbackRange.startSurahNumber === 'number' &&
+    typeof playbackRange.startAyahIndex === 'number' &&
+    typeof playbackRange.endSurahNumber === 'number' &&
+    typeof playbackRange.endAyahIndex === 'number'
+  );
+
+  const startSurahObj = isValidPlaybackRange ? surahs.find(s => s.number === playbackRange!.startSurahNumber) : null;
+  const endSurahObj = isValidPlaybackRange ? surahs.find(s => s.number === playbackRange!.endSurahNumber) : null;
 
   return (
     <div className="glass-panel border-t relative z-30">
       {/* Active Range Indicator Banner */}
-      {playbackRange && (
+      {isValidPlaybackRange && playbackRange && (
         <div className="bg-accent/15 border-b border-accent/20 py-1 px-4 text-center flex items-center justify-center gap-2.5 animate-in fade-in duration-300">
           <span className="text-[11px] text-accent font-semibold flex items-center gap-1.5 truncate max-w-[85vw] sm:max-w-none">
             <SlidersHorizontal className="w-3 h-3 flex-shrink-0" />
