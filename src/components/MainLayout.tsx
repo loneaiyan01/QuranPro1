@@ -21,34 +21,6 @@ const MainLayout: React.FC = () => {
     const { isRadioMode, currentSurah, currentPage, actions: quranActions } = useQuran();
     const { isFullscreenTranslation, setIsFullscreenTranslation } = useTheme();
 
-    // Swipe gestures on mobile
-    const [touchStartX, setTouchStartX] = useState<number | null>(null);
-    const [touchEndX, setTouchEndX] = useState<number | null>(null);
-
-    const onTouchStart = useCallback((e: React.TouchEvent) => {
-        setTouchEndX(null);
-        setTouchStartX(e.targetTouches[0].clientX);
-    }, []);
-
-    const onTouchMove = useCallback((e: React.TouchEvent) => {
-        setTouchEndX(e.targetTouches[0].clientX);
-    }, []);
-
-    const onTouchEnd = useCallback(() => {
-        if (touchStartX === null || touchEndX === null) return;
-        const distance = touchStartX - touchEndX;
-        const minSwipeDistance = 60; // minimum distance in px to trigger swipe
-
-        // Left swipe (close sidebar)
-        if (distance > minSwipeDistance && isSidebarOpen) {
-            setIsSidebarOpen(false);
-        }
-        // Right swipe (open sidebar)
-        if (distance < -minSwipeDistance && !isSidebarOpen) {
-            setIsSidebarOpen(true);
-        }
-    }, [touchStartX, touchEndX, isSidebarOpen]);
-
     // Update sidebar state when page changes (closed on home, open on other pages on desktop)
     React.useEffect(() => {
         if (window.innerWidth >= 768 && currentPage !== 'home') {
@@ -104,12 +76,7 @@ const MainLayout: React.FC = () => {
     const isHome = currentPage === 'home';
 
     return (
-        <div 
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-            className="flex h-[100dvh] w-full relative overflow-hidden"
-        >
+        <div className="flex h-[100dvh] w-full relative overflow-hidden">
             {/* Fullscreen Translation Overlay */}
             {isFullscreenTranslation && <FullscreenTranslationView />}
 
