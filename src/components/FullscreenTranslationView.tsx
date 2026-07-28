@@ -5,7 +5,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { formatTime } from '../utils/formatTime';
 import { DisplayMode } from '../types';
-import { X, Play, Pause, SkipBack, SkipForward, Type, List, Tv, Maximize2, Clock, Lock, Unlock } from 'lucide-react';
+import { X, Play, Pause, SkipBack, SkipForward, Type, List, Tv, Maximize2, Clock, Lock, Unlock, Hourglass } from 'lucide-react';
 
 const FullscreenTranslationView: React.FC = () => {
   const { currentSurah, surahText, surahs, actions: quranActions } = useQuran();
@@ -18,7 +18,10 @@ const FullscreenTranslationView: React.FC = () => {
     isBuffering,
     isFullSurahAudio,
     sleepTimer,
-    actions: { togglePlay, nextAyah, prevAyah, seek, setSleepTimer }
+    versePauseDelay,
+    isPausingBetweenVerses,
+    pauseCountdown,
+    actions: { togglePlay, nextAyah, prevAyah, seek, setSleepTimer, setVersePauseDelay }
   } = useAudio();
 
   const {
@@ -349,6 +352,14 @@ const FullscreenTranslationView: React.FC = () => {
           </button>
         </div>
       </header>
+
+      {/* Reflection Pause Indicator Pill */}
+      {isPausingBetweenVerses && (
+        <div className="absolute top-16 sm:top-20 inset-x-0 mx-auto w-fit bg-black/85 border border-white/20 px-4 py-1.5 rounded-full text-xs font-semibold text-white backdrop-blur-md z-[60] flex items-center gap-2 animate-pulse shadow-2xl">
+          <Hourglass className="w-3.5 h-3.5 animate-spin text-[var(--accent)]" />
+          <span>Reflection Pause ({pauseCountdown}s)</span>
+        </div>
+      )}
 
       {/* CORE DISPLAY CANVAS */}
       <main className="w-full h-full flex flex-col justify-center items-center px-4 md:px-24 relative z-10">

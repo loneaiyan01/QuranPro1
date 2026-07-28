@@ -4,7 +4,7 @@ import { useAudio } from '../contexts/AudioContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { DisplayMode, Ayah } from '../types';
-import { AlertTriangle, RefreshCw, Copy, Share2, Check, Search, X, Bookmark as BookmarkIcon, Play, Pause } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Copy, Share2, Check, Search, X, Bookmark as BookmarkIcon, Play, Pause, Hourglass } from 'lucide-react';
 
 interface VerseItemProps {
     ayah: Ayah;
@@ -12,6 +12,8 @@ interface VerseItemProps {
     isActive: boolean;
     isPlaying: boolean;
     isBuffering: boolean;
+    isPausingBetweenVerses?: boolean;
+    pauseCountdown?: number;
     displayMode: DisplayMode;
     arabicFontSize: number;
     translationFontSize: number;
@@ -30,6 +32,8 @@ const VerseItem = React.memo<VerseItemProps>(({
     isActive,
     isPlaying,
     isBuffering,
+    isPausingBetweenVerses,
+    pauseCountdown,
     displayMode,
     arabicFontSize,
     translationFontSize,
@@ -121,6 +125,12 @@ const VerseItem = React.memo<VerseItemProps>(({
                             )}
                         </div>
                     )}
+                    {isActive && isPausingBetweenVerses && (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/15 border border-accent/30 text-accent text-[11px] font-semibold animate-pulse">
+                            <Hourglass className="w-3 h-3 animate-spin" />
+                            <span>Reflecting ({pauseCountdown}s)</span>
+                        </div>
+                    )}
                 </div>
                 <div className="flex items-center gap-1 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300">
                     <button
@@ -203,6 +213,8 @@ const ScrollingVerseDisplay: React.FC = () => {
         currentAyahIndex,
         isFullSurahAudio,
         isBuffering,
+        isPausingBetweenVerses,
+        pauseCountdown,
         actions: audioActions
     } = useAudio();
     const {
@@ -431,6 +443,8 @@ const ScrollingVerseDisplay: React.FC = () => {
                                 isActive={isActive}
                                 isPlaying={isActive && isPlaying}
                                 isBuffering={isActive && isBuffering}
+                                isPausingBetweenVerses={isActive && isPausingBetweenVerses}
+                                pauseCountdown={pauseCountdown}
                                 displayMode={displayMode}
                                 arabicFontSize={arabicFontSize}
                                 translationFontSize={translationFontSize}

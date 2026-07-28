@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuran } from '../contexts/QuranContext';
-import { useAudio } from '../contexts/AudioContext';
+import { useAudio, VersePauseDelay } from '../contexts/AudioContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { DisplayMode } from '../types';
 import { getRepeatText } from '../utils/formatTime';
@@ -10,7 +10,8 @@ import {
   Layout, 
   User, 
   Clock, 
-  Repeat
+  Repeat,
+  Hourglass
 } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
@@ -19,8 +20,9 @@ export const SettingsPage: React.FC = () => {
   const {
     sleepTimer,
     verseRepeatLimit,
+    versePauseDelay,
     isFullSurahAudio,
-    actions: { setSleepTimer, setVerseRepeatLimit }
+    actions: { setSleepTimer, setVerseRepeatLimit, setVersePauseDelay }
   } = useAudio();
 
   const {
@@ -167,6 +169,38 @@ export const SettingsPage: React.FC = () => {
                   {getRepeatText(limit)}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Pause Before Verse Card */}
+          <div className="glass-panel p-6 rounded-2xl border border-[var(--border)] space-y-6 md:col-span-2">
+            <h3 className="text-sm font-bold text-main flex items-center gap-2 border-b border-[var(--border)] pb-3">
+              <Hourglass className="w-4 h-4 text-accent" />
+              Pause Before Verse (Reflection Delay)
+            </h3>
+            <p className="text-[11px] text-muted leading-relaxed">
+              Automatically pauses playback between verses for reflection or recitation practice. Select a fixed delay or choose "Equal to Ayah Length" to dynamically match the audio length of each verse.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+              {([0, 1, 2, 3, 5, 'equal'] as VersePauseDelay[]).map((delayOption) => {
+                const isSelected = versePauseDelay === delayOption;
+                return (
+                  <button
+                    key={String(delayOption)}
+                    disabled={isFullSurahAudio}
+                    onClick={() => setVersePauseDelay(delayOption)}
+                    className={`py-3 px-2 text-[11px] font-semibold rounded-xl border transition-all active:scale-95 text-center ${
+                      isFullSurahAudio
+                        ? 'opacity-30 cursor-not-allowed text-muted border-[var(--border)] bg-black/10'
+                        : isSelected
+                          ? 'bg-accent text-white border-accent shadow-md shadow-accent/15'
+                          : 'border-[var(--border)] bg-[var(--bg-sidebar)] text-muted hover:bg-white/5'
+                    }`}
+                  >
+                    {delayOption === 0 ? 'Off (0s)' : delayOption === 'equal' ? 'Equal Length' : `${delayOption}s`}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

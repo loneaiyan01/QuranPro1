@@ -1,8 +1,8 @@
 import React from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Repeat, Clock } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Repeat, Clock, Hourglass } from 'lucide-react';
 import { useAudio } from '../contexts/AudioContext';
 import { useQuran } from '../contexts/QuranContext';
-import { formatTime, getRepeatText } from '../utils/formatTime';
+import { formatTime, getRepeatText, getPauseDelayText } from '../utils/formatTime';
 
 const PlayerControls: React.FC = () => {
   const {
@@ -14,9 +14,12 @@ const PlayerControls: React.FC = () => {
     isBuffering,
     currentAyahIndex,
     verseRepeatLimit,
+    versePauseDelay,
+    isPausingBetweenVerses,
+    pauseCountdown,
     isFullSurahAudio,
     sleepTimer,
-    actions: { togglePlay, nextAyah, prevAyah, seek, setVerseRepeatLimit, setSleepTimer }
+    actions: { togglePlay, nextAyah, prevAyah, seek, setVerseRepeatLimit, setVersePauseDelay, setSleepTimer }
   } = useAudio();
 
   const { currentSurah, selectedReciter, surahText, isRadioMode } = useQuran();
@@ -37,9 +40,21 @@ const PlayerControls: React.FC = () => {
     }
   };
 
+  const handlePauseDelayToggle = () => {
+    // Cycle delay: 0 (Off) -> 2 -> 5 -> 'equal' -> 0
+    if (versePauseDelay === 0) {
+      setVersePauseDelay(2);
+    } else if (versePauseDelay === 2) {
+      setVersePauseDelay(5);
+    } else if (versePauseDelay === 5) {
+      setVersePauseDelay('equal');
+    } else {
+      setVersePauseDelay(0);
+    }
+  };
+
   const handleSleepTimerToggle = () => {
     // Cycle: null -> 15 -> 30 -> 45 -> 60 -> null
-    // Use <= so toggling during countdown advances to the next preset
     if (sleepTimer === null) {
       setSleepTimer(15);
     } else if (sleepTimer <= 15) {
@@ -53,12 +68,18 @@ const PlayerControls: React.FC = () => {
     }
   };
 
-
-
-
-
   return (
     <div className="glass-panel border-t relative z-30">
+      {/* Reflection Pause Indicator */}
+      {isPausingBetweenVerses && (
+        <div className="bg-accent/15 border-b border-accent/20 py-1 px-4 text-center animate-in fade-in duration-300">
+          <p className="text-[11px] text-accent font-semibold flex items-center justify-center gap-1.5">
+            <Hourglass className="w-3 h-3 animate-spin" />
+            Reflection Pause ({pauseCountdown}s remaining) • Tap any control to skip
+          </p>
+        </div>
+      )}
+
       {/* Full-Width Dynamic Progress Bar */}
       <div className={`absolute top-0 left-0 w-full h-1 overflow-visible z-40 ${isRadioMode ? 'pointer-events-none' : 'group cursor-pointer hover:h-1.5 transition-[height] duration-300 ease-in-out'}`}>
         {/* Background / Track */}
@@ -207,6 +228,34 @@ const PlayerControls: React.FC = () => {
               {verseRepeatLimit !== 1 && !isFullSurahAudio && !isRadioMode && (
                 <span className="absolute top-1 right-1 text-[9px] font-mono bg-accent text-white rounded-full w-4.5 h-4.5 flex items-center justify-center border border-[var(--bg-main)] shadow-sm">
                   {verseRepeatLimit === -1 ? '∞' : `${verseRepeatLimit}`}
+                </span>
+              )}
+            </button>
+
+            {/* Pause Before Verse (Reflection Delay) Button */}
+            <button
+              onClick={handlePauseDelayToggle}
+              disabled={isFullSurahAudio || isRadioMode}
+              className={`p-4 md:p-2 transition-colors relative active:scale-95 transition-transform ${
+                isFullSurahAudio || isRadioMode
+                  ? 'opacity-20 cursor-not-allowed text-muted' 
+                  : versePauseDelay !== 0
+                    ? 'text-accent font-bold' 
+                    : 'text-muted hover:text-accent'
+              }`}
+              aria-label="Toggle pause before verse"
+              title={
+                isFullSurahAudio 
+                  ? 'Pause before verse not available for full surah audio' 
+                  : isRadioMode
+                    ? 'Pause before verse not available in radio mode'
+                    : `Pause before verse: ${getPauseDelayText(versePauseDelay)}`
+              }
+            >
+              <Hourglass className={`w-5 h-5 ${isPausingBetweenVerses ? 'animate-spin' : ''}`} />
+              {versePauseDelay !== 0 && !isFullSurahAudio && !isRadioMode && (
+                <span className="absolute top-1 right-1 text-[8px] font-mono font-bold bg-accent text-white rounded-full min-w-4 h-4 px-1 flex items-center justify-center border border-[var(--bg-main)] shadow-sm">
+                  {versePauseDelay === 'equal' ? '=' : `${versePauseDelay}s`}
                 </span>
               )}
             </button>

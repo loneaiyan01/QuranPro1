@@ -16,3 +16,12 @@ export function getRepeatText(limit: number): string {
     if (limit === -1) return 'Repeat Infinitely';
     return `Repeat ${limit}x`;
 }
+
+/**
+ * Returns a human-readable label for the verse pause delay.
+ */
+export function getPauseDelayText(delay: number | 'equal'): string {
+    if (delay === 0) return 'Off';
+    if (delay === 'equal') return 'Equal to Ayah Length';
+    return `${delay}s Pause`;
+}

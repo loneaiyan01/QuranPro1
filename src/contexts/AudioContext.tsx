@@ -3,6 +3,8 @@ import { AudioAyah, Surah } from '../types';
 import { useQuran } from './QuranContext';
 import { fetchSurahAudio } from '../services/api';
 
+export type VersePauseDelay = number | 'equal';
+
 interface AudioContextType {
     isPlaying: boolean;
     progress: number;
@@ -15,6 +17,9 @@ interface AudioContextType {
     isBuffering: boolean;
     sleepTimer: number | null;
     verseRepeatLimit: number;
+    versePauseDelay: VersePauseDelay;
+    isPausingBetweenVerses: boolean;
+    pauseCountdown: number;
     actions: {
         togglePlay: () => void;
         play: () => void;
@@ -25,6 +30,8 @@ interface AudioContextType {
         setAyahIndex: (index: number) => void;
         setSleepTimer: (minutes: number | null) => void;
         setVerseRepeatLimit: (limit: number) => void;
+        setVersePauseDelay: (delay: VersePauseDelay) => void;
+        cancelVersePause: () => void;
         playVerse: (index: number) => void;
     };
 }
@@ -47,6 +54,44 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const [isBuffering, setIsBuffering] = useState<boolean>(false);
     const [sleepTimer, setSleepTimer] = useState<number | null>(null);
     const [verseRepeatLimit, setVerseRepeatLimit] = useState<number>(1);
+
+    // Verse Pause Delay State
+    const [versePauseDelay, setVersePauseDelayState] = useState<VersePauseDelay>(() => {
+        try {
+            const saved = localStorage.getItem('tarteela_verse_pause_delay');
+            if (saved !== null) {
+                if (saved === 'equal') return 'equal';
+                const parsed = parseInt(saved, 10);
+                if (!isNaN(parsed) && parsed >= 0) return parsed;
+            }
+        } catch (e) {
+            console.error('Failed to parse verse pause delay from localStorage:', e);
+        }
+        return 0;
+    });
+
+    const setVersePauseDelay = useCallback((delay: VersePauseDelay) => {
+        setVersePauseDelayState(delay);
+        try {
+            localStorage.setItem('tarteela_verse_pause_delay', String(delay));
+        } catch (e) {
+            console.error('Failed to save verse pause delay:', e);
+        }
+    }, []);
+
+    const [isPausingBetweenVerses, setIsPausingBetweenVerses] = useState<boolean>(false);
+    const [pauseCountdown, setPauseCountdown] = useState<number>(0);
+    const pauseIntervalRef = useRef<number | null>(null);
+
+    const cancelVersePause = useCallback(() => {
+        if (pauseIntervalRef.current) {
+            clearInterval(pauseIntervalRef.current);
+            pauseIntervalRef.current = null;
+        }
+        setIsPausingBetweenVerses(false);
+        setPauseCountdown(0);
+    }, []);
+
     const ayahPlayCountRef = useRef<number>(0);
     const isTransitioning = useRef<boolean>(false);
     const fadeRef = useRef<number | null>(null);
@@ -70,6 +115,8 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         isPlaying,
         nextRadioSurah: actions.nextRadioSurah,
         verseRepeatLimit,
+        versePauseDelay,
+        cancelVersePause,
         currentSurah,
         surahs,
         selectSurah: actions.selectSurah,
@@ -86,19 +133,24 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             isPlaying,
             nextRadioSurah: actions.nextRadioSurah,
             verseRepeatLimit,
+            versePauseDelay,
+            cancelVersePause,
             currentSurah,
             surahs,
             selectSurah: actions.selectSurah,
             nextSurah: actions.nextSurah,
             prevSurah: actions.prevSurah
         };
-    }, [isRadioMode, isFullSurahAudio, currentAyahIndex, surahText, isPlaying, actions.nextRadioSurah, verseRepeatLimit, currentSurah, surahs, actions.selectSurah, actions.nextSurah, actions.prevSurah]);
+    }, [isRadioMode, isFullSurahAudio, currentAyahIndex, surahText, isPlaying, actions.nextRadioSurah, verseRepeatLimit, versePauseDelay, cancelVersePause, currentSurah, surahs, actions.selectSurah, actions.nextSurah, actions.prevSurah]);
 
-    // Effect: Clean up fade interval on unmount
+    // Effect: Clean up intervals on unmount
     useEffect(() => {
         return () => {
             if (fadeRef.current) {
                 clearInterval(fadeRef.current);
+            }
+            if (pauseIntervalRef.current) {
+                clearInterval(pauseIntervalRef.current);
             }
         };
     }, []);
@@ -308,6 +360,8 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 surahText,
                 nextRadioSurah,
                 verseRepeatLimit,
+                versePauseDelay,
+                cancelVersePause,
                 currentSurah,
                 surahs,
                 selectSurah,
@@ -328,53 +382,88 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 ayahPlayCountRef.current = 0;
             }
 
-            // If we are in verse-by-verse mode and not at the last ayah, advance to the next ayah
-            if (!isFullSurahAudio && surahText && currentAyahIndex < surahText.arabic.ayahs.length - 1) {
-                isTransitioning.current = true;
-                setCurrentAyahIndex(prev => prev + 1);
-                setIsPlaying(true);
-                return;
+            // Calculate pause delay if in verse-by-verse mode
+            let delaySeconds = 0;
+            if (!isFullSurahAudio && versePauseDelay !== 0) {
+                if (versePauseDelay === 'equal') {
+                    const playedDuration = audioRef.current?.duration || duration || 0;
+                    delaySeconds = playedDuration > 0 ? Math.round(playedDuration) : 3;
+                } else if (typeof versePauseDelay === 'number' && versePauseDelay > 0) {
+                    delaySeconds = versePauseDelay;
+                }
             }
 
-            // Otherwise, we reached the end of the surah (either full surah audio ended, or last VBV verse ended)
-            if (isRadioMode) {
-                isTransitioning.current = true;
-                nextRadioSurah();
-            } else if (currentSurah) {
-                const nextSurahNumber = currentSurah.number + 1;
-                if (nextSurahNumber <= 114) {
-                    const targetNextSurah = surahs.find((s: Surah) => s.number === nextSurahNumber);
-                    if (targetNextSurah) {
-                        isTransitioning.current = true;
-                        if (nextSurah) {
-                            nextSurah();
-                        } else {
-                            selectSurah(targetNextSurah);
-                        }
-                        return;
-                    }
+            const executeTransition = () => {
+                cancelVersePause();
+                // If we are in verse-by-verse mode and not at the last ayah, advance to the next ayah
+                if (!isFullSurahAudio && surahText && currentAyahIndex < surahText.arabic.ayahs.length - 1) {
+                    isTransitioning.current = true;
+                    setCurrentAyahIndex(prev => prev + 1);
+                    setIsPlaying(true);
+                    return;
                 }
 
-                // Edge case: Reached the last Surah (Surah 114 An-Nas) or no next Surah found
-                isTransitioning.current = false;
-                setIsPlaying(false);
-                setCurrentAyahIndex(0);
-                setProgress(0);
-                setBuffered(0);
-                setCurrentTime(0);
-                if (audioRef.current) {
-                    audioRef.current.currentTime = 0;
+                // Otherwise, we reached the end of the surah (either full surah audio ended, or last VBV verse ended)
+                if (isRadioMode) {
+                    isTransitioning.current = true;
+                    nextRadioSurah();
+                } else if (currentSurah) {
+                    const nextSurahNumber = currentSurah.number + 1;
+                    if (nextSurahNumber <= 114) {
+                        const targetNextSurah = surahs.find((s: Surah) => s.number === nextSurahNumber);
+                        if (targetNextSurah) {
+                            isTransitioning.current = true;
+                            if (nextSurah) {
+                                nextSurah();
+                            } else {
+                                selectSurah(targetNextSurah);
+                            }
+                            return;
+                        }
+                    }
+
+                    // Edge case: Reached the last Surah (Surah 114 An-Nas) or no next Surah found
+                    isTransitioning.current = false;
+                    setIsPlaying(false);
+                    setCurrentAyahIndex(0);
+                    setProgress(0);
+                    setBuffered(0);
+                    setCurrentTime(0);
+                    if (audioRef.current) {
+                        audioRef.current.currentTime = 0;
+                    }
+                } else {
+                    isTransitioning.current = false;
+                    setIsPlaying(false);
+                    setCurrentAyahIndex(0);
+                    setProgress(0);
+                    setBuffered(0);
+                    setCurrentTime(0);
+                    if (audioRef.current) {
+                        audioRef.current.currentTime = 0;
+                    }
                 }
+            };
+
+            if (delaySeconds > 0) {
+                cancelVersePause();
+                setIsPausingBetweenVerses(true);
+                setPauseCountdown(delaySeconds);
+                setIsPlaying(false);
+                setProgress(0);
+
+                let remaining = delaySeconds;
+                pauseIntervalRef.current = window.setInterval(() => {
+                    remaining -= 1;
+                    if (remaining > 0) {
+                        setPauseCountdown(remaining);
+                    } else {
+                        cancelVersePause();
+                        executeTransition();
+                    }
+                }, 1000);
             } else {
-                isTransitioning.current = false;
-                setIsPlaying(false);
-                setCurrentAyahIndex(0);
-                setProgress(0);
-                setBuffered(0);
-                setCurrentTime(0);
-                if (audioRef.current) {
-                    audioRef.current.currentTime = 0;
-                }
+                executeTransition();
             }
         };
 
@@ -473,6 +562,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     // Actions wrapped in useCallback and useMemo
     const togglePlay = useCallback(() => {
+        cancelVersePause();
         if (!audioRef.current || audioData.length === 0) return;
 
         const targetIndex = isFullSurahAudio ? 0 : currentAyahIndex;
@@ -511,17 +601,20 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 setIsPlaying(true);
             }
         }
-    }, [audioData, isFullSurahAudio, currentAyahIndex, isPlaying, fadeAudioIn, fadeAudioOut]);
+    }, [audioData, isFullSurahAudio, currentAyahIndex, isPlaying, fadeAudioIn, fadeAudioOut, cancelVersePause]);
 
     const play = useCallback(() => {
+        cancelVersePause();
         if (audioRef.current) audioRef.current.play();
-    }, []);
+    }, [cancelVersePause]);
 
     const pause = useCallback(() => {
+        cancelVersePause();
         if (audioRef.current) audioRef.current.pause();
-    }, []);
+    }, [cancelVersePause]);
 
     const nextAyah = useCallback(() => {
+        cancelVersePause();
         const { currentSurah, surahs, selectSurah, nextSurah } = stateRef.current;
         if (isFullSurahAudio) {
             if (currentSurah && currentSurah.number < 114) {
@@ -563,9 +656,10 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 }
             }
         }
-    }, [isFullSurahAudio, surahText, currentAyahIndex, isPlaying, fadeAudioOut]);
+    }, [isFullSurahAudio, surahText, currentAyahIndex, isPlaying, fadeAudioOut, cancelVersePause]);
 
     const prevAyah = useCallback(() => {
+        cancelVersePause();
         const { currentSurah, surahs, selectSurah, prevSurah: statePrevSurah } = stateRef.current;
         if (isFullSurahAudio) {
             if (currentSurah && currentSurah.number > 1) {
@@ -605,9 +699,10 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 if (target) selectSurah(target);
             }
         }
-    }, [isFullSurahAudio, currentAyahIndex, isPlaying, fadeAudioOut]);
+    }, [isFullSurahAudio, currentAyahIndex, isPlaying, fadeAudioOut, cancelVersePause]);
 
     const seek = useCallback((value: number) => {
+        cancelVersePause();
         if (audioRef.current && duration) {
             const time = (value / 100) * duration;
             isSeekingRef.current = true;
@@ -635,17 +730,19 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 isSeekingRef.current = false;
             }
         }
-    }, [duration, isPlaying, fadeAudioOut, fadeAudioIn]);
+    }, [duration, isPlaying, fadeAudioOut, fadeAudioIn, cancelVersePause]);
 
     const setAyahIndex = useCallback((index: number) => {
+        cancelVersePause();
         setCurrentAyahIndex(index);
-    }, []);
+    }, [cancelVersePause]);
 
     const handleSetSleepTimer = useCallback((minutes: number | null) => {
         setSleepTimer(minutes);
     }, []);
 
     const playVerse = useCallback((index: number) => {
+        cancelVersePause();
         if (isFullSurahAudio) return;
 
         if (currentAyahIndex === index) {
@@ -669,7 +766,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 });
             }
         }
-    }, [isFullSurahAudio, currentAyahIndex, togglePlay, audioData, fadeAudioIn]);
+    }, [isFullSurahAudio, currentAyahIndex, togglePlay, audioData, fadeAudioIn, cancelVersePause]);
 
     const audioActions = useMemo(() => ({
         togglePlay,
@@ -681,8 +778,10 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setAyahIndex,
         setSleepTimer: handleSetSleepTimer,
         setVerseRepeatLimit,
+        setVersePauseDelay,
+        cancelVersePause,
         playVerse
-    }), [togglePlay, play, pause, nextAyah, prevAyah, seek, setAyahIndex, handleSetSleepTimer, playVerse]);
+    }), [togglePlay, play, pause, nextAyah, prevAyah, seek, setAyahIndex, handleSetSleepTimer, setVerseRepeatLimit, setVersePauseDelay, cancelVersePause, playVerse]);
 
     return (
         <AudioContext.Provider
@@ -698,6 +797,9 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 isBuffering,
                 sleepTimer,
                 verseRepeatLimit,
+                versePauseDelay,
+                isPausingBetweenVerses,
+                pauseCountdown,
                 actions: audioActions
             }}
         >
