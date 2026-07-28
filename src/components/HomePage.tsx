@@ -138,8 +138,8 @@ export const HomePage: React.FC = () => {
     <div className="flex-1 overflow-y-auto px-4 pt-24 pb-28 md:py-12 lg:px-12 custom-scrollbar">
       <div className="max-w-6xl mx-auto space-y-12 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
         
-        {/* Quick Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        {/* Quick Action Bar & Surah Search */}
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
           {/* Quran Live Radio Button */}
           <button
             onClick={() => quranActions.toggleRadioMode(true)}
@@ -160,8 +160,8 @@ export const HomePage: React.FC = () => {
             <Play className="w-3.5 h-3.5 text-accent fill-current flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
           </button>
 
-          {/* Resume Session / Verse Player Button */}
-          {sessionData ? (
+          {/* Resume Session Button (if active session exists) */}
+          {sessionData && (
             <button
               onClick={handleResume}
               className="group flex-1 flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 active:scale-[0.98] text-left"
@@ -181,19 +181,28 @@ export const HomePage: React.FC = () => {
               </div>
               <Play className="w-3.5 h-3.5 text-accent fill-current flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
             </button>
-          ) : (
-            <div className="flex-1 flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--bg-sidebar)] text-left opacity-80">
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="w-8 h-8 rounded-lg bg-accent-muted text-accent flex items-center justify-center flex-shrink-0">
-                  <BookOpen className="w-4 h-4" />
-                </span>
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-main">Verse Player</div>
-                  <p className="text-[10px] text-muted truncate mt-0.5">114 Surahs available below</p>
-                </div>
-              </div>
-            </div>
           )}
+
+          {/* Top Surah Search Bar */}
+          <div className="flex-[1.2] relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-accent" />
+            <input
+              type="text"
+              placeholder="Search Surah by name or number (e.g. 36, Yaseen, Kahf)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-9 py-3 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] border border-[var(--border)] focus:border-accent/60 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent/40 text-main placeholder-muted transition-all shadow-sm"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-main rounded-md hover:bg-white/10 transition-colors"
+                title="Clear Search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Recently Played Surahs Section */}
@@ -263,53 +272,31 @@ export const HomePage: React.FC = () => {
           )}
         </div>
 
-        {/* All Surahs/Juzs Grid with Search */}
+        {/* All Surahs/Juzs Grid */}
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border)] pb-2">
-            <div className="flex items-center gap-6">
-              <button
-                onClick={() => { setActiveTab('surah'); setSearchQuery(''); }}
-                className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-lg md:text-xl transition-all duration-300 ${
-                  activeTab === 'surah'
-                    ? 'border-accent text-accent'
-                    : 'border-transparent text-muted hover:text-main'
-                }`}
-              >
-                <BookOpen className="w-5 h-5" />
-                <span>All Surahs</span>
-              </button>
-              <button
-                onClick={() => { setActiveTab('juz'); setSearchQuery(''); }}
-                className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-lg md:text-xl transition-all duration-300 ${
-                  activeTab === 'juz'
-                    ? 'border-accent text-accent'
-                    : 'border-transparent text-muted hover:text-main'
-                }`}
-              >
-                <Compass className="w-5 h-5" />
-                <span>All Juzs</span>
-              </button>
-            </div>
-            
-            {/* Search Input */}
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-              <input
-                type="text"
-                placeholder={activeTab === 'surah' ? "Search by name or number..." : "Search Juz by number or surah name..."}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 text-main placeholder-muted"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-main rounded-md hover:bg-white/5 transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+          <div className="flex items-center gap-6 border-b border-[var(--border)] pb-2">
+            <button
+              onClick={() => { setActiveTab('surah'); }}
+              className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-lg md:text-xl transition-all duration-300 ${
+                activeTab === 'surah'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-muted hover:text-main'
+              }`}
+            >
+              <BookOpen className="w-5 h-5" />
+              <span>All Surahs</span>
+            </button>
+            <button
+              onClick={() => { setActiveTab('juz'); }}
+              className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-lg md:text-xl transition-all duration-300 ${
+                activeTab === 'juz'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-muted hover:text-main'
+              }`}
+            >
+              <Compass className="w-5 h-5" />
+              <span>All Juzs</span>
+            </button>
           </div>
 
           {/* List Grid based on Active Tab */}
