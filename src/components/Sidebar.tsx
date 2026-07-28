@@ -73,7 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               actions.setCurrentPage('home');
               onClose();
             }}
-            className="text-xl font-serif font-bold text-accent hover:opacity-80 transition-opacity text-left bg-transparent border-none p-0 cursor-pointer"
+            className="text-xl font-sans font-bold text-accent hover:opacity-80 transition-opacity text-left bg-transparent border-none p-0 cursor-pointer"
           >
             HearQuran
           </button>

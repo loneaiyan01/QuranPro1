@@ -73,7 +73,7 @@ export const RadioPage: React.FC = () => {
                         <span className="text-[10px] font-bold uppercase tracking-widest text-accent">Quran Live Radio</span>
                     </div>
                     
-                    <h1 className="text-xl md:text-2xl font-serif font-bold text-main mt-1 tracking-tight">
+                    <h1 className="text-xl md:text-2xl font-sans font-bold text-main mt-1 tracking-tight">
                         {currentSurah.englishName}
                     </h1>
                     

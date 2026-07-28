@@ -40,7 +40,7 @@ export const BookmarksPage: React.FC = () => {
         {/* Header section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border)] pb-6">
           <div className="space-y-1">
-            <h1 className="text-2xl md:text-4xl font-serif font-bold text-main flex items-center gap-2">
+            <h1 className="text-2xl md:text-4xl font-sans font-bold text-main flex items-center gap-2">
               <BookmarkIcon className="w-6 h-6 md:w-8 md:h-8 text-accent" />
               Saved Reflections
             </h1>
@@ -71,7 +71,7 @@ export const BookmarksPage: React.FC = () => {
               <BookmarkIcon className="w-8 h-8" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-lg font-serif font-bold text-main">No Saved Verses</h3>
+              <h3 className="text-lg font-sans font-bold text-main">No Saved Verses</h3>
               <p className="text-xs text-muted leading-relaxed">
                 As you listen to the Quran, tap the bookmark icon on any verse to save it here for easy visual access.
               </p>

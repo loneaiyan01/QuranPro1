@@ -46,7 +46,7 @@ export const SettingsPage: React.FC = () => {
         
         {/* Header section */}
         <div className="border-b border-[var(--border)] pb-6">
-          <h1 className="text-2xl md:text-4xl font-serif font-bold text-main flex items-center gap-2">
+          <h1 className="text-2xl md:text-4xl font-sans font-bold text-main flex items-center gap-2">
             <Settings className="w-6 h-6 md:w-8 md:h-8 text-accent" />
             Preferences
           </h1>

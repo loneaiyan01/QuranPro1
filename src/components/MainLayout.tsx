@@ -75,7 +75,7 @@ const MainLayout: React.FC = () => {
                                 <BookOpen className="w-8 h-8" />
                             </div>
                             <div className="space-y-2">
-                                <h3 className="text-lg font-serif font-bold text-main">No Surah Selected</h3>
+                                <h3 className="text-lg font-sans font-bold text-main">No Surah Selected</h3>
                                 <p className="text-xs text-muted leading-relaxed">
                                     Select a Surah from the library on the home dashboard to load the verse player.
                                 </p>

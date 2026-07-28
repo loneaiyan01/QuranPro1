@@ -215,7 +215,7 @@ export const HomePage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <History className="w-5 h-5 text-accent" />
-              <h2 className="text-xl font-serif font-bold text-main">Recently Played Surahs</h2>
+              <h2 className="text-xl font-sans font-bold text-main">Recently Played Surahs</h2>
             </div>
             {recentSurahs.length > 0 && (
               <span className="text-xs text-muted">
@@ -283,7 +283,7 @@ export const HomePage: React.FC = () => {
             <div className="flex items-center gap-6">
               <button
                 onClick={() => { setActiveTab('surah'); setSearchQuery(''); }}
-                className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-serif font-bold text-lg md:text-xl transition-all duration-300 ${
+                className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-lg md:text-xl transition-all duration-300 ${
                   activeTab === 'surah'
                     ? 'border-accent text-accent'
                     : 'border-transparent text-muted hover:text-main'
@@ -294,7 +294,7 @@ export const HomePage: React.FC = () => {
               </button>
               <button
                 onClick={() => { setActiveTab('juz'); setSearchQuery(''); }}
-                className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-serif font-bold text-lg md:text-xl transition-all duration-300 ${
+                className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-lg md:text-xl transition-all duration-300 ${
                   activeTab === 'juz'
                     ? 'border-accent text-accent'
                     : 'border-transparent text-muted hover:text-main'

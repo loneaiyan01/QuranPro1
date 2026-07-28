@@ -345,7 +345,7 @@ const ScrollingVerseDisplay: React.FC = () => {
                         <AlertTriangle className="w-8 h-8 text-red-400" />
                     </div>
                     <div className="space-y-2">
-                        <h3 className="text-lg font-serif font-bold text-main">Unable to Load Content</h3>
+                        <h3 className="text-lg font-sans font-bold text-main">Unable to Load Content</h3>
                         <p className="text-sm text-muted leading-relaxed">
                             {contentError || 'No Surah data is available. This may be due to a network issue or the API server being offline.'}
                         </p>
@@ -429,7 +429,7 @@ const ScrollingVerseDisplay: React.FC = () => {
                             {showJuzHeader && (
                                 <div className="flex items-center gap-4 py-6 px-4 select-none">
                                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--border)] to-[var(--border)]" />
-                                    <span className="px-4 py-1.5 rounded-full bg-accent-muted text-accent text-xs font-serif font-bold tracking-wider uppercase border border-accent/20 flex items-center gap-2">
+                                    <span className="px-4 py-1.5 rounded-full bg-accent-muted text-accent text-xs font-sans font-bold tracking-wider uppercase border border-accent/20 flex items-center gap-2">
                                         <span>Juz {currentJuz}</span>
                                         <span className="text-[10px] opacity-60">•</span>
                                         <span className="font-sans font-medium text-[10px]">الجزء {currentJuz}</span>
