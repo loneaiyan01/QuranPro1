@@ -7,7 +7,6 @@ import { BookmarksPage } from './BookmarksPage';
 import { SettingsPage } from './SettingsPage';
 import { RadioPage } from './RadioPage';
 import { MiniPlayer } from './MiniPlayer';
-import { ResumePrompt } from './ResumePrompt';
 import { Menu, Tv, Home, BookOpen, Radio, Bookmark as BookmarkIcon, Settings } from 'lucide-react';
 import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
@@ -75,9 +74,6 @@ const MainLayout: React.FC = () => {
         <div className="flex h-[100dvh] w-full relative overflow-hidden">
             {/* Fullscreen Translation Overlay */}
             {isFullscreenTranslation && <FullscreenTranslationView />}
-
-            {/* Resume Session Toast */}
-            <ResumePrompt />
 
             {/* Sidebar (Desktop navigation menu) */}
             <Sidebar
