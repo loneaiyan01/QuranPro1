@@ -135,15 +135,15 @@ export const HomePage: React.FC = () => {
   }, [searchQuery]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 pt-24 pb-28 md:py-12 lg:px-12 custom-scrollbar">
-      <div className="max-w-6xl mx-auto space-y-12 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-4 pt-24 pb-28 md:py-12 lg:px-12 custom-scrollbar w-full max-w-full box-border">
+      <div className="max-w-6xl mx-auto space-y-8 sm:space-y-12 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full max-w-full min-w-0">
         
         {/* Quick Action Bar & Surah Search */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full max-w-full min-w-0">
           {/* Quran Live Radio Button */}
           <button
             onClick={() => quranActions.toggleRadioMode(true)}
-            className="group flex-1 flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 active:scale-[0.98] text-left"
+            className="group flex-1 flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 active:scale-[0.98] text-left min-w-0"
           >
             <div className="flex items-center gap-3 min-w-0">
               <span className="w-8 h-8 rounded-lg bg-accent-muted text-accent flex items-center justify-center flex-shrink-0 group-hover:bg-accent group-hover:text-white transition-colors">
@@ -152,7 +152,7 @@ export const HomePage: React.FC = () => {
               <div className="min-w-0">
                 <div className="text-xs font-bold text-main group-hover:text-accent transition-colors flex items-center gap-2">
                   <span>Quran Live Radio</span>
-                  <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-accent/15 text-accent uppercase tracking-wider">Live</span>
+                  <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-accent/15 text-accent uppercase tracking-wider flex-shrink-0">Live</span>
                 </div>
                 <p className="text-[10px] text-muted truncate mt-0.5">Continuous peaceful recitation stream</p>
               </div>
@@ -164,7 +164,7 @@ export const HomePage: React.FC = () => {
           {sessionData && (
             <button
               onClick={handleResume}
-              className="group flex-1 flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 active:scale-[0.98] text-left"
+              className="group flex-1 flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 active:scale-[0.98] text-left min-w-0"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <span className="w-8 h-8 rounded-lg bg-accent-muted text-accent flex items-center justify-center flex-shrink-0 group-hover:bg-accent group-hover:text-white transition-colors">
@@ -184,11 +184,11 @@ export const HomePage: React.FC = () => {
           )}
 
           {/* Top Surah Search Bar */}
-          <div className="flex-[1.2] relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-accent" />
+          <div className="flex-1 sm:flex-[1.2] relative min-w-0 w-full">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-accent pointer-events-none" />
             <input
               type="text"
-              placeholder="Search Surah by name or number (e.g. 36, Yaseen, Kahf)..."
+              placeholder="Search Surah (e.g. 36, Yaseen, Kahf)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-9 py-3 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] border border-[var(--border)] focus:border-accent/60 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent/40 text-main placeholder-muted transition-all shadow-sm"
@@ -206,29 +206,29 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* Recently Played Surahs Section */}
-        <div className="space-y-3">
+        <div className="space-y-3 w-full max-w-full overflow-hidden">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <History className="w-4 h-4 text-accent" />
-              <h2 className="text-lg font-sans font-bold text-main">Recently Played Surahs</h2>
+            <div className="flex items-center gap-2 min-w-0">
+              <History className="w-4 h-4 text-accent flex-shrink-0" />
+              <h2 className="text-base sm:text-lg font-sans font-bold text-main truncate">Recently Played Surahs</h2>
             </div>
             {recentSurahs.length > 0 && (
-              <span className="text-[11px] text-muted">
+              <span className="text-[10px] sm:text-[11px] text-muted flex-shrink-0">
                 Last {recentSurahs.slice(0, 5).length} listened
               </span>
             )}
           </div>
 
           {recentSurahs.length > 0 ? (
-            <div className="flex items-center gap-3 overflow-x-auto custom-scrollbar pb-2 pt-1 -mx-1 px-1">
+            <div className="flex items-center gap-3 overflow-x-auto custom-scrollbar pb-2 pt-1 w-full max-w-full px-0.5 box-border">
               {recentSurahs.slice(0, 5).map((item) => (
                 <div
                   key={item.surahNumber}
                   onClick={() => handleResumeRecent(item)}
-                  className="group cursor-pointer p-3 rounded-xl border border-[var(--border)] bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 shadow-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.97] flex flex-col justify-between gap-2.5 w-[170px] sm:w-[190px] flex-shrink-0 relative"
+                  className="group cursor-pointer p-3 rounded-xl border border-[var(--border)] bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 shadow-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.97] flex flex-col justify-between gap-2.5 w-[155px] sm:w-[180px] flex-shrink-0 relative"
                 >
                   <div className="flex items-center justify-between w-full">
-                    <span className="w-7 h-7 rounded-lg bg-accent-muted text-accent flex items-center justify-center text-[11px] font-semibold group-hover:bg-accent group-hover:text-white transition-colors">
+                    <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-accent-muted text-accent flex items-center justify-center text-[10px] sm:text-[11px] font-semibold group-hover:bg-accent group-hover:text-white transition-colors">
                       {item.surahNumber}
                     </span>
                     <span className="text-[9px] text-muted font-mono">
@@ -236,7 +236,7 @@ export const HomePage: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="space-y-0.5">
+                  <div className="space-y-0.5 min-w-0">
                     <h3 className="font-semibold text-xs text-main group-hover:text-accent transition-colors truncate">
                       {item.surahEnglishName}
                     </h3>
@@ -273,28 +273,28 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* All Surahs/Juzs Grid */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6 w-full max-w-full min-w-0">
           <div className="flex items-center gap-6 border-b border-[var(--border)] pb-2">
             <button
               onClick={() => { setActiveTab('surah'); }}
-              className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-lg md:text-xl transition-all duration-300 ${
+              className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-base sm:text-lg md:text-xl transition-all duration-300 ${
                 activeTab === 'surah'
                   ? 'border-accent text-accent'
                   : 'border-transparent text-muted hover:text-main'
               }`}
             >
-              <BookOpen className="w-5 h-5" />
+              <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>All Surahs</span>
             </button>
             <button
               onClick={() => { setActiveTab('juz'); }}
-              className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-lg md:text-xl transition-all duration-300 ${
+              className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-base sm:text-lg md:text-xl transition-all duration-300 ${
                 activeTab === 'juz'
                   ? 'border-accent text-accent'
                   : 'border-transparent text-muted hover:text-main'
               }`}
             >
-              <Compass className="w-5 h-5" />
+              <Compass className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>All Juzs</span>
             </button>
           </div>
@@ -302,22 +302,22 @@ export const HomePage: React.FC = () => {
           {/* List Grid based on Active Tab */}
           {activeTab === 'surah' ? (
             filteredSurahs.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 w-full min-w-0">
                 {filteredSurahs.map((surah) => (
                   <div
                     key={surah.number}
                     onClick={() => handlePlaySurah(surah)}
-                    className="group cursor-pointer p-4 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-[0.97] flex items-center justify-between gap-3"
+                    className="group cursor-pointer p-3.5 sm:p-4 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-[0.97] flex items-center justify-between gap-3 min-w-0 w-full overflow-hidden"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="w-9 h-9 rounded-xl bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold group-hover:scale-105 transition-transform">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold group-hover:scale-105 transition-transform flex-shrink-0">
                         {surah.number}
                       </span>
-                      <div>
-                        <h4 className="font-semibold text-sm text-main group-hover:text-accent transition-colors line-clamp-1">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-semibold text-xs sm:text-sm text-main group-hover:text-accent transition-colors truncate">
                           {surah.englishName}
                         </h4>
-                        <p className="text-[11px] text-muted line-clamp-1 mt-0.5">
+                        <p className="text-[10px] sm:text-[11px] text-muted truncate mt-0.5">
                           {surah.englishNameTranslation}
                         </p>
                       </div>
@@ -344,22 +344,22 @@ export const HomePage: React.FC = () => {
             )
           ) : (
             filteredJuzs.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 w-full min-w-0">
                 {filteredJuzs.map((juz) => (
                   <div
                     key={juz.number}
                     onClick={() => handlePlayJuz(juz)}
-                    className="group cursor-pointer p-4 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-[0.97] flex items-center justify-between gap-3"
+                    className="group cursor-pointer p-3.5 sm:p-4 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-[0.97] flex items-center justify-between gap-3 min-w-0 w-full overflow-hidden"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="w-9 h-9 rounded-xl bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold group-hover:scale-105 transition-transform flex-shrink-0">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold group-hover:scale-105 transition-transform flex-shrink-0">
                         {juz.number}
                       </span>
-                      <div>
-                        <h4 className="font-semibold text-sm text-main group-hover:text-accent transition-colors line-clamp-1">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-semibold text-xs sm:text-sm text-main group-hover:text-accent transition-colors truncate">
                           {juz.nameEnglish}
                         </h4>
-                        <p className="text-[11px] text-muted line-clamp-1 mt-0.5">
+                        <p className="text-[10px] sm:text-[11px] text-muted truncate mt-0.5">
                           {juz.description}
                         </p>
                       </div>

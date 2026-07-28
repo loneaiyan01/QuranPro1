@@ -123,7 +123,7 @@ const MainLayout: React.FC = () => {
             />
 
             {/* Main Content */}
-            <div className={`flex-1 flex flex-col h-full transition-all duration-300 relative ${isSidebarOpen ? 'md:ml-80' : ''}`}>
+            <div className={`flex-1 flex flex-col h-full transition-all duration-300 relative min-w-0 overflow-x-hidden ${isSidebarOpen ? 'md:ml-80' : ''}`}>
 
                 {/* Top Mobile Bar */}
                 <div className="md:hidden absolute top-0 inset-x-0 p-4 z-20 flex justify-between pointer-events-none">
