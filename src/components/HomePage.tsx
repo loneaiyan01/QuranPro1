@@ -7,7 +7,6 @@ import {
   Search, 
   Clock, 
   Play, 
-  Sparkles, 
   Compass, 
   ChevronRight, 
   X,
@@ -139,29 +138,6 @@ export const HomePage: React.FC = () => {
     <div className="flex-1 overflow-y-auto px-4 pt-24 pb-28 md:py-12 lg:px-12 custom-scrollbar">
       <div className="max-w-6xl mx-auto space-y-12 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
         
-        {/* Hero Banner Section */}
-        <div className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-[var(--bg-sidebar)] via-black/40 to-black p-6 md:p-10 shadow-[var(--shadow-lg)]">
-          {/* Subtle background graphic */}
-          <div className="absolute right-0 bottom-0 opacity-15 translate-x-12 translate-y-12 pointer-events-none">
-            <Compass className="w-80 h-80 text-accent" />
-          </div>
-          
-          <div className="max-w-2xl relative z-10 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-muted text-accent border border-accent/20 text-xs font-semibold tracking-wider uppercase">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Spiritual Sanctuary</span>
-            </div>
-            <h1 className="text-3xl md:text-5xl font-serif font-bold tracking-tight text-main">
-              Hear<span className="text-accent">Quran</span>
-            </h1>
-            <p className="text-sm md:text-base text-muted leading-relaxed">
-              Welcome to a premium, minimalist sanctuary for Quranic reflection. 
-              Immerse yourself in beautiful, high-quality verse-by-verse recitations with English translations. 
-              Designed for focus, memorization, and active spiritual contemplation.
-            </p>
-          </div>
-        </div>
-
         {/* Dashboard Actions Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Radio Mode Card */}
