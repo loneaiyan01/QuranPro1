@@ -138,73 +138,59 @@ export const HomePage: React.FC = () => {
     <div className="flex-1 overflow-y-auto px-4 pt-24 pb-28 md:py-12 lg:px-12 custom-scrollbar">
       <div className="max-w-6xl mx-auto space-y-12 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
         
-        {/* Dashboard Actions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Radio Mode Card */}
-          <div 
+        {/* Quick Action Buttons */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {/* Quran Live Radio Button */}
+          <button
             onClick={() => quranActions.toggleRadioMode(true)}
-            className="group cursor-pointer relative overflow-hidden rounded-2xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] p-6 shadow-md transition-all duration-300 hover:scale-[1.01] active:scale-[0.98] flex flex-col justify-between"
+            className="group flex-1 flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 active:scale-[0.98] text-left"
           >
-            <div className="flex justify-between items-start gap-4">
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-main flex items-center gap-2">
-                  <Radio className="w-5 h-5 text-accent animate-pulse" />
-                  Quran Live Radio
-                </h3>
-                <p className="text-xs text-muted leading-relaxed">
-                  Start a continuous, tranquil stream of randomly selected Surahs. Perfect for continuous listening and background reflection.
-                </p>
-              </div>
-              <span className="w-10 h-10 rounded-xl bg-accent-muted text-accent flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                <Play className="w-4 h-4 fill-current ml-0.5" />
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="w-8 h-8 rounded-lg bg-accent-muted text-accent flex items-center justify-center flex-shrink-0 group-hover:bg-accent group-hover:text-white transition-colors">
+                <Radio className="w-4 h-4 animate-pulse" />
               </span>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-main group-hover:text-accent transition-colors flex items-center gap-2">
+                  <span>Quran Live Radio</span>
+                  <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-accent/15 text-accent uppercase tracking-wider">Live</span>
+                </div>
+                <p className="text-[10px] text-muted truncate mt-0.5">Continuous peaceful recitation stream</p>
+              </div>
             </div>
-            <div className="mt-6 flex items-center gap-1.5 text-xs font-bold text-accent">
-              <span>Start Listening Now</span>
-              <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </div>
+            <Play className="w-3.5 h-3.5 text-accent fill-current flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
+          </button>
 
-          {/* Continue Listening Session */}
+          {/* Resume Session / Verse Player Button */}
           {sessionData ? (
-            <div 
+            <button
               onClick={handleResume}
-              className="group cursor-pointer relative overflow-hidden rounded-2xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] p-6 shadow-md transition-all duration-300 hover:scale-[1.01] active:scale-[0.98] flex flex-col justify-between"
+              className="group flex-1 flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 active:scale-[0.98] text-left"
             >
-              <div className="flex justify-between items-start gap-4">
-                <div className="space-y-2">
-                  <h3 className="text-lg font-bold text-main flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-accent" />
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="w-8 h-8 rounded-lg bg-accent-muted text-accent flex items-center justify-center flex-shrink-0 group-hover:bg-accent group-hover:text-white transition-colors">
+                  <Clock className="w-4 h-4" />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-main group-hover:text-accent transition-colors">
                     Resume Session
-                  </h3>
-                  <p className="text-xs text-muted leading-relaxed">
-                    Pick up where you left off: <strong className="text-main font-semibold">Surah {sessionData.surahEnglishName}</strong> (Verse {sessionData.ayahIndex + 1}).
+                  </div>
+                  <p className="text-[10px] text-muted truncate mt-0.5">
+                    Surah {sessionData.surahEnglishName} • Verse {sessionData.ayahIndex + 1}
                   </p>
                 </div>
-                <span className="w-10 h-10 rounded-xl bg-accent-muted text-accent flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                  <Play className="w-4 h-4 fill-current ml-0.5" />
-                </span>
               </div>
-              <div className="mt-6 flex items-center gap-1.5 text-xs font-bold text-accent">
-                <span>Continue Listening</span>
-                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
+              <Play className="w-3.5 h-3.5 text-accent fill-current flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
+            </button>
           ) : (
-            <div 
-              className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-sidebar)] p-6 shadow-md flex flex-col justify-between"
-            >
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-main flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-accent" />
-                  Verse Player
-                </h3>
-                <p className="text-xs text-muted leading-relaxed">
-                  Select any Surah below to open the verse player with synchronized translations and recitation.
-                </p>
-              </div>
-              <div className="mt-6 text-xs text-muted">
-                114 Surahs available
+            <div className="flex-1 flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--bg-sidebar)] text-left opacity-80">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="w-8 h-8 rounded-lg bg-accent-muted text-accent flex items-center justify-center flex-shrink-0">
+                  <BookOpen className="w-4 h-4" />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-main">Verse Player</div>
+                  <p className="text-[10px] text-muted truncate mt-0.5">114 Surahs available below</p>
+                </div>
               </div>
             </div>
           )}
