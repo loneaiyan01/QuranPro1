@@ -1,21 +1,17 @@
 import { Reciter } from '../types';
 
 export const ALLOWED_IDENTIFIERS = [
-  'ar.muhammadayyoub',      // Muhammad Ayyub
-  'ar.hudhaify',            // Ali Al-Hudhaify
-  'ar.alafasy',             // Mishary Rashid Alafasy
-  'ar.abdurrahmaansudais',  // Abdur-Rahman As-Sudais
-  'ar.saoodshuraym',        // Sa'ood Ash-Shuraym
-  'ar.mahermuaiqly',        // Maher Al-Muaiqly
-  'ar.minshawi',            // Mohamed Siddiq Al-Minshawi (Murattal)
-  'ar.husary',              // Mahmoud Khalil Al-Husary
-  'ar.abdulbasitmurattal',  // Abdul Basit Abdul Samad (Murattal)
-  'ar.shaatree',            // Abu Bakr Al-Shatri
-  'ar.hanrifai',            // Hani Ar-Rifai
-  'ar.gammed',              // Saad Al-Ghamdi
-  'ar.yasseraldosari',      // Yasser Al-Dosari (Manual Surah-level)
-  'ar.muhammadalluhaidan',  // Luhaidan (Manual Surah-level)
-  'ar.ahmedtalib'           // Ahmed bin Talib (Manual Surah-level)
+  'ar.muhammadayyoub',      // Sheikh Muhammad Ayyub
+  'ar.hudhaify',            // Sheikh Ali Abdul-Rahman Al-Hudhaify
+  'ar.alafasy',             // Sheikh Mishary Rashid Alafasy
+  'ar.abdurrahmaansudais',  // Sheikh Abdur-Rahman As-Sudais
+  'ar.saoodshuraym',        // Sheikh Sa'ood Ash-Shuraym
+  'ar.minshawi',            // Sheikh Mohamed Siddiq Al-Minshawi
+  'ar.husary',              // Sheikh Mahmoud Khalil Al-Husary
+  'ar.mahermuaiqly',        // Sheikh Maher Al-Muaiqly
+  'ar.yasseraldosari',      // Yasser Al-Dosari
+  'ar.muhammadalluhaidan',  // Muhammad Al-Luhaidan
+  'ar.ahmedtalib'           // Ahmed bin Talib
 ];
 
 export const MANUAL_RECITERS: Reciter[] = [
