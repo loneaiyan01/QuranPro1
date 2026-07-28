@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useAudio } from '../contexts/AudioContext';
 import { JUZ_LIST } from '../utils/juzData';
+import { HIZB_LIST } from '../utils/hizbData';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -30,7 +31,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { actions: audioActions } = useAudio();
 
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [activeTab, setActiveTab] = React.useState<'surah' | 'juz'>('surah');
+  const [activeTab, setActiveTab] = React.useState<'surah' | 'juz' | 'hizb'>('surah');
 
   const filteredSurahs = surahs.filter(s =>
     s.englishName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -43,11 +44,29 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     j.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const filteredHizbs = HIZB_LIST.filter(h =>
+    h.nameEnglish.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    h.number.toString().includes(searchQuery) ||
+    h.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const handleSelectJuz = async (juz: typeof JUZ_LIST[0]) => {
     const targetSurah = surahs.find(s => s.number === juz.startSurahNumber);
     if (targetSurah) {
       await actions.selectSurah(targetSurah);
       audioActions.setAyahIndex(juz.startAyahNumber - 1);
+      setTimeout(() => {
+        audioActions.play();
+      }, 300);
+      onClose();
+    }
+  };
+
+  const handleSelectHizb = async (hizb: typeof HIZB_LIST[0]) => {
+    const targetSurah = surahs.find(s => s.number === hizb.startSurahNumber);
+    if (targetSurah) {
+      await actions.selectSurah(targetSurah);
+      audioActions.setAyahIndex(hizb.startAyahNumber - 1);
       setTimeout(() => {
         audioActions.play();
       }, 300);
@@ -169,7 +188,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        {/* Scrollable Quick Browse Surahs / Juzs */}
+        {/* Scrollable Quick Browse Surahs / Juzs / Hizbs */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col min-h-0">
           <div className="flex border-b border-[var(--border)] mb-3 flex-shrink-0">
             <button
@@ -192,12 +211,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             >
               Juzs
             </button>
+            <button
+              onClick={() => { setActiveTab('hizb'); setSearchQuery(''); }}
+              className={`flex-1 text-center pb-2 text-[11px] font-bold uppercase tracking-wider transition-all duration-300 border-b-2 ${
+                activeTab === 'hizb'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-muted hover:text-main'
+              }`}
+            >
+              Hizbs
+            </button>
           </div>
           <div className="relative mb-3 flex-shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" />
             <input
               type="text"
-              placeholder={activeTab === 'surah' ? "Filter Surahs..." : "Filter Juzs..."}
+              placeholder={activeTab === 'surah' ? "Filter Surahs..." : activeTab === 'juz' ? "Filter Juzs..." : "Filter Hizbs..."}
               className="w-full pl-9 pr-4 py-2 bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-accent/50 text-main"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -233,7 +262,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   </div>
                 </button>
               ))
-            ) : (
+            ) : activeTab === 'juz' ? (
               filteredJuzs.map((juz) => (
                 <button
                   key={juz.number}
@@ -250,6 +279,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     </div>
                   </div>
                   <span className="text-[9px] font-mono text-muted flex-shrink-0">{juz.nameArabic}</span>
+                </button>
+              ))
+            ) : (
+              filteredHizbs.map((hizb) => (
+                <button
+                  key={hizb.number}
+                  onClick={() => handleSelectHizb(hizb)}
+                  className="w-full text-left px-3 py-2 rounded-lg flex items-center justify-between transition-colors hover:bg-accent-muted/30 text-main"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="text-[10px] w-6 h-6 rounded-md flex items-center justify-center bg-[var(--bg-sidebar)] text-muted flex-shrink-0">
+                      {hizb.number}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold truncate">{hizb.nameEnglish} <span className="text-[9px] opacity-60">(Juz {hizb.juzNumber})</span></p>
+                      <p className="text-[9px] opacity-70 truncate">{hizb.description}</p>
+                    </div>
+                  </div>
+                  <span className="text-[9px] font-mono text-muted flex-shrink-0">{hizb.nameArabic}</span>
                 </button>
               ))
             )}

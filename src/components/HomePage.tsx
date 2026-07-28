@@ -10,17 +10,19 @@ import {
   Compass, 
   ChevronRight, 
   X,
-  History
+  History,
+  Layers
 } from 'lucide-react';
 import { Surah, RecentSurahItem } from '../types';
 import { JUZ_LIST } from '../utils/juzData';
+import { HIZB_LIST } from '../utils/hizbData';
 import { formatRelativeTime } from '../utils/formatTime';
 
 export const HomePage: React.FC = () => {
   const { surahs, actions: quranActions } = useQuran();
   const { actions: audioActions } = useAudio();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'surah' | 'juz'>('surah');
+  const [activeTab, setActiveTab] = useState<'surah' | 'juz' | 'hizb'>('surah');
   
   // Last played session & Recently played Surahs state
   const [sessionData, setSessionData] = useState<{
@@ -38,43 +40,21 @@ export const HomePage: React.FC = () => {
       const savedSession = localStorage.getItem('tarteela_last_session');
       if (savedSession) {
         const parsed = JSON.parse(savedSession);
-        if (parsed && (parsed.surahNumber > 1 || parsed.ayahIndex > 0)) {
-          setSessionData(parsed);
-        }
+        setSessionData(parsed);
       }
 
-      // 2. History of recently played Surahs
-      const savedHistory = localStorage.getItem('tarteela_recent_surahs');
-      if (savedHistory) {
-        const parsed = JSON.parse(savedHistory);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setRecentSurahs(parsed);
-          return;
-        }
-      }
-
-      // Fallback: If history empty, derive first item from single session
-      if (savedSession && surahs.length > 0) {
-        const parsed = JSON.parse(savedSession);
-        if (parsed && parsed.surahNumber) {
-          const matchSurah = surahs.find(s => s.number === parsed.surahNumber);
-          if (matchSurah) {
-            setRecentSurahs([{
-              surahNumber: matchSurah.number,
-              surahEnglishName: matchSurah.englishName,
-              surahEnglishNameTranslation: matchSurah.englishNameTranslation,
-              numberOfAyahs: matchSurah.numberOfAyahs,
-              revelationType: matchSurah.revelationType,
-              ayahIndex: parsed.ayahIndex || 0,
-              timestamp: parsed.timestamp || Date.now()
-            }]);
-          }
+      // 2. Recent surahs list
+      const savedRecents = localStorage.getItem('tarteela_recent_surahs');
+      if (savedRecents) {
+        const parsedRecents = JSON.parse(savedRecents);
+        if (Array.isArray(parsedRecents)) {
+          setRecentSurahs(parsedRecents);
         }
       }
     } catch (e) {
-      console.error("Failed to load recent surahs from localStorage", e);
+      console.error('Failed to load session/recent data:', e);
     }
-  }, [surahs]);
+  }, []);
 
   const handleResume = async () => {
     if (!sessionData) return;
@@ -114,6 +94,17 @@ export const HomePage: React.FC = () => {
     }
   };
 
+  const handlePlayHizb = async (hizb: typeof HIZB_LIST[0]) => {
+    const targetSurah = surahs.find(s => s.number === hizb.startSurahNumber);
+    if (targetSurah) {
+      await quranActions.selectSurah(targetSurah);
+      audioActions.setAyahIndex(hizb.startAyahNumber - 1);
+      setTimeout(() => {
+        audioActions.play();
+      }, 300);
+    }
+  };
+
   const filteredSurahs = useMemo(() => {
     return surahs.filter(s =>
       s.englishName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -131,6 +122,19 @@ export const HomePage: React.FC = () => {
       j.startSurahName.toLowerCase().includes(q) ||
       j.endSurahName.toLowerCase().includes(q) ||
       j.description.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
+
+  const filteredHizbs = useMemo(() => {
+    if (!searchQuery) return HIZB_LIST;
+    const q = searchQuery.toLowerCase();
+    return HIZB_LIST.filter(h =>
+      h.number.toString().includes(q) ||
+      h.nameEnglish.toLowerCase().includes(q) ||
+      h.startSurahName.toLowerCase().includes(q) ||
+      h.endSurahName.toLowerCase().includes(q) ||
+      h.description.toLowerCase().includes(q) ||
+      `juz ${h.juzNumber}`.includes(q)
     );
   }, [searchQuery]);
 
@@ -183,12 +187,12 @@ export const HomePage: React.FC = () => {
             </button>
           )}
 
-          {/* Top Surah Search Bar */}
+          {/* Top Search Bar */}
           <div className="flex-1 sm:flex-[1.2] relative min-w-0 w-full">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-accent pointer-events-none" />
             <input
               type="text"
-              placeholder="Search Surah (e.g. 36, Yaseen, Kahf)..."
+              placeholder={activeTab === 'surah' ? "Search Surah (e.g. 36, Yaseen, Kahf)..." : activeTab === 'juz' ? "Search Juz by number or surah..." : "Search Hizb by number (1-60) or surah..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-9 py-3 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] border border-[var(--border)] focus:border-accent/60 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent/40 text-main placeholder-muted transition-all shadow-sm"
@@ -272,12 +276,12 @@ export const HomePage: React.FC = () => {
           )}
         </div>
 
-        {/* All Surahs/Juzs Grid */}
+        {/* All Surahs/Juzs/Hizbs Grid */}
         <div className="space-y-4 sm:space-y-6 w-full max-w-full min-w-0">
-          <div className="flex items-center gap-6 border-b border-[var(--border)] pb-2">
+          <div className="flex items-center gap-4 sm:gap-6 border-b border-[var(--border)] pb-2 overflow-x-auto custom-scrollbar">
             <button
               onClick={() => { setActiveTab('surah'); }}
-              className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-base sm:text-lg md:text-xl transition-all duration-300 ${
+              className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-base sm:text-lg md:text-xl transition-all duration-300 flex-shrink-0 ${
                 activeTab === 'surah'
                   ? 'border-accent text-accent'
                   : 'border-transparent text-muted hover:text-main'
@@ -288,7 +292,7 @@ export const HomePage: React.FC = () => {
             </button>
             <button
               onClick={() => { setActiveTab('juz'); }}
-              className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-base sm:text-lg md:text-xl transition-all duration-300 ${
+              className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-base sm:text-lg md:text-xl transition-all duration-300 flex-shrink-0 ${
                 activeTab === 'juz'
                   ? 'border-accent text-accent'
                   : 'border-transparent text-muted hover:text-main'
@@ -296,6 +300,17 @@ export const HomePage: React.FC = () => {
             >
               <Compass className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>All Juzs</span>
+            </button>
+            <button
+              onClick={() => { setActiveTab('hizb'); }}
+              className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-base sm:text-lg md:text-xl transition-all duration-300 flex-shrink-0 ${
+                activeTab === 'hizb'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-muted hover:text-main'
+              }`}
+            >
+              <Layers className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>All Hizbs</span>
             </button>
           </div>
 
@@ -342,7 +357,7 @@ export const HomePage: React.FC = () => {
                 </button>
               </div>
             )
-          ) : (
+          ) : activeTab === 'juz' ? (
             filteredJuzs.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 w-full min-w-0">
                 {filteredJuzs.map((juz) => (
@@ -378,6 +393,50 @@ export const HomePage: React.FC = () => {
             ) : (
               <div className="text-center py-16 px-4 space-y-3">
                 <p className="text-sm text-muted">No Juzs found matching "{searchQuery}"</p>
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="text-xs font-medium text-accent hover:underline"
+                >
+                  Clear Search Query
+                </button>
+              </div>
+            )
+          ) : (
+            filteredHizbs.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 w-full min-w-0">
+                {filteredHizbs.map((hizb) => (
+                  <div
+                    key={hizb.number}
+                    onClick={() => handlePlayHizb(hizb)}
+                    className="group cursor-pointer p-3.5 sm:p-4 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-[0.97] flex items-center justify-between gap-3 min-w-0 w-full overflow-hidden"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold group-hover:scale-105 transition-transform flex-shrink-0">
+                        {hizb.number}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-semibold text-xs sm:text-sm text-main group-hover:text-accent transition-colors truncate">
+                          {hizb.nameEnglish} <span className="text-[10px] text-muted font-normal">(Juz {hizb.juzNumber})</span>
+                        </h4>
+                        <p className="text-[10px] sm:text-[11px] text-muted truncate mt-0.5">
+                          {hizb.description}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0 flex items-center gap-2">
+                      <span className="inline-block px-1.5 py-0.5 rounded bg-white/5 text-[9px] font-medium text-muted uppercase tracking-wider font-mono">
+                        {hizb.nameArabic}
+                      </span>
+                      <span className="p-1.5 rounded-lg bg-accent-muted text-accent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
+                        <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 px-4 space-y-3">
+                <p className="text-sm text-muted">No Hizbs found matching "{searchQuery}"</p>
                 <button 
                   onClick={() => setSearchQuery('')}
                   className="text-xs font-medium text-accent hover:underline"
