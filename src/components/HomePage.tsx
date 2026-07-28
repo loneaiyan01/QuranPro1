@@ -7,23 +7,23 @@ import {
   Search, 
   Clock, 
   Play, 
-  Bookmark as BookmarkIcon, 
   Sparkles, 
   Compass, 
   ChevronRight, 
   X,
-  Heart
+  History
 } from 'lucide-react';
-import { Surah } from '../types';
+import { Surah, RecentSurahItem } from '../types';
 import { JUZ_LIST } from '../utils/juzData';
+import { formatRelativeTime } from '../utils/formatTime';
 
 export const HomePage: React.FC = () => {
-  const { surahs, bookmarks, actions: quranActions } = useQuran();
+  const { surahs, actions: quranActions } = useQuran();
   const { actions: audioActions } = useAudio();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'surah' | 'juz'>('surah');
   
-  // Last played session state
+  // Last played session & Recently played Surahs state
   const [sessionData, setSessionData] = useState<{
     surahNumber: number;
     surahEnglishName: string;
@@ -31,19 +31,51 @@ export const HomePage: React.FC = () => {
     timestamp: number;
   } | null>(null);
 
+  const [recentSurahs, setRecentSurahs] = useState<RecentSurahItem[]>([]);
+
   useEffect(() => {
-    const saved = localStorage.getItem('tarteela_last_session');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
+    try {
+      // 1. Last single session
+      const savedSession = localStorage.getItem('tarteela_last_session');
+      if (savedSession) {
+        const parsed = JSON.parse(savedSession);
         if (parsed && (parsed.surahNumber > 1 || parsed.ayahIndex > 0)) {
           setSessionData(parsed);
         }
-      } catch (e) {
-        console.error("Failed to parse last session data", e);
       }
+
+      // 2. History of recently played Surahs
+      const savedHistory = localStorage.getItem('tarteela_recent_surahs');
+      if (savedHistory) {
+        const parsed = JSON.parse(savedHistory);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setRecentSurahs(parsed);
+          return;
+        }
+      }
+
+      // Fallback: If history empty, derive first item from single session
+      if (savedSession && surahs.length > 0) {
+        const parsed = JSON.parse(savedSession);
+        if (parsed && parsed.surahNumber) {
+          const matchSurah = surahs.find(s => s.number === parsed.surahNumber);
+          if (matchSurah) {
+            setRecentSurahs([{
+              surahNumber: matchSurah.number,
+              surahEnglishName: matchSurah.englishName,
+              surahEnglishNameTranslation: matchSurah.englishNameTranslation,
+              numberOfAyahs: matchSurah.numberOfAyahs,
+              revelationType: matchSurah.revelationType,
+              ayahIndex: parsed.ayahIndex || 0,
+              timestamp: parsed.timestamp || Date.now()
+            }]);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load recent surahs from localStorage", e);
     }
-  }, []);
+  }, [surahs]);
 
   const handleResume = async () => {
     if (!sessionData) return;
@@ -51,6 +83,20 @@ export const HomePage: React.FC = () => {
     if (targetSurah) {
       await quranActions.selectSurah(targetSurah);
       audioActions.setAyahIndex(sessionData.ayahIndex);
+      setTimeout(() => {
+        audioActions.play();
+      }, 300);
+    }
+  };
+
+  const handleResumeRecent = async (item: RecentSurahItem) => {
+    const targetSurah = surahs.find(s => s.number === item.surahNumber);
+    if (targetSurah) {
+      await quranActions.selectSurah(targetSurah);
+      audioActions.setAyahIndex(item.ayahIndex);
+      setTimeout(() => {
+        audioActions.play();
+      }, 300);
     }
   };
 
@@ -68,12 +114,6 @@ export const HomePage: React.FC = () => {
       }, 300);
     }
   };
-
-  const popularSurahsList = useMemo(() => {
-    const popularNumbers = [1, 18, 36, 55, 56, 67]; // Al-Fatiha, Al-Kahf, Yaseen, Ar-Rahman, Al-Waqi'ah, Al-Mulk
-    return surahs.filter(s => popularNumbers.includes(s.number))
-      .sort((a, b) => popularNumbers.indexOf(a.number) - popularNumbers.indexOf(b.number));
-  }, [surahs]);
 
   const filteredSurahs = useMemo(() => {
     return surahs.filter(s =>
@@ -175,91 +215,90 @@ export const HomePage: React.FC = () => {
               </div>
             </div>
           ) : (
-            // Fallback: Bookmarks quick link or simple stats card
             <div 
               className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-sidebar)] p-6 shadow-md flex flex-col justify-between"
             >
               <div className="space-y-2">
                 <h3 className="text-lg font-bold text-main flex items-center gap-2">
-                  <BookmarkIcon className="w-5 h-5 text-accent" />
-                  Your Reflections
+                  <BookOpen className="w-5 h-5 text-accent" />
+                  Verse Player
                 </h3>
                 <p className="text-xs text-muted leading-relaxed">
-                  Bookmark verses during playback to save them for easy access later. Create your own collection of inspiring passages.
+                  Select any Surah below to open the verse player with synchronized translations and recitation.
                 </p>
               </div>
               <div className="mt-6 text-xs text-muted">
-                {bookmarks.length === 0 ? 'No bookmarks saved yet' : `${bookmarks.length} saved bookmarks`}
+                114 Surahs available
               </div>
             </div>
           )}
         </div>
 
-        {/* Bookmarks Section (if available) */}
-        {bookmarks.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-serif font-bold text-main flex items-center gap-2">
-              <BookmarkIcon className="w-5 h-5 text-accent" />
-              Bookmarked Verses
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {bookmarks.slice(0, 6).map((bookmark) => {
-                const targetSurah = surahs.find(s => s.number === bookmark.surahNumber);
-                return (
-                  <div
-                    key={`${bookmark.surahNumber}-${bookmark.ayahNumberInSurah}`}
-                    onClick={async () => {
-                      if (targetSurah) {
-                        await quranActions.selectSurah(targetSurah);
-                        audioActions.setAyahIndex(bookmark.ayahNumberInSurah - 1);
-                      }
-                    }}
-                    className="group cursor-pointer p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] hover:border-accent/30 transition-all duration-200 active:scale-[0.97] flex items-center justify-between shadow-sm"
-                  >
-                    <div>
-                      <h4 className="text-sm font-semibold text-main">{bookmark.surahEnglishName}</h4>
-                      <p className="text-xs text-muted">Verse {bookmark.ayahNumberInSurah}</p>
-                    </div>
-                    <span className="p-2 bg-accent-muted text-accent rounded-lg group-hover:scale-105 transition-transform">
-                      <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+        {/* Recently Played Surahs Section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <History className="w-5 h-5 text-accent" />
+              <h2 className="text-xl font-serif font-bold text-main">Recently Played Surahs</h2>
+            </div>
+            {recentSurahs.length > 0 && (
+              <span className="text-xs text-muted">
+                Last {recentSurahs.slice(0, 5).length} listened
+              </span>
+            )}
+          </div>
+
+          {recentSurahs.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {recentSurahs.slice(0, 5).map((item) => (
+                <div
+                  key={item.surahNumber}
+                  onClick={() => handleResumeRecent(item)}
+                  className="group cursor-pointer p-5 rounded-2xl border border-[var(--border)] bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 shadow-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.97] flex flex-col justify-between gap-4 relative"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="w-8 h-8 rounded-xl bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold group-hover:bg-accent group-hover:text-white transition-colors">
+                      {item.surahNumber}
+                    </span>
+                    <span className="text-[10px] text-muted font-mono">
+                      {formatRelativeTime(item.timestamp)}
                     </span>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
-        {/* Popular Surahs Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Heart className="w-5 h-5 text-accent" />
-            <h2 className="text-xl font-serif font-bold text-main">Popular Surahs</h2>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {popularSurahsList.map((surah) => (
-              <div
-                key={surah.number}
-                onClick={() => handlePlaySurah(surah)}
-                className="group cursor-pointer p-5 rounded-2xl border border-[var(--border)] bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 shadow-sm transition-all duration-300 hover:scale-[1.03] active:scale-[0.96] flex flex-col justify-between items-center text-center gap-3 relative"
-              >
-                <span className="w-8 h-8 rounded-full bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold transition-colors group-hover:bg-accent group-hover:text-white">
-                  {surah.number}
-                </span>
-                <div>
-                  <h3 className="font-semibold text-sm text-main group-hover:text-accent transition-colors line-clamp-1">
-                    {surah.englishName}
-                  </h3>
-                  <p className="text-[10px] text-muted line-clamp-1 mt-0.5">
-                    {surah.englishNameTranslation}
-                  </p>
+                  <div className="space-y-1">
+                    <h3 className="font-semibold text-sm text-main group-hover:text-accent transition-colors line-clamp-1">
+                      {item.surahEnglishName}
+                    </h3>
+                    <p className="text-[10px] text-muted line-clamp-1">
+                      {item.surahEnglishNameTranslation}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-[var(--border)]/60 flex items-center justify-between text-[10px]">
+                    <span className="text-accent font-semibold flex items-center gap-1">
+                      <Play className="w-3 h-3 fill-current" />
+                      Verse {item.ayahIndex + 1}
+                    </span>
+                    <span className="text-muted">
+                      {item.numberOfAyahs} verses
+                    </span>
+                  </div>
                 </div>
-                <span className="text-[10px] uppercase font-bold text-muted/60 tracking-wider">
-                  {surah.numberOfAyahs} verses
-                </span>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 rounded-2xl border border-[var(--border)] bg-[var(--bg-sidebar)] text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-accent-muted text-accent flex items-center justify-center mx-auto">
+                <History className="w-6 h-6" />
               </div>
-            ))}
-          </div>
+              <div className="space-y-1 max-w-md mx-auto">
+                <h3 className="text-sm font-semibold text-main">No Recently Played Surahs</h3>
+                <p className="text-xs text-muted leading-relaxed">
+                  Select any Surah from the library below to start listening. Your recently played Surahs and verse progress will appear here for easy resuming.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* All Surahs/Juzs Grid with Search */}

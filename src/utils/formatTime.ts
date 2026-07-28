@@ -25,3 +25,20 @@ export function getPauseDelayText(delay: number | 'equal'): string {
     if (delay === 'equal') return 'Equal to Ayah Length';
     return `${delay}s Pause`;
 }
+
+/**
+ * Formats a timestamp into a human-readable relative time string.
+ */
+export function formatRelativeTime(timestamp: number): string {
+    if (!timestamp) return '';
+    const now = Date.now();
+    const diffInSeconds = Math.floor((now - timestamp) / 1000);
+    if (diffInSeconds < 60) return 'Just now';
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 30) return `${diffInDays}d ago`;
+    return new Date(timestamp).toLocaleDateString();
+}

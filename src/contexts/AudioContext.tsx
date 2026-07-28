@@ -237,16 +237,46 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
     }, [currentSurah, isRadioMode, radioStartAyahIndex]);
 
-    // Effect: Persist session progress to localStorage
+    // Effect: Persist session progress and recently played Surahs list to localStorage
     useEffect(() => {
         if (currentSurah && !isRadioMode) {
+            const timestamp = Date.now();
             const session = {
                 surahNumber: currentSurah.number,
                 surahEnglishName: currentSurah.englishName,
                 ayahIndex: currentAyahIndex,
-                timestamp: Date.now()
+                timestamp
             };
             localStorage.setItem('tarteela_last_session', JSON.stringify(session));
+
+            try {
+                const savedHistory = localStorage.getItem('tarteela_recent_surahs');
+                let history: any[] = savedHistory ? JSON.parse(savedHistory) : [];
+                if (!Array.isArray(history)) history = [];
+
+                // Remove existing entry for the same Surah to keep list deduplicated
+                history = history.filter(item => item && item.surahNumber !== currentSurah.number);
+
+                // Add latest played Surah at top
+                history.unshift({
+                    surahNumber: currentSurah.number,
+                    surahEnglishName: currentSurah.englishName,
+                    surahEnglishNameTranslation: currentSurah.englishNameTranslation,
+                    numberOfAyahs: currentSurah.numberOfAyahs,
+                    revelationType: currentSurah.revelationType,
+                    ayahIndex: currentAyahIndex,
+                    timestamp
+                });
+
+                // Keep top 10 items
+                if (history.length > 10) {
+                    history = history.slice(0, 10);
+                }
+
+                localStorage.setItem('tarteela_recent_surahs', JSON.stringify(history));
+            } catch (e) {
+                console.error("Failed to update recently played surahs in localStorage", e);
+            }
         }
     }, [currentSurah, currentAyahIndex, isRadioMode]);
 

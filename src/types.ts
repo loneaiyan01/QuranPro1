@@ -72,3 +72,13 @@ export interface Bookmark {
   ayahNumberInSurah: number;
   addedAt: number;
 }
+
+export interface RecentSurahItem {
+  surahNumber: number;
+  surahEnglishName: string;
+  surahEnglishNameTranslation: string;
+  numberOfAyahs: number;
+  revelationType: string;
+  ayahIndex: number;
+  timestamp: number;
+}
