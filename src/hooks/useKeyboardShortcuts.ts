@@ -41,7 +41,7 @@ export function useKeyboardShortcuts({ togglePlay, prevAyah, nextAyah, toggleSid
                     e.preventDefault();
                     if (isFullscreenTranslation) {
                         setIsFullscreenTranslation(false);
-                    } else {
+                    } else if (window.innerWidth < 768) {
                         toggleSidebar();
                     }
                     break;

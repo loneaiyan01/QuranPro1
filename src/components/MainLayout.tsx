@@ -21,13 +21,9 @@ const MainLayout: React.FC = () => {
     const { isRadioMode, currentSurah, currentPage, actions: quranActions } = useQuran();
     const { isFullscreenTranslation, setIsFullscreenTranslation } = useTheme();
 
-    // Update sidebar state when page changes (closed on home, open on other pages on desktop)
+    // Close sidebar on page change
     React.useEffect(() => {
-        if (window.innerWidth >= 768 && currentPage !== 'home') {
-            setIsSidebarOpen(true);
-        } else {
-            setIsSidebarOpen(false);
-        }
+        setIsSidebarOpen(false);
     }, [currentPage]);
 
     const { actions: { togglePlay, nextAyah, prevAyah } } = useAudio();
@@ -90,7 +86,7 @@ const MainLayout: React.FC = () => {
             />
 
             {/* Main Content */}
-            <div className={`flex-1 flex flex-col h-full transition-all duration-300 relative min-w-0 overflow-x-hidden ${isSidebarOpen ? 'md:mr-80' : ''}`}>
+            <div className="flex-1 flex flex-col h-full transition-all duration-300 relative min-w-0 overflow-x-hidden">
 
                 {/* Top Header Bar for Mobile & Desktop */}
                 <header className="fixed top-0 inset-x-0 h-16 px-4 sm:px-6 md:px-8 bg-[var(--bg-sidebar)]/90 backdrop-blur-md border-b border-[var(--border)] z-30 flex items-center justify-between shadow-xs">
@@ -185,7 +181,7 @@ const MainLayout: React.FC = () => {
                         )}
                         <button
                             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                            className="p-2.5 bg-accent text-white rounded-xl shadow-md shadow-accent/20 active:scale-95 transition-transform flex items-center justify-center cursor-pointer"
+                            className="p-2.5 bg-accent text-white rounded-xl shadow-md shadow-accent/20 active:scale-95 transition-transform flex items-center justify-center cursor-pointer md:hidden"
                             title={isSidebarOpen ? "Close Quick Menu" : "Open Quick Menu"}
                         >
                             <Menu className="w-5 h-5" />
