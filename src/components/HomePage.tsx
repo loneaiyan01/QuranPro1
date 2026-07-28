@@ -206,66 +206,66 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* Recently Played Surahs Section */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <History className="w-5 h-5 text-accent" />
-              <h2 className="text-xl font-sans font-bold text-main">Recently Played Surahs</h2>
+              <History className="w-4 h-4 text-accent" />
+              <h2 className="text-lg font-sans font-bold text-main">Recently Played Surahs</h2>
             </div>
             {recentSurahs.length > 0 && (
-              <span className="text-xs text-muted">
+              <span className="text-[11px] text-muted">
                 Last {recentSurahs.slice(0, 5).length} listened
               </span>
             )}
           </div>
 
           {recentSurahs.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="flex items-center gap-3 overflow-x-auto custom-scrollbar pb-2 pt-1 -mx-1 px-1">
               {recentSurahs.slice(0, 5).map((item) => (
                 <div
                   key={item.surahNumber}
                   onClick={() => handleResumeRecent(item)}
-                  className="group cursor-pointer p-5 rounded-2xl border border-[var(--border)] bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 shadow-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.97] flex flex-col justify-between gap-4 relative"
+                  className="group cursor-pointer p-3 rounded-xl border border-[var(--border)] bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 shadow-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.97] flex flex-col justify-between gap-2.5 w-[170px] sm:w-[190px] flex-shrink-0 relative"
                 >
                   <div className="flex items-center justify-between w-full">
-                    <span className="w-8 h-8 rounded-xl bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold group-hover:bg-accent group-hover:text-white transition-colors">
+                    <span className="w-7 h-7 rounded-lg bg-accent-muted text-accent flex items-center justify-center text-[11px] font-semibold group-hover:bg-accent group-hover:text-white transition-colors">
                       {item.surahNumber}
                     </span>
-                    <span className="text-[10px] text-muted font-mono">
+                    <span className="text-[9px] text-muted font-mono">
                       {formatRelativeTime(item.timestamp)}
                     </span>
                   </div>
 
-                  <div className="space-y-1">
-                    <h3 className="font-semibold text-sm text-main group-hover:text-accent transition-colors line-clamp-1">
+                  <div className="space-y-0.5">
+                    <h3 className="font-semibold text-xs text-main group-hover:text-accent transition-colors truncate">
                       {item.surahEnglishName}
                     </h3>
-                    <p className="text-[10px] text-muted line-clamp-1">
+                    <p className="text-[10px] text-muted truncate">
                       {item.surahEnglishNameTranslation}
                     </p>
                   </div>
 
-                  <div className="pt-2 border-t border-[var(--border)]/60 flex items-center justify-between text-[10px]">
+                  <div className="pt-1.5 border-t border-[var(--border)]/60 flex items-center justify-between text-[10px]">
                     <span className="text-accent font-semibold flex items-center gap-1">
-                      <Play className="w-3 h-3 fill-current" />
-                      Verse {item.ayahIndex + 1}
+                      <Play className="w-2.5 h-2.5 fill-current" />
+                      v{item.ayahIndex + 1}
                     </span>
-                    <span className="text-muted">
-                      {item.numberOfAyahs} verses
+                    <span className="text-muted text-[9px]">
+                      {item.numberOfAyahs} ayahs
                     </span>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="p-8 rounded-2xl border border-[var(--border)] bg-[var(--bg-sidebar)] text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-accent-muted text-accent flex items-center justify-center mx-auto">
-                <History className="w-6 h-6" />
+            <div className="p-4 sm:p-6 rounded-xl border border-[var(--border)] bg-[var(--bg-sidebar)] text-center space-y-2">
+              <div className="w-10 h-10 rounded-full bg-accent-muted text-accent flex items-center justify-center mx-auto">
+                <History className="w-5 h-5" />
               </div>
-              <div className="space-y-1 max-w-md mx-auto">
-                <h3 className="text-sm font-semibold text-main">No Recently Played Surahs</h3>
-                <p className="text-xs text-muted leading-relaxed">
-                  Select any Surah from the library below to start listening. Your recently played Surahs and verse progress will appear here for easy resuming.
+              <div className="space-y-0.5 max-w-md mx-auto">
+                <h3 className="text-xs font-semibold text-main">No Recently Played Surahs</h3>
+                <p className="text-[11px] text-muted leading-relaxed">
+                  Select any Surah below to start listening. Your recently played Surahs will appear here horizontally.
                 </p>
               </div>
             </div>
