@@ -139,7 +139,7 @@ export const HomePage: React.FC = () => {
   }, [searchQuery]);
 
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-4 pt-24 pb-28 md:py-12 lg:px-12 custom-scrollbar w-full max-w-full box-border">
+    <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-4 pt-20 sm:pt-24 pb-28 md:pb-12 md:pt-20 lg:px-12 custom-scrollbar w-full max-w-full box-border">
       <div className="max-w-6xl mx-auto space-y-8 sm:space-y-12 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full max-w-full min-w-0">
         
         {/* Quick Action Bar & Surah Search */}

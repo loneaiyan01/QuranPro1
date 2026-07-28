@@ -8,7 +8,7 @@ import { SettingsPage } from './SettingsPage';
 import { RadioPage } from './RadioPage';
 import { MiniPlayer } from './MiniPlayer';
 import { ResumePrompt } from './ResumePrompt';
-import { Menu, Tv, Home, BookOpen } from 'lucide-react';
+import { Menu, Tv, Home, BookOpen, Radio, Bookmark as BookmarkIcon, Settings } from 'lucide-react';
 import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -92,17 +92,78 @@ const MainLayout: React.FC = () => {
             {/* Main Content */}
             <div className={`flex-1 flex flex-col h-full transition-all duration-300 relative min-w-0 overflow-x-hidden ${isSidebarOpen ? 'md:mr-80' : ''}`}>
 
-                {/* Top Mobile Bar */}
-                <div className="md:hidden fixed top-0 inset-x-0 h-16 px-4 bg-[var(--bg-sidebar)]/90 backdrop-blur-md border-b border-[var(--border)] z-30 flex items-center justify-between shadow-xs">
-                    {/* Website Name on Left */}
-                    <button
-                        onClick={() => quranActions.resetToHome()}
-                        className="text-lg font-sans font-bold text-accent hover:opacity-80 transition-opacity bg-transparent border-none p-0 cursor-pointer flex items-center gap-2"
-                    >
-                        HearQuran
-                    </button>
+                {/* Top Header Bar for Mobile & Desktop */}
+                <header className="fixed top-0 inset-x-0 h-16 px-4 sm:px-6 md:px-8 bg-[var(--bg-sidebar)]/90 backdrop-blur-md border-b border-[var(--border)] z-30 flex items-center justify-between shadow-xs">
+                    {/* Website Logo & Navigation Links (Left) */}
+                    <div className="flex items-center gap-4 sm:gap-6">
+                        <button
+                            onClick={() => quranActions.resetToHome()}
+                            className="text-lg sm:text-xl font-sans font-bold text-accent hover:opacity-80 transition-opacity bg-transparent border-none p-0 cursor-pointer flex items-center gap-2"
+                        >
+                            HearQuran
+                        </button>
 
-                    {/* Controls & Sidebar Toggle on Right */}
+                        {/* Desktop Navigation Links */}
+                        <nav className="hidden md:flex items-center gap-1">
+                            <button
+                                onClick={() => quranActions.setCurrentPage('home')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                                    currentPage === 'home'
+                                        ? 'bg-accent-muted text-accent'
+                                        : 'text-muted hover:text-main hover:bg-white/5'
+                                }`}
+                            >
+                                <Home className="w-3.5 h-3.5" />
+                                <span>Home</span>
+                            </button>
+                            <button
+                                onClick={() => quranActions.setCurrentPage('player')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                                    currentPage === 'player'
+                                        ? 'bg-accent-muted text-accent'
+                                        : 'text-muted hover:text-main hover:bg-white/5'
+                                }`}
+                            >
+                                <BookOpen className="w-3.5 h-3.5" />
+                                <span>Player</span>
+                            </button>
+                            <button
+                                onClick={() => quranActions.toggleRadioMode(true)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                                    currentPage === 'radio'
+                                        ? 'bg-accent-muted text-accent'
+                                        : 'text-muted hover:text-main hover:bg-white/5'
+                                }`}
+                            >
+                                <Radio className="w-3.5 h-3.5" />
+                                <span>Radio</span>
+                            </button>
+                            <button
+                                onClick={() => quranActions.setCurrentPage('bookmarks')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                                    currentPage === 'bookmarks'
+                                        ? 'bg-accent-muted text-accent'
+                                        : 'text-muted hover:text-main hover:bg-white/5'
+                                }`}
+                            >
+                                <BookmarkIcon className="w-3.5 h-3.5" />
+                                <span>Reflections</span>
+                            </button>
+                            <button
+                                onClick={() => quranActions.setCurrentPage('settings')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                                    currentPage === 'settings'
+                                        ? 'bg-accent-muted text-accent'
+                                        : 'text-muted hover:text-main hover:bg-white/5'
+                                }`}
+                            >
+                                <Settings className="w-3.5 h-3.5" />
+                                <span>Settings</span>
+                            </button>
+                        </nav>
+                    </div>
+
+                    {/* Action Controls & Sidebar Toggle (Right) */}
                     <div className="flex items-center gap-2">
                         {!isHome && (
                             <button
@@ -123,47 +184,14 @@ const MainLayout: React.FC = () => {
                             </button>
                         )}
                         <button
-                            onClick={() => setIsSidebarOpen(true)}
-                            className="p-2.5 bg-accent text-white rounded-xl shadow-md shadow-accent/20 active:scale-95 transition-transform flex items-center justify-center"
-                            title="Open Sidebar"
+                            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                            className="p-2.5 bg-accent text-white rounded-xl shadow-md shadow-accent/20 active:scale-95 transition-transform flex items-center justify-center cursor-pointer"
+                            title={isSidebarOpen ? "Close Quick Menu" : "Open Quick Menu"}
                         >
                             <Menu className="w-5 h-5" />
                         </button>
                     </div>
-                </div>
-
-                {/* Desktop/Tablet Home Button */}
-                <div className="hidden md:flex items-center gap-2 absolute top-4 left-4 z-20">
-                    {!isHome && (
-                        <button
-                            onClick={() => quranActions.resetToHome()}
-                            className="p-2 bg-transparent hover:bg-[var(--bg-card-active)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
-                            title="Go to Homepage"
-                        >
-                            <Home className="w-6 h-6" />
-                        </button>
-                    )}
-                </div>
-
-                {/* Desktop/Tablet Sidebar Toggle & Controls */}
-                <div className="hidden md:flex items-center gap-2 absolute top-4 right-4 z-20">
-                    {currentPage === 'player' && currentSurah && (
-                        <button
-                            onClick={() => setIsFullscreenTranslation(true)}
-                            className="p-2 bg-transparent hover:bg-[var(--bg-card-active)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
-                            title="Fullscreen Translation Mode"
-                        >
-                            <Tv className="w-6 h-6" />
-                        </button>
-                    )}
-                    <button
-                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        className="p-2 bg-transparent hover:bg-[var(--bg-card-active)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
-                        title={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
-                    >
-                        <Menu className="w-6 h-6" />
-                    </button>
-                </div>
+                </header>
 
                 {/* Dynamic Page Container */}
                 <main className="flex-1 flex flex-col relative min-h-0 overflow-hidden">
