@@ -6,8 +6,10 @@ import { fetchSurahAudio } from '../services/api';
 export type VersePauseDelay = number | 'equal';
 
 export interface PlaybackRange {
-    startAyah: number; // 0-indexed
-    endAyah: number;   // 0-indexed
+    startSurahNumber: number;
+    startAyahIndex: number; // 0-indexed
+    endSurahNumber: number;
+    endAyahIndex: number;   // 0-indexed
 }
 
 interface AudioContextType {
@@ -230,9 +232,10 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     // Effect: Reset state when Surah changes
     useEffect(() => {
         if (currentSurah) {
+            const wasPlayingOrTransitioning = isPlaying || isTransitioning.current;
             const startIndex = (isRadioMode && radioStartAyahIndex !== null) ? radioStartAyahIndex : 0;
             setCurrentAyahIndex(startIndex);
-            if (isRadioMode) {
+            if (isRadioMode || wasPlayingOrTransitioning) {
                 setIsPlaying(true);
             } else {
                 setIsPlaying(false);
@@ -413,13 +416,18 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             } = stateRef.current;
 
             // Check if current verse reached end of playback range
-            if (playbackRange && currentAyahIndex >= playbackRange.endAyah) {
-                if (audioRef.current) {
-                    audioRef.current.pause();
+            if (playbackRange && currentSurah) {
+                const isAtEndSurah = currentSurah.number === playbackRange.endSurahNumber;
+                const isPastEndSurah = currentSurah.number > playbackRange.endSurahNumber;
+
+                if (isPastEndSurah || (isAtEndSurah && currentAyahIndex >= playbackRange.endAyahIndex)) {
+                    if (audioRef.current) {
+                        audioRef.current.pause();
+                    }
+                    setIsPlaying(false);
+                    setPlaybackRange(null);
+                    return;
                 }
-                setIsPlaying(false);
-                setPlaybackRange(null);
-                return;
             }
 
             // Check if we need to repeat the current verse (only in verse-by-verse mode)

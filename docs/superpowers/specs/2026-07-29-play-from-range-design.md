@@ -1,4 +1,4 @@
-# Play from Range (Play from Element) Feature Design
+# Play from Range (Cross-Surah) Feature Design
 
 **Date**: 2026-07-29  
 **Status**: Approved  
@@ -6,40 +6,45 @@
 ---
 
 ## 1. Overview
-The "Resume Session" button on the Home Page is replaced with a mobile-optimized **"Play Verse Range"** feature. This allows users to select any Surah and define a custom Start Ayah and End Ayah range to play continuously until the end verse of the range is reached, at which point audio automatically pauses.
+The "Play Verse Range" feature supports cross-Surah playback ranges, allowing users to specify a starting Surah + Ayah (e.g. Surah Yaseen 36, Ayah 5) and an ending Surah + Ayah (e.g. Surah Al-Qalam 68, Ayah 10). The player will play continuously across Surah boundaries and automatically pause when the ending verse of the ending Surah finishes.
 
 ---
 
 ## 2. Requirements & User Flow
-1. **Home Page Quick Action Bar**:
-   - Replace "Resume Session" quick action button with "Play Verse Range".
-   - Clicking opens the Range Selection Modal / Bottom Sheet.
+1. **Home Page Action Button**:
+   - Clicking "Play Verse Range" opens the Range Selector Modal / Bottom Sheet.
 2. **Range Selection Modal / Bottom Sheet**:
-   - Touch-friendly Bottom Sheet on mobile viewports (<640px) and centered Modal on desktop (≥640px).
-   - Surah Selector (1-114) with search and total Ayah indicator.
-   - Start Ayah picker (`From`) and End Ayah picker (`To`) with numeric inputs and stepper buttons (`-` / `+`).
-   - Quick preset chips (`1-10`, `1-20`, `1-50`, `Full Surah`).
-   - Real-time range validation: `1 <= Start <= End <= Max Ayahs`.
+   - **From Boundary**: Select Start Surah (1-114) and Start Ayah.
+   - **To Boundary**: Select End Surah (1-114, >= Start Surah) and End Ayah.
+   - **Validation Rules**:
+     - `1 <= Start Surah <= End Surah <= 114`.
+     - If `Start Surah === End Surah`, `1 <= Start Ayah <= End Ayah <= Max Ayahs`.
+     - If `Start Surah < End Surah`, `1 <= Start Ayah <= Start Surah Max Ayahs` and `1 <= End Ayah <= End Surah Max Ayahs`.
 3. **Playback Execution**:
-   - On tapping "Play Range", audio starts playing from `Start Ayah`.
-   - Audio automatically pauses when playback finishes `End Ayah`.
+   - **Start Surah**: Audio begins at `Start Ayah` and plays to the end of Start Surah, then advances to next Surah.
+   - **Intermediate Surahs**: Audio plays from Ayah 1 through the end of the Surah, advancing to next Surah.
+   - **End Surah**: Audio plays from Ayah 1 up to `End Ayah`. Once `End Ayah` finishes, audio automatically pauses and range resets.
 
 ---
 
 ## 3. Architecture & State Changes
 - **`AudioContext`**:
-  - State: `playbackRange: { startAyah: number; endAyah: number } | null`.
-  - Action: `setPlaybackRange(range: { startAyah: number; endAyah: number } | null)`.
-  - Effect: Monitor audio progress/verse index transitions. When `currentAyahIndex > endAyah`, trigger pause and clear or hold range state.
-- **`HomePage`**:
-  - Replace `sessionData` button with `Play Verse Range` trigger button.
-  - Add state for managing `RangeModal` visibility.
-- **`RangeModal` Component (`src/components/RangeModal.tsx`)**:
-  - New modular component containing Surah selector, range inputs, preset chips, and play trigger.
-
----
-
-## 4. Mobile & Touch Optimizations
-- Minimum 44px touch targets for steppers and preset chips.
-- Slide-up bottom sheet with backdrop blur and swipeable header on mobile screens.
-- Auto-focused input sanitization for valid verse bounds.
+  - `PlaybackRange` type:
+    ```ts
+    export interface PlaybackRange {
+      startSurahNumber: number;
+      startAyahIndex: number; // 0-indexed
+      endSurahNumber: number;
+      endAyahIndex: number;   // 0-indexed
+    }
+    ```
+  - `handleEnded`:
+    - If `currentSurah.number === playbackRange.endSurahNumber` AND `currentAyahIndex >= playbackRange.endAyahIndex`: pause audio & clear `playbackRange`.
+    - If `currentSurah.number < playbackRange.endSurahNumber` AND at last verse of current surah: advance to next surah (`selectSurah(nextSurah)`), keeping `playbackRange` active.
+- **`RangeModal` Component**:
+  - Start Surah & Start Ayah pickers.
+  - End Surah & End Ayah pickers.
+  - Quick Presets: `This Surah (1-10)`, `This Surah (Full)`, `Next 3 Surahs`, `Custom`.
+  - Summary indicator (e.g. `Surah Yaseen (v5) → Surah Al-Qalam (v10)`).
+- **`PlayerControls`**:
+  - Displays active range badge pill (e.g. `Range: Yaseen (v5) → Al-Qalam (v10)`) with "Clear Range" action.
