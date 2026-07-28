@@ -2,7 +2,7 @@ import React from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Repeat, Clock, Hourglass } from 'lucide-react';
 import { useAudio } from '../contexts/AudioContext';
 import { useQuran } from '../contexts/QuranContext';
-import { formatTime, getRepeatText, getPauseDelayText } from '../utils/formatTime';
+import { formatTime, getRepeatText } from '../utils/formatTime';
 
 const PlayerControls: React.FC = () => {
   const {
@@ -14,12 +14,11 @@ const PlayerControls: React.FC = () => {
     isBuffering,
     currentAyahIndex,
     verseRepeatLimit,
-    versePauseDelay,
     isPausingBetweenVerses,
     pauseCountdown,
     isFullSurahAudio,
     sleepTimer,
-    actions: { togglePlay, nextAyah, prevAyah, seek, setVerseRepeatLimit, setVersePauseDelay, setSleepTimer }
+    actions: { togglePlay, nextAyah, prevAyah, seek, setVerseRepeatLimit, setSleepTimer }
   } = useAudio();
 
   const { currentSurah, selectedReciter, surahText, isRadioMode } = useQuran();
@@ -37,19 +36,6 @@ const PlayerControls: React.FC = () => {
       setVerseRepeatLimit(-1);
     } else {
       setVerseRepeatLimit(1);
-    }
-  };
-
-  const handlePauseDelayToggle = () => {
-    // Cycle delay: 0 (Off) -> 2 -> 5 -> 'equal' -> 0
-    if (versePauseDelay === 0) {
-      setVersePauseDelay(2);
-    } else if (versePauseDelay === 2) {
-      setVersePauseDelay(5);
-    } else if (versePauseDelay === 5) {
-      setVersePauseDelay('equal');
-    } else {
-      setVersePauseDelay(0);
     }
   };
 
@@ -74,8 +60,8 @@ const PlayerControls: React.FC = () => {
       {isPausingBetweenVerses && (
         <div className="bg-accent/15 border-b border-accent/20 py-1 px-4 text-center animate-in fade-in duration-300">
           <p className="text-[11px] text-accent font-semibold flex items-center justify-center gap-1.5">
-            <Hourglass className="w-3 h-3 animate-spin" />
-            Reflection Pause ({pauseCountdown}s remaining) • Tap any control to skip
+            <Hourglass className="w-3 h-3 animate-spin flex-shrink-0" />
+            <span>Reflection Pause ({pauseCountdown}s remaining) • Tap control to skip</span>
           </p>
         </div>
       )}
@@ -126,7 +112,7 @@ const PlayerControls: React.FC = () => {
         )}
       </div>
 
-      <div className="max-w-5xl mx-auto w-full flex flex-col gap-1.5 sm:gap-2 p-2 sm:p-4 pb-4 md:pb-4">
+      <div className="max-w-5xl mx-auto w-full flex flex-col gap-1.5 sm:gap-2 p-3 sm:p-4 pb-5 md:pb-4">
         {/* Mobile Info */}
         <div className="md:hidden flex flex-col items-center text-center gap-0.5 max-w-full px-2">
           <div className="text-xs sm:text-sm font-semibold text-main truncate max-w-full">{currentSurah?.englishName}</div>
@@ -142,7 +128,7 @@ const PlayerControls: React.FC = () => {
         </div>
 
         {/* Controls Row */}
-        <div className="flex items-center justify-between md:justify-center relative px-1 md:px-0">
+        <div className="flex items-center justify-center relative w-full px-1 md:px-0">
           {/* Desktop Info */}
           <div className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2">
             <div className="text-sm font-semibold text-main">{currentSurah?.englishName}</div>
@@ -151,12 +137,12 @@ const PlayerControls: React.FC = () => {
             </div>
           </div>
 
-          {/* Buttons */}
-          <div className="flex items-center justify-center gap-1.5 sm:gap-4 md:gap-8 mx-auto w-full sm:w-auto overflow-x-auto no-scrollbar py-0.5">
-            {/* Sleep Timer Button */}
+          {/* Symmetrical 5-Button Center Cluster */}
+          <div className="flex items-center justify-center gap-3 sm:gap-6 md:gap-8 mx-auto">
+            {/* 1. Sleep Timer Button */}
             <button
               onClick={handleSleepTimerToggle}
-              className={`p-2 sm:p-3 md:p-2 transition-colors relative active:scale-95 transition-transform flex-shrink-0 ${
+              className={`p-2.5 sm:p-3 md:p-2 transition-colors relative active:scale-95 transition-transform flex-shrink-0 ${
                 sleepTimer 
                   ? 'text-accent font-bold' 
                   : 'text-muted hover:text-accent'
@@ -164,7 +150,7 @@ const PlayerControls: React.FC = () => {
               aria-label="Toggle sleep timer"
               title={sleepTimer ? `Sleep timer: ${sleepTimer} mins remaining` : 'Set sleep timer'}
             >
-              <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Clock className="w-5 h-5" />
               {sleepTimer && (
                 <span className="absolute -top-1 -right-1 text-[8px] font-mono bg-accent text-white rounded-full w-4 h-4 flex items-center justify-center border border-[var(--bg-main)] shadow-sm">
                   {sleepTimer}
@@ -172,43 +158,46 @@ const PlayerControls: React.FC = () => {
               )}
             </button>
 
+            {/* 2. Previous Ayah Button */}
             <button
               onClick={prevAyah}
               disabled={isRadioMode}
-              className={`p-2 sm:p-3 md:p-2 text-muted hover:text-accent transition-colors active:scale-95 transition-transform flex-shrink-0 ${isRadioMode ? 'opacity-20 cursor-not-allowed pointer-events-none' : ''}`}
+              className={`p-2.5 sm:p-3 md:p-2 text-muted hover:text-accent transition-colors active:scale-95 transition-transform flex-shrink-0 ${isRadioMode ? 'opacity-20 cursor-not-allowed pointer-events-none' : ''}`}
               aria-label="Previous Verse"
             >
-              <SkipBack className="w-5 h-5 sm:w-6 sm:h-6" />
+              <SkipBack className="w-6 h-6" />
             </button>
 
+            {/* 3. Play / Pause Button (Center) */}
             <button
               onClick={togglePlay}
               aria-label={isBuffering ? 'Loading audio' : isPlaying ? 'Pause playback' : 'Play playback'}
-              className="w-12 h-12 sm:w-14 sm:h-14 bg-accent hover:bg-accent/90 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-accent/30 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-main)] transition-all duration-300 flex-shrink-0"
+              className="w-13 h-13 sm:w-14 sm:h-14 bg-accent hover:bg-accent/90 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-accent/30 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-main)] transition-all duration-300 flex-shrink-0"
             >
               {isBuffering ? (
-                <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : isPlaying ? (
-                <Pause className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
+                <Pause className="w-6 h-6 fill-current" />
               ) : (
-                <Play className="w-5 h-5 sm:w-6 sm:h-6 ml-0.5 fill-current" />
+                <Play className="w-6 h-6 ml-0.5 fill-current" />
               )}
             </button>
 
+            {/* 4. Next Ayah Button */}
             <button
               onClick={nextAyah}
               disabled={isRadioMode}
-              className={`p-2 sm:p-3 md:p-2 text-muted hover:text-accent transition-colors active:scale-95 transition-transform flex-shrink-0 ${isRadioMode ? 'opacity-20 cursor-not-allowed pointer-events-none' : ''}`}
+              className={`p-2.5 sm:p-3 md:p-2 text-muted hover:text-accent transition-colors active:scale-95 transition-transform flex-shrink-0 ${isRadioMode ? 'opacity-20 cursor-not-allowed pointer-events-none' : ''}`}
               aria-label="Next Verse"
             >
-              <SkipForward className="w-5 h-5 sm:w-6 sm:h-6" />
+              <SkipForward className="w-6 h-6" />
             </button>
 
-            {/* Repeat / Loop Button */}
+            {/* 5. Repeat / Loop Button */}
             <button
               onClick={handleRepeatToggle}
               disabled={isFullSurahAudio || isRadioMode}
-              className={`p-2 sm:p-3 md:p-2 transition-colors relative active:scale-95 transition-transform flex-shrink-0 ${
+              className={`p-2.5 sm:p-3 md:p-2 transition-colors relative active:scale-95 transition-transform flex-shrink-0 ${
                 isFullSurahAudio || isRadioMode
                   ? 'opacity-20 cursor-not-allowed text-muted' 
                   : verseRepeatLimit > 1 || verseRepeatLimit === -1 
@@ -224,44 +213,16 @@ const PlayerControls: React.FC = () => {
                     : `Verse repeat limit: ${getRepeatText(verseRepeatLimit)}`
               }
             >
-              <Repeat className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Repeat className="w-5 h-5" />
               {verseRepeatLimit !== 1 && !isFullSurahAudio && !isRadioMode && (
                 <span className="absolute -top-1 -right-1 text-[8px] font-mono bg-accent text-white rounded-full w-4 h-4 flex items-center justify-center border border-[var(--bg-main)] shadow-sm">
                   {verseRepeatLimit === -1 ? '∞' : `${verseRepeatLimit}`}
                 </span>
               )}
             </button>
-
-            {/* Pause Before Verse (Reflection Delay) Button */}
-            <button
-              onClick={handlePauseDelayToggle}
-              disabled={isFullSurahAudio || isRadioMode}
-              className={`p-2 sm:p-3 md:p-2 transition-colors relative active:scale-95 transition-transform flex-shrink-0 ${
-                isFullSurahAudio || isRadioMode
-                  ? 'opacity-20 cursor-not-allowed text-muted' 
-                  : versePauseDelay !== 0
-                    ? 'text-accent font-bold' 
-                    : 'text-muted hover:text-accent'
-              }`}
-              aria-label="Toggle pause before verse"
-              title={
-                isFullSurahAudio 
-                  ? 'Pause before verse not available for full surah audio' 
-                  : isRadioMode
-                    ? 'Pause before verse not available in radio mode'
-                    : `Pause before verse: ${getPauseDelayText(versePauseDelay)}`
-              }
-            >
-              <Hourglass className={`w-4 h-4 sm:w-5 sm:h-5 ${isPausingBetweenVerses ? 'animate-spin' : ''}`} />
-              {versePauseDelay !== 0 && !isFullSurahAudio && !isRadioMode && (
-                <span className="absolute -top-1 -right-1 text-[8px] font-mono font-bold bg-accent text-white rounded-full min-w-4 h-4 px-1 flex items-center justify-center border border-[var(--bg-main)] shadow-sm">
-                  {versePauseDelay === 'equal' ? '=' : `${versePauseDelay}s`}
-                </span>
-              )}
-            </button>
           </div>
 
-          {/* Volume Indicator */}
+          {/* Desktop Volume Indicator */}
           <div className="hidden md:flex items-center gap-2 absolute right-0 top-1/2 -translate-y-1/2 text-muted opacity-50">
             <Volume2 className="w-5 h-5" />
           </div>
