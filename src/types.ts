@@ -52,6 +52,7 @@ export interface Reciter {
   type: string;
   isVerseByVerse: boolean;
   urlPrefix?: string;
+  verseUrlPrefix?: string;
 }
 
 export enum DisplayMode {
@@ -61,6 +62,7 @@ export enum DisplayMode {
 }
 
 export enum Theme {
+  APPLE_BLUE = 'apple-blue',
   ROSE_GOLD = 'rose-gold'
 }
 

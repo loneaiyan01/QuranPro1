@@ -32,7 +32,8 @@ export const MANUAL_RECITERS: Reciter[] = [
     language: 'ar',
     format: 'audio',
     type: 'versebyverse',
-    isVerseByVerse: true
+    isVerseByVerse: true,
+    verseUrlPrefix: 'https://everyayah.com/data/Minshawy_Mujawwad_192kbps/'
   },
   {
     identifier: 'ar.yasseraldosari',

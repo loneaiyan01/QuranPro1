@@ -22,7 +22,7 @@ const PlayerControls: React.FC = () => {
     actions: { togglePlay, nextAyah, prevAyah, seek, setVerseRepeatLimit, setSleepTimer, setPlaybackRange }
   } = useAudio();
 
-  const { currentSurah, selectedReciter, surahText, isRadioMode } = useQuran();
+  const { currentSurah, selectedReciter, surahText, isRadioMode, surahs } = useQuran();
 
   // Calculate verse number for display
   const verseNumber = surahText?.arabic.ayahs[currentAyahIndex]?.numberInSurah;

@@ -122,13 +122,48 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 setSurahs(fetchedSurahs);
                 setReciters(fetchedReciters);
 
-                // Defaults — force Muhammad Ayyub for now
+                // Reciter selection: restore saved or default to Sheikh Muhammad Ayyub
+                let activeReciter = fetchedReciters[0];
                 if (fetchedReciters.length > 0) {
+                    const savedReciterId = localStorage.getItem('tarteela_reciter');
+                    const savedMatch = savedReciterId ? fetchedReciters.find(r => r.identifier === savedReciterId) : null;
                     const ayyub = fetchedReciters.find(r => r.identifier === 'ar.muhammadayyoub');
-                    setSelectedReciter(ayyub || fetchedReciters[0]);
+                    activeReciter = savedMatch || ayyub || fetchedReciters[0];
+                    setSelectedReciter(activeReciter);
                 }
 
-                // Do not load any Surah by default (go to home page)
+                // Initial Surah selection: restore last session or default to Surah 1 (Al-Fatihah)
+                let initialSurah = fetchedSurahs[0];
+                let savedAyahIndex: number | null = null;
+                try {
+                    const savedSession = localStorage.getItem('tarteela_last_session');
+                    if (savedSession) {
+                        const parsed = JSON.parse(savedSession);
+                        const match = fetchedSurahs.find(s => s.number === parsed.surahNumber);
+                        if (match) {
+                            initialSurah = match;
+                            savedAyahIndex = typeof parsed.ayahIndex === 'number' ? parsed.ayahIndex : null;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to parse last session:', e);
+                }
+
+                if (initialSurah) {
+                    setCurrentSurah(initialSurah);
+                    const textData = await fetchSurahText(initialSurah.number);
+                    if (textData) {
+                        if (initialSurah.number !== 1 && initialSurah.number !== 9 && textData.arabic?.ayahs?.[0]) {
+                            const firstAyahText = textData.arabic.ayahs[0].text;
+                            const bismillahPrefix = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
+                            if (firstAyahText.startsWith(bismillahPrefix)) {
+                                textData.arabic.ayahs[0].text = firstAyahText.slice(bismillahPrefix.length).trim();
+                            }
+                        }
+                        setSurahText(textData);
+                    }
+                }
+
                 setIsLoadingContent(false);
             } catch (err) {
                 setContentError('Failed to connect to the Quran API. Please check your internet connection.');

@@ -17,6 +17,17 @@ interface ThemeContextType {
 }
 
 export const THEME_VARIABLES: Record<Theme, Record<string, string>> = {
+  [Theme.APPLE_BLUE]: {
+    '--bg-main': '#0B0C0E',
+    '--bg-sidebar': '#121316',
+    '--bg-card-active': '#1D212A',
+    '--accent': '#0A84FF', // Apple Sonic Electric Blue
+    '--accent-muted': 'rgba(10, 132, 255, 0.15)',
+    '--border': 'rgba(255, 255, 255, 0.08)',
+    '--border-active': '#0A84FF',
+    '--ring': 'rgba(10, 132, 255, 0.35)',
+    '--glass-bg': 'rgba(18, 19, 22, 0.8)'
+  },
   [Theme.ROSE_GOLD]: {
     '--bg-main': '#191213',
     '--bg-sidebar': '#241B1C',
@@ -44,21 +55,24 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const saved = localStorage.getItem('tarteela_arabicFontSize');
     if (saved !== null) {
       const num = Number(saved);
-      return !isNaN(num) && num >= 32 && num <= 120 ? num : 64;
+      return !isNaN(num) && num >= 32 && num <= 120 ? num : 56;
     }
-    return 64;
+    return 56;
   });
   
   const [translationFontSize, setTranslationFontSize] = useState<number>(() => {
     const saved = localStorage.getItem('tarteela_translationFontSize');
     if (saved !== null) {
       const num = Number(saved);
-      return !isNaN(num) && num >= 14 && num <= 48 ? num : 20;
+      return !isNaN(num) && num >= 14 && num <= 48 ? num : 18;
     }
-    return 20;
+    return 18;
   });
 
-  const [theme, setTheme] = useState<Theme>(Theme.ROSE_GOLD);
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem('tarteela_selected_theme');
+    return saved === Theme.ROSE_GOLD ? Theme.ROSE_GOLD : Theme.APPLE_BLUE;
+  });
 
   const [isFullscreenTranslation, setIsFullscreenTranslation] = useState<boolean>(false);
   const [fullscreenLayoutMode, setFullscreenLayoutMode] = useState<FullscreenLayoutMode>(() => {

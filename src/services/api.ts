@@ -93,6 +93,27 @@ export const fetchSurahAudio = async (surahNumber: number, reciterIdentifier: st
       }];
     }
 
+    // If it's a manual VBV reciter with a custom verse URL prefix (e.g., EveryAyah high-quality Mujawwad)
+    if (reciter && reciter.isVerseByVerse && reciter.verseUrlPrefix) {
+      const response = await fetch(`${BASE_URL}/surah/${surahNumber}/quran-uthmani`);
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      const data = await response.json();
+      const paddedSurah = surahNumber.toString().padStart(3, '0');
+
+      return data.data.ayahs.map((ayah: any) => {
+        const paddedAyah = ayah.numberInSurah.toString().padStart(3, '0');
+        return {
+          number: ayah.number,
+          audio: `${reciter.verseUrlPrefix}${paddedSurah}${paddedAyah}.mp3`,
+          audioSecondary: [],
+          text: ayah.text || '',
+          numberInSurah: ayah.numberInSurah
+        };
+      });
+    }
+
     // Default VBV fetch
     const response = await fetch(`${BASE_URL}/surah/${surahNumber}/${reciterIdentifier}`);
     if (!response.ok) {
