@@ -33,8 +33,11 @@ export const fetchReciters = async (): Promise<Reciter[]> => {
     // Add isVerseByVerse flag
     apiReciters = apiReciters.map((r: Reciter) => ({ ...r, isVerseByVerse: true }));
 
-    // Merge with Manual
-    let reciters = [...apiReciters, ...MANUAL_RECITERS];
+    // Merge with Manual, deduplicating by identifier (manual entries take precedence)
+    const reciterMap = new Map<string, Reciter>();
+    apiReciters.forEach((r: Reciter) => reciterMap.set(r.identifier, r));
+    MANUAL_RECITERS.forEach((r: Reciter) => reciterMap.set(r.identifier, r));
+    let reciters = Array.from(reciterMap.values());
 
     // Strictly keep ONLY the reciters requested by the user
     reciters = reciters.filter(r => ALLOWED_IDENTIFIERS.includes(r.identifier));

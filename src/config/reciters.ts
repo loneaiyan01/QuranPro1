@@ -7,6 +7,7 @@ export const ALLOWED_IDENTIFIERS = [
   'ar.abdurrahmaansudais',  // Sheikh Abdur-Rahman As-Sudais
   'ar.saoodshuraym',        // Sheikh Sa'ood Ash-Shuraym
   'ar.minshawi',            // Sheikh Mohamed Siddiq Al-Minshawi
+  'ar.minshawimujawwad',    // Sheikh Mohamed Siddiq Al-Minshawi (Mujawwad)
   'ar.husary',              // Sheikh Mahmoud Khalil Al-Husary
   'ar.mahermuaiqly',        // Sheikh Maher Al-Muaiqly
   'ar.yasseraldosari',      // Yasser Al-Dosari
@@ -15,6 +16,24 @@ export const ALLOWED_IDENTIFIERS = [
 ];
 
 export const MANUAL_RECITERS: Reciter[] = [
+  {
+    identifier: 'ar.minshawi',
+    name: 'محمد صديق المنشاوي',
+    englishName: 'Minshawi (Murattal)',
+    language: 'ar',
+    format: 'audio',
+    type: 'versebyverse',
+    isVerseByVerse: true
+  },
+  {
+    identifier: 'ar.minshawimujawwad',
+    name: 'محمد صديق المنشاوي (المجود)',
+    englishName: 'Minshawi (Mujawwad)',
+    language: 'ar',
+    format: 'audio',
+    type: 'versebyverse',
+    isVerseByVerse: true
+  },
   {
     identifier: 'ar.yasseraldosari',
     name: 'ياسر الدوسري',
