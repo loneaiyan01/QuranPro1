@@ -43,7 +43,7 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className="flex-1 overflow-y-auto px-4 pt-24 pb-28 md:py-12 lg:px-12 custom-scrollbar">
-      <div className="max-w-3xl mx-auto space-y-10 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="max-w-3xl mx-auto space-y-10 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-300 ease-[var(--ease-apple-out)]">
         
         {/* Header section */}
         <div className="border-b border-[var(--border)] pb-6">
@@ -111,7 +111,7 @@ export const SettingsPage: React.FC = () => {
             <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
               <button
                 onClick={() => setDisplayMode(DisplayMode.ENGLISH_ONLY)}
-                className={`py-3 text-[10px] sm:text-xs px-1 sm:px-2 font-semibold rounded-xl border transition-all active:scale-95 ${
+                className={`py-3 text-[10px] sm:text-xs px-1 sm:px-2 font-semibold rounded-xl border btn-press hit-area-40 transition-colors ${
                   displayMode === DisplayMode.ENGLISH_ONLY
                     ? 'bg-accent text-white border-accent shadow-md shadow-accent/15'
                     : 'border-[var(--border)] bg-[var(--bg-sidebar)] text-muted hover:bg-white/5'
@@ -122,7 +122,7 @@ export const SettingsPage: React.FC = () => {
               
               <button
                 onClick={() => setDisplayMode(DisplayMode.ARABIC_ONLY)}
-                className={`py-3 text-[10px] sm:text-xs px-1 sm:px-2 font-semibold rounded-xl border transition-all active:scale-95 ${
+                className={`py-3 text-[10px] sm:text-xs px-1 sm:px-2 font-semibold rounded-xl border btn-press hit-area-40 transition-colors ${
                   displayMode === DisplayMode.ARABIC_ONLY
                     ? 'bg-accent text-white border-accent shadow-md shadow-accent/15'
                     : 'border-[var(--border)] bg-[var(--bg-sidebar)] text-muted hover:bg-white/5'
@@ -133,7 +133,7 @@ export const SettingsPage: React.FC = () => {
               
               <button
                 onClick={() => setDisplayMode(DisplayMode.BOTH)}
-                className={`py-3 text-[10px] sm:text-xs px-1 sm:px-2 font-semibold rounded-xl border transition-all active:scale-95 ${
+                className={`py-3 text-[10px] sm:text-xs px-1 sm:px-2 font-semibold rounded-xl border btn-press hit-area-40 transition-colors ${
                   displayMode === DisplayMode.BOTH
                     ? 'bg-accent text-white border-accent shadow-md shadow-accent/15'
                     : 'border-[var(--border)] bg-[var(--bg-sidebar)] text-muted hover:bg-white/5'
@@ -159,7 +159,7 @@ export const SettingsPage: React.FC = () => {
                   key={limit}
                   disabled={isFullSurahAudio}
                   onClick={() => handleRepeatToggle(limit)}
-                  className={`py-2 text-xs font-semibold rounded-xl border transition-all active:scale-95 ${
+                  className={`py-2 text-xs font-semibold rounded-xl border btn-press hit-area-40 transition-colors ${
                     isFullSurahAudio 
                       ? 'opacity-30 cursor-not-allowed text-muted border-[var(--border)] bg-black/10' 
                       : verseRepeatLimit === limit
@@ -190,7 +190,7 @@ export const SettingsPage: React.FC = () => {
                     key={String(delayOption)}
                     disabled={isFullSurahAudio}
                     onClick={() => setVersePauseDelay(delayOption)}
-                    className={`py-3 px-2 text-[11px] font-semibold rounded-xl border transition-all active:scale-95 text-center ${
+                    className={`py-3 px-2 text-[11px] font-semibold rounded-xl border btn-press hit-area-40 transition-colors text-center ${
                       isFullSurahAudio
                         ? 'opacity-30 cursor-not-allowed text-muted border-[var(--border)] bg-black/10'
                         : isSelected
@@ -219,7 +219,7 @@ export const SettingsPage: React.FC = () => {
                 <button
                   key={mins}
                   onClick={() => setSleepTimer(mins)}
-                  className={`py-2 text-xs font-semibold rounded-xl border transition-all active:scale-95 ${
+                  className={`py-2 text-xs font-semibold rounded-xl border btn-press hit-area-40 transition-colors ${
                     sleepTimer === mins
                       ? 'bg-accent text-white border-accent shadow-md shadow-accent/15'
                       : 'border-[var(--border)] bg-[var(--bg-sidebar)] text-muted hover:bg-white/5'
@@ -259,7 +259,7 @@ export const SettingsPage: React.FC = () => {
                   <button
                     key={reciter.identifier}
                     onClick={() => quranActions.selectReciter(reciter)}
-                    className={`p-4 rounded-xl border text-left flex justify-between items-center transition-all active:scale-[0.99] cursor-pointer ${
+                    className={`p-4 rounded-xl border text-left flex justify-between items-center transition-colors duration-150 cursor-pointer ${
                       isSelected
                         ? 'border-accent bg-accent-muted text-accent shadow-md'
                         : 'border-[var(--border)] bg-[var(--bg-sidebar)] text-main hover:bg-white/5'

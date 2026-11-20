@@ -14,6 +14,10 @@ interface ThemeContextType {
   setIsFullscreenTranslation: (active: boolean) => void;
   fullscreenLayoutMode: FullscreenLayoutMode;
   setFullscreenLayoutMode: (mode: FullscreenLayoutMode) => void;
+  readingWidth: number;
+  setReadingWidth: (width: number) => void;
+  horizontalPadding: number;
+  setHorizontalPadding: (padding: number) => void;
 }
 
 export const THEME_VARIABLES: Record<Theme, Record<string, string>> = {
@@ -80,6 +84,24 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return saved === 'single' || saved === 'scroll' ? saved : 'single';
   });
 
+  const [readingWidth, setReadingWidth] = useState<number>(() => {
+    const saved = localStorage.getItem('tarteela_readingWidth');
+    if (saved !== null) {
+      const num = Number(saved);
+      return !isNaN(num) && num >= 600 && num <= 1800 ? num : 1800; // default to wide/max
+    }
+    return 1800;
+  });
+
+  const [horizontalPadding, setHorizontalPadding] = useState<number>(() => {
+    const saved = localStorage.getItem('tarteela_horizontalPadding');
+    if (saved !== null) {
+      const num = Number(saved);
+      return !isNaN(num) && num >= 0 && num <= 48 ? num : 16;
+    }
+    return 16;
+  });
+
   // Persist settings to localStorage on change
   useEffect(() => {
     localStorage.setItem('tarteela_displayMode', displayMode);
@@ -100,6 +122,14 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   useEffect(() => {
     localStorage.setItem('tarteela_fullscreenLayoutMode', fullscreenLayoutMode);
   }, [fullscreenLayoutMode]);
+
+  useEffect(() => {
+    localStorage.setItem('tarteela_readingWidth', String(readingWidth));
+  }, [readingWidth]);
+
+  useEffect(() => {
+    localStorage.setItem('tarteela_horizontalPadding', String(horizontalPadding));
+  }, [horizontalPadding]);
 
   // Listen for browser native fullscreen changes
   useEffect(() => {
@@ -198,6 +228,10 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setIsFullscreenTranslation,
         fullscreenLayoutMode,
         setFullscreenLayoutMode,
+        readingWidth,
+        setReadingWidth,
+        horizontalPadding,
+        setHorizontalPadding,
       }}
     >
       {children}

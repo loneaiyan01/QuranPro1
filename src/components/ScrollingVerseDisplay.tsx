@@ -85,18 +85,23 @@ const VerseItem = React.memo<VerseItemProps>(({
         <div
             ref={innerRef}
             onClick={isVerseByVerse ? onClick : undefined}
-            className={`group p-5 md:p-10 rounded-2xl md:rounded-3xl transition-all duration-700 border ${
+            className={`group p-5 md:p-10 rounded-2xl md:rounded-3xl border ${
                 isVerseByVerse ? 'cursor-pointer' : ''
             } ${isActive
                 ? 'bg-[var(--bg-card-active)] border-[var(--border-active)] shadow-[var(--shadow-lg)] border-l-4'
-                : 'bg-transparent border-transparent hover:bg-white/5 active:bg-white/10'
+                : 'bg-transparent border-transparent border-l-4 border-l-transparent hover:bg-white/5 active:bg-white/10'
                 }`}
+            style={{
+                transitionProperty: 'background-color, border-color, box-shadow, opacity',
+                transitionDuration: '250ms',
+                transitionTimingFunction: 'var(--ease-apple-out)'
+            }}
         >
             {/* Header: Verse Number */}
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
-                    <span className={`w-10 h-10 flex items-center justify-center text-xs font-mono rounded-xl transition-all duration-500 shadow-sm border relative overflow-hidden ${isActive
-                        ? 'bg-accent text-white rotate-0 scale-110 border-accent'
+                    <span className={`w-10 h-10 flex items-center justify-center text-xs font-mono tabular-nums rounded-xl transition-[transform,opacity,background-color] duration-200 shadow-sm border relative overflow-hidden ${isActive
+                        ? 'bg-accent text-white rotate-0 scale-105 border-accent'
                         : 'bg-[var(--bg-main)] text-accent rotate-45 group-hover:rotate-0 border-[var(--border)]'
                         }`}>
                         {isVerseByVerse && (
@@ -163,7 +168,7 @@ const VerseItem = React.memo<VerseItemProps>(({
             {/* Arabic Text */}
             {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ARABIC_ONLY) && (
                 <p
-                    className={`text-right font-quran leading-[2.4] mb-8 transition-all duration-500 ${isActive ? 'text-main scale-[1.02] origin-right' : 'text-main opacity-90'
+                    className={`text-right font-quran leading-[2.4] mb-8 transition-colors duration-250 ${isActive ? 'text-main' : 'text-main opacity-90'
                         }`}
                     dir="rtl"
                     style={{ fontSize: `${displayArabicSize}px` }}
@@ -175,7 +180,7 @@ const VerseItem = React.memo<VerseItemProps>(({
             {/* English Text */}
             {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ENGLISH_ONLY) && englishAyah && (
                 <p
-                    className={`text-left font-sans leading-relaxed transition-all duration-500 ${isActive ? 'text-main font-normal' : 'text-muted opacity-80'
+                    className={`text-left font-sans leading-relaxed transition-colors duration-250 ${isActive ? 'text-main font-normal' : 'text-muted opacity-80'
                         }`}
                     style={{ fontSize: `${displayTranslationSize}px` }}
                 >
@@ -352,7 +357,7 @@ const ScrollingVerseDisplay: React.FC = () => {
                     </div>
                     <button
                         onClick={() => actions.retryLoadContent()}
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-white font-semibold text-sm rounded-2xl shadow-lg shadow-accent/20 hover:scale-[1.03] active:scale-95 transition-all duration-200"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-white font-semibold text-sm rounded-2xl shadow-lg shadow-accent/20 btn-press hit-area-44 transition-colors duration-150"
                     >
                         <RefreshCw className="w-4 h-4" />
                         Retry Loading

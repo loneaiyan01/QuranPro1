@@ -54,17 +54,17 @@ export const RadioPage: React.FC = () => {
             {/* Ambient Background Elements */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 <div
-                    className="absolute w-[500px] h-[500px] rounded-full bg-accent/10 blur-[120px] -top-40 -right-40 animate-pulse transition-all duration-1000"
+                    className="absolute w-[500px] h-[500px] rounded-full bg-accent/10 blur-[120px] -top-40 -right-40 animate-pulse transition-transform duration-1000"
                     style={{ transform: `scale(${1 + Math.sin(randomSeed / 10) * 0.1})` }}
                 />
                 <div
-                    className="absolute w-[400px] h-[400px] rounded-full bg-[var(--accent-muted)] blur-[100px] -bottom-20 -left-20 animate-pulse transition-all duration-1000 delay-700"
+                    className="absolute w-[400px] h-[400px] rounded-full bg-[var(--accent-muted)] blur-[100px] -bottom-20 -left-20 animate-pulse transition-transform duration-1000 delay-700"
                     style={{ transform: `scale(${1 + Math.cos(randomSeed / 15) * 0.15})` }}
                 />
             </div>
 
             {/* Main Content Area */}
-            <div className="z-10 w-full max-w-2xl flex-1 flex flex-col justify-between items-center gap-4 animate-in fade-in zoom-in duration-500 min-h-0">
+            <div className="z-10 w-full max-w-2xl flex-1 flex flex-col justify-between items-center gap-4 animate-in fade-in zoom-in duration-300 min-h-0">
                 
                 {/* Header Information */}
                 <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
@@ -77,19 +77,19 @@ export const RadioPage: React.FC = () => {
                         {currentSurah.englishName}
                     </h1>
                     
-                    <p className="text-[11px] text-muted tracking-wide">
+                    <p className="text-[11px] text-muted tracking-wide tabular-nums">
                         Verse {currentAyahIndex + 1} of {currentSurah.numberOfAyahs} • Recitation by {selectedReciter.name}
                     </p>
                 </div>
 
                 {/* Verse Display Card */}
-                <div className="glass-panel w-full flex-1 min-h-[140px] max-h-[380px] p-6 md:p-10 rounded-3xl border border-[var(--border)] shadow-[var(--shadow-lg)] relative overflow-hidden flex flex-col justify-center transition-all duration-500 hover:border-accent/30 my-2">
+                <div className="glass-panel w-full flex-1 min-h-[140px] max-h-[380px] p-6 md:p-10 rounded-3xl border border-[var(--border)] shadow-[var(--shadow-lg)] relative overflow-hidden flex flex-col justify-center transition-colors duration-200 hover:border-accent/30 my-2">
                     {/* Scrollable container for text to prevent bleeding on small viewports */}
                     <div className="overflow-y-auto max-h-full custom-scrollbar pr-1">
                         {/* English translation text with CSS entry transitions */}
                         <p 
                             key={`en-${currentAyahIndex}`}
-                            className="text-center font-sans text-sm sm:text-base md:text-lg leading-relaxed text-main px-1 animate-in fade-in slide-in-from-bottom-4 duration-500"
+                            className="text-center font-sans text-sm sm:text-base md:text-lg leading-relaxed text-main px-1 animate-in fade-in slide-in-from-bottom-4 duration-300"
                         >
                             {englishAyah.text}
                         </p>
@@ -102,7 +102,7 @@ export const RadioPage: React.FC = () => {
                         {/* Sleep Timer Preset Controller */}
                         <button
                             onClick={handleSleepTimerToggle}
-                            className={`p-3 rounded-full transition-all relative active:scale-95 bg-[var(--bg-sidebar)] border border-[var(--border)] hover:border-accent/30 shadow-md ${
+                            className={`p-3 rounded-full btn-press hit-area-44 transition-colors relative bg-[var(--bg-sidebar)] border border-[var(--border)] hover:border-accent/30 shadow-md ${
                                 sleepTimer 
                                     ? 'text-accent font-bold border-accent/30 shadow-accent/5' 
                                     : 'text-muted hover:text-accent'
@@ -112,7 +112,7 @@ export const RadioPage: React.FC = () => {
                         >
                             <Clock className="w-5 h-5" />
                             {sleepTimer && (
-                                <span className="absolute -top-1 -right-1 text-[8px] font-mono bg-accent text-white rounded-full w-4.5 h-4.5 flex items-center justify-center border border-[var(--bg-main)] shadow-sm">
+                                <span className="absolute -top-1 -right-1 text-[8px] font-mono tabular-nums bg-accent text-white rounded-full w-4.5 h-4.5 flex items-center justify-center border border-[var(--bg-main)] shadow-sm">
                                     {sleepTimer}
                                 </span>
                             )}
@@ -122,7 +122,7 @@ export const RadioPage: React.FC = () => {
                         <button
                             onClick={audioActions.togglePlay}
                             aria-label={isBuffering ? 'Loading audio' : isPlaying ? 'Pause playback' : 'Play playback'}
-                            className="w-14 h-14 bg-accent hover:bg-accent/90 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-accent/30 hover:scale-105 active:scale-95 transition-all duration-300"
+                            className="w-14 h-14 bg-accent hover:bg-accent/90 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-accent/30 btn-press hit-area-44 transition-transform duration-150"
                         >
                             {isBuffering ? (
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

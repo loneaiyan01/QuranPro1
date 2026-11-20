@@ -118,9 +118,62 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     const ayahPlayCountRef = useRef<number>(0);
     const isTransitioning = useRef<boolean>(false);
+    const isSeekingRef = useRef<boolean>(false);
     const fadeRef = useRef<number | null>(null);
     const pendingNavRef = useRef<number>(0);
-    const isSeekingRef = useRef<boolean>(false);
+
+    const fadeAudioIn = useCallback(() => {
+        if (!audioRef.current) return;
+        if (fadeRef.current) {
+            clearInterval(fadeRef.current);
+            fadeRef.current = null;
+        }
+        const audio = audioRef.current;
+        audio.volume = 0;
+        const duration = 250;
+        const step = 0.1;
+        const interval = duration * step;
+
+        fadeRef.current = window.setInterval(() => {
+            if (audio.volume < 0.9) {
+                audio.volume = Math.min(1, audio.volume + step);
+            } else {
+                audio.volume = 1;
+                if (fadeRef.current) {
+                    clearInterval(fadeRef.current);
+                    fadeRef.current = null;
+                }
+            }
+        }, interval);
+    }, []);
+
+    const fadeAudioOut = useCallback((onComplete?: () => void) => {
+        if (!audioRef.current) {
+            if (onComplete) onComplete();
+            return;
+        }
+        if (fadeRef.current) {
+            clearInterval(fadeRef.current);
+            fadeRef.current = null;
+        }
+        const audio = audioRef.current;
+        const duration = 200;
+        const step = 0.15;
+        const interval = duration * step;
+
+        fadeRef.current = window.setInterval(() => {
+            if (audio.volume > 0.15) {
+                audio.volume = Math.max(0, audio.volume - step);
+            } else {
+                if (fadeRef.current) {
+                    clearInterval(fadeRef.current);
+                    fadeRef.current = null;
+                }
+                audio.volume = 0;
+                if (onComplete) onComplete();
+            }
+        }, interval);
+    }, []);
 
     // Derived State
     const isFullSurahAudio = selectedReciter ? !selectedReciter.isVerseByVerse : false;
@@ -174,73 +227,10 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     // Effect: Clean up intervals on unmount
     useEffect(() => {
         return () => {
-            if (fadeRef.current) {
-                clearInterval(fadeRef.current);
-            }
             if (pauseIntervalRef.current) {
                 clearInterval(pauseIntervalRef.current);
             }
         };
-    }, []);
-
-    // Helper: Fade In Audio
-    const fadeAudioIn = useCallback(() => {
-        if (!audioRef.current) return;
-
-        // Clear any existing fade
-        if (fadeRef.current) {
-            clearInterval(fadeRef.current);
-        }
-
-        const audio = audioRef.current;
-        audio.volume = 0;
-        const fadeDuration = 400; // ms
-        const steps = 20;
-        const stepValue = 1 / steps;
-        const intervalTime = fadeDuration / steps;
-        let currentStep = 0;
-
-        fadeRef.current = window.setInterval(() => {
-            currentStep++;
-            if (currentStep >= steps) {
-                audio.volume = 1;
-                clearInterval(fadeRef.current!);
-                fadeRef.current = null;
-            } else {
-                audio.volume = Math.min(1, currentStep * stepValue);
-            }
-        }, intervalTime);
-    }, []);
-
-    // Helper: Fade Out Audio
-    const fadeAudioOut = useCallback((callback?: () => void) => {
-        if (!audioRef.current) {
-            if (callback) callback();
-            return;
-        }
-
-        // Clear any existing fade
-        if (fadeRef.current) {
-            clearInterval(fadeRef.current);
-        }
-
-        const audio = audioRef.current;
-        const startVolume = audio.volume;
-        const duration = 300; // ms
-        const steps = 10;
-        const stepValue = startVolume / steps;
-        const interval = duration / steps;
-
-        fadeRef.current = window.setInterval(() => {
-            if (audio.volume > 0.05) {
-                audio.volume = Math.max(0, audio.volume - stepValue);
-            } else {
-                audio.volume = 0;
-                clearInterval(fadeRef.current!);
-                fadeRef.current = null;
-                if (callback) callback();
-            }
-        }, interval);
     }, []);
 
     // Effect: Reset state when Surah changes
@@ -339,20 +329,18 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 isTransitioning.current = false;
 
                 audioRef.current.src = audioUrl;
-                audioRef.current.volume = wasPlaying ? 0 : 1; // Prepare for fade if playing
+                audioRef.current.volume = 1;
                 audioRef.current.load();
 
                 if (wasPlaying) {
-                    audioRef.current.play().then(() => {
-                        fadeAudioIn();
-                    }).catch(e => {
+                    audioRef.current.play().catch(e => {
                         console.error("Autoplay prevented or failed", e);
                         setIsPlaying(false);
                     });
                 }
             }
         }
-    }, [currentAyahIndex, audioData, isFullSurahAudio, isPlaying, fadeAudioIn]);
+    }, [currentAyahIndex, audioData, isFullSurahAudio, isPlaying]);
 
     // Audio Logic: Preload Next Verse (Only for VBV mode)
     useEffect(() => {
@@ -545,7 +533,9 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
         const handlePlay = () => {
             setIsPlaying(true);
-            fadeAudioIn();
+            if (audio) {
+                audio.volume = 1;
+            }
         };
 
         const handlePause = () => {
@@ -557,7 +547,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const handleCanPlayThrough = () => {
             setIsBuffering(false);
             if (isTransitioning.current && stateRef.current.isPlaying) {
-                audio.volume = 0;
+                audio.volume = 1;
                 audio.play().catch(console.error);
             }
         };
@@ -603,7 +593,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             audio.removeEventListener('stalled', handleStalled);
             audio.removeEventListener('error', handleError);
         };
-    }, [fadeAudioIn]);
+    }, []);
 
     // Media Session API Integration with cleanup
     useEffect(() => {
@@ -652,10 +642,6 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
 
         if (isPlaying) {
-            if (fadeRef.current) {
-                clearInterval(fadeRef.current);
-                fadeRef.current = null;
-            }
             if (audioRef.current) {
                 audioRef.current.pause();
                 audioRef.current.volume = 1;
@@ -668,7 +654,6 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             if (playPromise !== undefined) {
                 playPromise.then(() => {
                     setIsPlaying(true);
-                    fadeAudioIn();
                 }).catch(e => {
                     console.error("Mobile play gesture failed", e);
                     setIsPlaying(false);
@@ -677,7 +662,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 setIsPlaying(true);
             }
         }
-    }, [audioData, isFullSurahAudio, currentAyahIndex, isPlaying, fadeAudioIn, fadeAudioOut, cancelVersePause]);
+    }, [audioData, isFullSurahAudio, currentAyahIndex, isPlaying, cancelVersePause]);
 
     const play = useCallback(() => {
         cancelVersePause();
@@ -704,25 +689,9 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             return;
         }
         if (surahText) {
-            if (currentAyahIndex + pendingNavRef.current < surahText.arabic.ayahs.length - 1) {
-                pendingNavRef.current += 1;
-                if (isPlaying) {
-                    if (!fadeRef.current) {
-                        fadeAudioOut(() => {
-                            setCurrentAyahIndex(prev => {
-                                const nextIndex = prev + pendingNavRef.current;
-                                pendingNavRef.current = 0;
-                                return Math.min(surahText.arabic.ayahs.length - 1, nextIndex);
-                            });
-                        });
-                    }
-                } else {
-                    setCurrentAyahIndex(prev => {
-                        const nextIndex = prev + pendingNavRef.current;
-                        pendingNavRef.current = 0;
-                        return Math.min(surahText.arabic.ayahs.length - 1, nextIndex);
-                    });
-                }
+            if (currentAyahIndex < surahText.arabic.ayahs.length - 1) {
+                isTransitioning.current = isPlaying;
+                setCurrentAyahIndex(prev => Math.min(surahText.arabic.ayahs.length - 1, prev + 1));
             } else if (currentSurah && currentSurah.number < 114) {
                 isTransitioning.current = true;
                 if (nextSurah) nextSurah();
@@ -732,7 +701,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 }
             }
         }
-    }, [isFullSurahAudio, surahText, currentAyahIndex, isPlaying, fadeAudioOut, cancelVersePause]);
+    }, [isFullSurahAudio, surahText, currentAyahIndex, isPlaying, cancelVersePause]);
 
     const prevAyah = useCallback(() => {
         cancelVersePause();
@@ -748,25 +717,9 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             }
             return;
         }
-        if (currentAyahIndex + pendingNavRef.current > 0) {
-            pendingNavRef.current -= 1;
-            if (isPlaying) {
-                if (!fadeRef.current) {
-                    fadeAudioOut(() => {
-                        setCurrentAyahIndex(prev => {
-                            const nextIndex = prev + pendingNavRef.current;
-                            pendingNavRef.current = 0;
-                            return Math.max(0, nextIndex);
-                        });
-                    });
-                }
-            } else {
-                setCurrentAyahIndex(prev => {
-                    const nextIndex = prev + pendingNavRef.current;
-                    pendingNavRef.current = 0;
-                    return Math.max(0, nextIndex);
-                });
-            }
+        if (currentAyahIndex > 0) {
+            isTransitioning.current = isPlaying;
+            setCurrentAyahIndex(prev => Math.max(0, prev - 1));
         } else if (currentSurah && currentSurah.number > 1) {
             isTransitioning.current = true;
             if (statePrevSurah) statePrevSurah();
@@ -775,7 +728,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 if (target) selectSurah(target);
             }
         }
-    }, [isFullSurahAudio, currentAyahIndex, isPlaying, fadeAudioOut, cancelVersePause]);
+    }, [isFullSurahAudio, currentAyahIndex, isPlaying, cancelVersePause]);
 
     const seek = useCallback((value: number) => {
         cancelVersePause();
@@ -784,29 +737,15 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             isSeekingRef.current = true;
             setProgress(value);
             setCurrentTime(time);
+            audioRef.current.currentTime = time;
+            isSeekingRef.current = false;
 
             if (isPlaying) {
-                fadeAudioOut(() => {
-                    if (audioRef.current) {
-                        audioRef.current.currentTime = time;
-                        audioRef.current.volume = 0;
-                        audioRef.current.play().then(() => {
-                            isSeekingRef.current = false;
-                            fadeAudioIn();
-                        }).catch(e => {
-                            console.error(e);
-                            isSeekingRef.current = false;
-                        });
-                    } else {
-                        isSeekingRef.current = false;
-                    }
-                });
-            } else {
-                audioRef.current.currentTime = time;
-                isSeekingRef.current = false;
+                audioRef.current.volume = 1;
+                audioRef.current.play().catch(console.error);
             }
         }
-    }, [duration, isPlaying, fadeAudioOut, fadeAudioIn, cancelVersePause]);
+    }, [duration, isPlaying, cancelVersePause]);
 
     const setAyahIndex = useCallback((index: number) => {
         cancelVersePause();
@@ -833,16 +772,14 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                     audioRef.current.src = targetSrc;
                     audioRef.current.load();
                 }
-                audioRef.current.volume = 0;
-                audioRef.current.play().then(() => {
-                    fadeAudioIn();
-                }).catch(e => {
+                audioRef.current.volume = 1;
+                audioRef.current.play().catch(e => {
                     console.error("Play verse failed", e);
                     setIsPlaying(false);
                 });
             }
         }
-    }, [isFullSurahAudio, currentAyahIndex, togglePlay, audioData, fadeAudioIn, cancelVersePause]);
+    }, [isFullSurahAudio, currentAyahIndex, togglePlay, audioData, cancelVersePause]);
 
     const audioActions = useMemo(() => ({
         togglePlay,

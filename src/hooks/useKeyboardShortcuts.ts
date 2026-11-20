@@ -7,9 +7,10 @@ interface KeyboardShortcutHandlers {
     nextAyah: () => void;
     toggleSidebar: () => void;
     toggleFullscreen?: () => void;
+    onEscape?: () => boolean; // Returns true if an open overlay was handled
 }
 
-export function useKeyboardShortcuts({ togglePlay, prevAyah, nextAyah, toggleSidebar }: KeyboardShortcutHandlers) {
+export function useKeyboardShortcuts({ togglePlay, prevAyah, nextAyah, toggleSidebar, onEscape }: KeyboardShortcutHandlers) {
     const {
         isFullscreenTranslation,
         setIsFullscreenTranslation,
@@ -22,6 +23,32 @@ export function useKeyboardShortcuts({ togglePlay, prevAyah, nextAyah, toggleSid
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             const tag = (e.target as HTMLElement).tagName;
+
+            // ⌘B / Ctrl+B toggle sidebar shortcut
+            if ((e.metaKey || e.ctrlKey) && e.code === 'KeyB') {
+                e.preventDefault();
+                toggleSidebar();
+                return;
+            }
+
+            // Jakob's Law: Escape always closes the topmost layer even when an input is focused
+            if (e.code === 'Escape') {
+                if (onEscape && onEscape()) {
+                    e.preventDefault();
+                    return;
+                }
+                if (isFullscreenTranslation) {
+                    e.preventDefault();
+                    setIsFullscreenTranslation(false);
+                    return;
+                }
+                if (window.innerWidth < 768) {
+                    e.preventDefault();
+                    toggleSidebar();
+                    return;
+                }
+            }
+
             if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
             switch (e.code) {
@@ -36,14 +63,6 @@ export function useKeyboardShortcuts({ togglePlay, prevAyah, nextAyah, toggleSid
                 case 'ArrowRight':
                     e.preventDefault();
                     nextAyah();
-                    break;
-                case 'Escape':
-                    e.preventDefault();
-                    if (isFullscreenTranslation) {
-                        setIsFullscreenTranslation(false);
-                    } else if (window.innerWidth < 768) {
-                        toggleSidebar();
-                    }
                     break;
                 case 'KeyF':
                     e.preventDefault();
@@ -79,6 +98,7 @@ export function useKeyboardShortcuts({ togglePlay, prevAyah, nextAyah, toggleSid
         prevAyah,
         nextAyah,
         toggleSidebar,
+        onEscape,
         isFullscreenTranslation,
         setIsFullscreenTranslation,
         fullscreenLayoutMode,

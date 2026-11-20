@@ -21,13 +21,13 @@ export const MiniPlayer: React.FC = () => {
     return (
         <div 
             onClick={handleContainerClick}
-            className="fixed bottom-4 left-4 right-4 md:left-auto md:right-8 md:bottom-8 md:w-80 z-40 glass-panel hover:bg-[var(--bg-card-active)] hover:border-accent/30 rounded-2xl shadow-xl border border-[var(--border)] overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] flex flex-col animate-in slide-in-from-bottom-6 duration-500"
+            className="fixed bottom-4 left-4 right-4 md:left-auto md:right-8 md:bottom-8 md:w-80 z-40 glass-panel hover:bg-[var(--bg-card-active)] hover:border-accent/30 rounded-2xl shadow-xl border border-[var(--border)] overflow-hidden cursor-pointer transition-colors duration-150 flex flex-col animate-in slide-in-from-bottom-6 duration-300"
         >
-            {/* Top thin progress bar */}
-            <div className="w-full bg-accent-muted h-1 relative">
+            {/* Top thin progress bar (GPU scaleX, no reflow) */}
+            <div className="w-full bg-accent-muted h-1 relative overflow-hidden">
                 <div 
-                    className="bg-accent h-full shadow-[0_0_8px_var(--accent)] transition-all duration-150 ease-linear"
-                    style={{ width: `${progress}%` }}
+                    className="bg-accent h-full w-full shadow-[0_0_8px_var(--accent)] origin-left transition-transform duration-150"
+                    style={{ transform: `scaleX(${progress / 100})`, transitionTimingFunction: 'linear' }}
                 />
             </div>
 
@@ -49,7 +49,7 @@ export const MiniPlayer: React.FC = () => {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={handlePlayPause}
-                        className="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-md shadow-accent/15 flex-shrink-0"
+                        className="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center btn-press hit-area-44 transition-transform duration-150 shadow-md shadow-accent/15 flex-shrink-0"
                         title={isPlaying ? "Pause" : "Play"}
                     >
                         {isBuffering ? (

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useQuran } from '../contexts/QuranContext';
 import { useAudio, VersePauseDelay } from '../contexts/AudioContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useToast } from '../contexts/ToastContext';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { RangeModal } from './RangeModal';
@@ -29,14 +30,9 @@ import {
   Settings,
   Tv,
   ChevronDown,
-  BookOpen,
-  Compass,
-  Sparkles,
   RefreshCw,
   AlertTriangle,
-  Menu,
-  Volume2,
-  Layers,
+  PanelLeft,
   Trash2
 } from 'lucide-react';
 
@@ -80,18 +76,33 @@ export const OnePanelConsole: React.FC = () => {
     setArabicFontSize,
     translationFontSize,
     setTranslationFontSize,
+    readingWidth,
+    setReadingWidth,
+    horizontalPadding,
+    setHorizontalPadding,
     isFullscreenTranslation,
     setIsFullscreenTranslation
   } = useTheme();
 
+  const { showToast } = useToast();
   const isMobile = useIsMobile();
 
   // Local UI States
   const [searchQuery, setSearchQuery] = useState('');
   const [directoryTab, setDirectoryTab] = useState<'surahs' | 'juz' | 'saved'>('surahs');
+
+  // Reciter Popover with Entrance/Exit Animation
   const [isReciterMenuOpen, setIsReciterMenuOpen] = useState(false);
+  const [isReciterMenuMounted, setIsReciterMenuMounted] = useState(false);
+  const [isReciterMenuExiting, setIsReciterMenuExiting] = useState(false);
+
+  // Settings Slide-over Drawer with Entrance/Exit Animation
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSettingsMounted, setIsSettingsMounted] = useState(false);
+  const [isSettingsExiting, setIsSettingsExiting] = useState(false);
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile drawer
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // Desktop collapse
   const [isRangeModalOpen, setIsRangeModalOpen] = useState(false);
   const [copiedAyahNumber, setCopiedAyahNumber] = useState<number | null>(null);
 
@@ -102,28 +113,98 @@ export const OnePanelConsole: React.FC = () => {
   const isAutoScrolling = useRef(false);
   const interactionTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Open/Close Reciter Popover with 150ms Exit Animation
+  const openReciterMenu = useCallback(() => {
+    setIsReciterMenuMounted(true);
+    setIsReciterMenuExiting(false);
+    setIsReciterMenuOpen(true);
+  }, []);
+
+  const closeReciterMenu = useCallback(() => {
+    setIsReciterMenuExiting(true);
+    setIsReciterMenuOpen(false);
+    setTimeout(() => {
+      setIsReciterMenuMounted(false);
+      setIsReciterMenuExiting(false);
+    }, 150);
+  }, []);
+
+  const toggleReciterMenu = useCallback(() => {
+    if (isReciterMenuOpen) {
+      closeReciterMenu();
+    } else {
+      openReciterMenu();
+    }
+  }, [isReciterMenuOpen, closeReciterMenu, openReciterMenu]);
+
+  // Open/Close Settings Drawer with 200ms Exit Animation
+  const openSettings = useCallback(() => {
+    setIsSettingsMounted(true);
+    setIsSettingsExiting(false);
+    setIsSettingsOpen(true);
+  }, []);
+
+  const closeSettings = useCallback(() => {
+    setIsSettingsExiting(true);
+    setIsSettingsOpen(false);
+    setTimeout(() => {
+      setIsSettingsMounted(false);
+      setIsSettingsExiting(false);
+    }, 200);
+  }, []);
+
   // Close reciter menu on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (reciterMenuRef.current && !reciterMenuRef.current.contains(e.target as Node)) {
-        setIsReciterMenuOpen(false);
+        closeReciterMenu();
       }
     };
     if (isReciterMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isReciterMenuOpen]);
+  }, [isReciterMenuOpen, closeReciterMenu]);
+
+  // Sidebar toggle handler (desktop & mobile)
+  const toggleSidebar = useCallback(() => {
+    if (isMobile) {
+      setIsSidebarOpen(prev => !prev);
+    } else {
+      setIsSidebarCollapsed(prev => !prev);
+    }
+  }, [isMobile]);
+
+  // Jakob's Law: Escape Closes the Topmost Layer
+  const handleEscape = useCallback(() => {
+    if (isSettingsOpen) {
+      closeSettings();
+      return true;
+    }
+    if (isRangeModalOpen) {
+      setIsRangeModalOpen(false);
+      return true;
+    }
+    if (isReciterMenuOpen) {
+      closeReciterMenu();
+      return true;
+    }
+    if (searchQuery) {
+      setSearchQuery('');
+      return true;
+    }
+    return false;
+  }, [isSettingsOpen, closeSettings, isRangeModalOpen, isReciterMenuOpen, closeReciterMenu, searchQuery]);
 
   // Keyboard Shortcuts
-  const toggleSidebar = useCallback(() => setIsSidebarOpen(prev => !prev), []);
   const toggleFullscreen = useCallback(() => setIsFullscreenTranslation(!isFullscreenTranslation), [isFullscreenTranslation, setIsFullscreenTranslation]);
   useKeyboardShortcuts({
     togglePlay: audioActions.togglePlay,
     prevAyah: audioActions.prevAyah,
     nextAyah: audioActions.nextAyah,
     toggleSidebar,
-    toggleFullscreen
+    toggleFullscreen,
+    onEscape: handleEscape
   });
 
   // Derived data
@@ -166,7 +247,7 @@ export const OnePanelConsole: React.FC = () => {
   // Reciter Selection Handler
   const handleSelectReciter = (reciter: Reciter) => {
     quranActions.selectReciter(reciter);
-    setIsReciterMenuOpen(false);
+    closeReciterMenu();
   };
 
   // Surah Selection Handler
@@ -250,7 +331,7 @@ export const OnePanelConsole: React.FC = () => {
 
   // Time-Synced Auto Scroll to Active Verse
   useEffect(() => {
-    if (!isVerseByVerse || isUserInteracting.current) return;
+    if (!isVerseByVerse || isUserInteracting.current || isRadioMode) return;
     const activeVerse = verseRefs.current[currentAyahIndex];
     if (activeVerse && containerRef.current) {
       isAutoScrolling.current = true;
@@ -259,9 +340,9 @@ export const OnePanelConsole: React.FC = () => {
         block: 'center'
       });
     }
-  }, [currentAyahIndex, isVerseByVerse]);
+  }, [currentAyahIndex, isVerseByVerse, isRadioMode]);
 
-  // Copy Verse Text
+  // Copy Verse Text with Confident Feedback
   const handleCopyVerse = async (e: React.MouseEvent, ayah: Ayah, englishAyah?: Ayah) => {
     e.stopPropagation();
     let text = ayah.text;
@@ -270,8 +351,11 @@ export const OnePanelConsole: React.FC = () => {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedAyahNumber(ayah.numberInSurah);
+      showToast(`Ayah ${ayah.numberInSurah} copied to clipboard`, { type: 'success' });
       setTimeout(() => setCopiedAyahNumber(null), 2000);
-    } catch { /* clipboard not available */ }
+    } catch {
+      showToast(`Unable to copy to clipboard`, { type: 'info' });
+    }
   };
 
   // Share Verse
@@ -305,33 +389,23 @@ export const OnePanelConsole: React.FC = () => {
           1. TOP APP BAR: Apple-Inspired Header Bar (Height: 56px)
          ========================================================================= */}
       <header className="h-14 px-3 sm:px-6 bg-[var(--bg-sidebar)]/85 backdrop-blur-2xl border-b border-[var(--border)] z-30 flex items-center justify-between gap-3 shadow-xs flex-shrink-0">
-        {/* Left: Brand & Mobile Sidebar Toggle */}
-        <div className="flex items-center gap-3 min-w-0">
+        {/* Left: Sidebar Toggle & Brand Title */}
+        <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
           <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="md:hidden p-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-main active:scale-95 transition-all flex items-center justify-center"
-            title="Browse Surahs & Reciters"
+            onClick={toggleSidebar}
+            className={`p-2 rounded-xl transition-colors btn-press hit-area-40 flex items-center justify-center border ${
+              isSidebarCollapsed
+                ? 'bg-accent/15 border-accent/40 text-accent'
+                : 'bg-white/[0.05] hover:bg-white/[0.1] border-white/[0.08] text-muted hover:text-white'
+            }`}
+            title={isSidebarCollapsed ? "Expand Sidebar (⌘B)" : "Collapse Sidebar (⌘B)"}
           >
-            <Menu className="w-4 h-4 text-accent" />
+            <PanelLeft className="w-4 h-4" />
           </button>
 
-          <div className="flex items-center gap-2 flex-shrink-0 cursor-default">
-            <div className="w-8 h-8 rounded-xl bg-accent/15 border border-accent/25 flex items-center justify-center text-accent shadow-sm">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <span className="font-bold text-sm sm:text-base tracking-tight text-white hidden sm:inline">
-              HearQuran
-            </span>
-          </div>
-
-          {/* Quick Active Status Badge (Desktop) */}
-          {currentSurah && (
-            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] text-muted truncate max-w-xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-              <span className="font-medium text-white truncate">{currentSurah.englishName}</span>
-              <span className="text-[10px] opacity-60">• v{currentAyahIndex + 1}</span>
-            </div>
-          )}
+          <span className="font-bold text-base tracking-tight text-white cursor-default select-none">
+            HearQuran
+          </span>
         </div>
 
         {/* Center: Spotlight Search Pill */}
@@ -342,12 +416,13 @@ export const OnePanelConsole: React.FC = () => {
             placeholder={isMobile ? "Search..." : "Search Surah, number, or Juz..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8.5 pr-8 py-1.5 bg-white/[0.04] hover:bg-white/[0.07] focus:bg-white/[0.09] border border-[var(--border)] focus:border-accent/50 rounded-full text-xs font-medium focus:outline-none focus:ring-1 focus:ring-accent/40 text-white placeholder-muted/70 transition-all"
+            className="w-full pl-8.5 pr-8 py-1.5 bg-white/[0.04] hover:bg-white/[0.07] focus:bg-white/[0.09] border border-[var(--border)] focus:border-accent/50 rounded-full text-xs font-medium focus:outline-none focus:ring-1 focus:ring-accent/40 text-white placeholder-muted/70 transition-colors"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-muted hover:text-white rounded-full hover:bg-white/10 transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-white rounded-full hover:bg-white/10 transition-colors hit-area-40"
+              title="Clear search (Esc)"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -359,7 +434,7 @@ export const OnePanelConsole: React.FC = () => {
           {/* Live Radio Toggle */}
           <button
             onClick={handleToggleRadio}
-            className={`px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 border ${
+            className={`px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors btn-press hit-area-40 border ${
               isRadioMode
                 ? 'bg-accent text-white border-accent shadow-md shadow-accent/30'
                 : 'bg-white/[0.05] hover:bg-white/[0.1] text-muted hover:text-white border-white/[0.08]'
@@ -373,7 +448,7 @@ export const OnePanelConsole: React.FC = () => {
           {/* Range Button */}
           <button
             onClick={() => setIsRangeModalOpen(true)}
-            className={`p-2 sm:px-3 sm:py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 border ${
+            className={`p-2 sm:px-3 sm:py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors btn-press hit-area-40 border ${
               playbackRange
                 ? 'bg-accent/20 border-accent/40 text-accent font-bold'
                 : 'bg-white/[0.05] hover:bg-white/[0.1] text-muted hover:text-white border-white/[0.08]'
@@ -388,7 +463,7 @@ export const OnePanelConsole: React.FC = () => {
           <div className="hidden xl:flex items-center bg-white/[0.04] p-0.5 rounded-full border border-white/[0.08] text-[11px] font-medium">
             <button
               onClick={() => setDisplayMode(DisplayMode.BOTH)}
-              className={`px-2.5 py-1 rounded-full transition-all ${
+              className={`px-2.5 py-1 rounded-full transition-colors ${
                 displayMode === DisplayMode.BOTH
                   ? 'bg-accent text-white shadow-xs font-semibold'
                   : 'text-muted hover:text-white'
@@ -398,7 +473,7 @@ export const OnePanelConsole: React.FC = () => {
             </button>
             <button
               onClick={() => setDisplayMode(DisplayMode.ARABIC_ONLY)}
-              className={`px-2.5 py-1 rounded-full transition-all ${
+              className={`px-2.5 py-1 rounded-full transition-colors ${
                 displayMode === DisplayMode.ARABIC_ONLY
                   ? 'bg-accent text-white shadow-xs font-semibold'
                   : 'text-muted hover:text-white'
@@ -408,7 +483,7 @@ export const OnePanelConsole: React.FC = () => {
             </button>
             <button
               onClick={() => setDisplayMode(DisplayMode.ENGLISH_ONLY)}
-              className={`px-2.5 py-1 rounded-full transition-all ${
+              className={`px-2.5 py-1 rounded-full transition-colors ${
                 displayMode === DisplayMode.ENGLISH_ONLY
                   ? 'bg-accent text-white shadow-xs font-semibold'
                   : 'text-muted hover:text-white'
@@ -421,16 +496,16 @@ export const OnePanelConsole: React.FC = () => {
           {/* Fullscreen TV Mode */}
           <button
             onClick={() => setIsFullscreenTranslation(true)}
-            className="p-2 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-muted hover:text-white border border-white/[0.08] active:scale-95 transition-all"
-            title="Immersive Fullscreen TV Mode"
+            className="p-2 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-muted hover:text-white border border-white/[0.08] btn-press hit-area-40 transition-colors"
+            title="Immersive Fullscreen TV Mode (F)"
           >
             <Tv className="w-3.5 h-3.5" />
           </button>
 
           {/* Preferences Settings Gear */}
           <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="p-2 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-muted hover:text-white border border-white/[0.08] active:scale-95 transition-all"
+            onClick={openSettings}
+            className="p-2 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-muted hover:text-white border border-white/[0.08] btn-press hit-area-40 transition-colors"
             title="Open Audio & Reading Preferences"
           >
             <Settings className="w-3.5 h-3.5" />
@@ -442,21 +517,35 @@ export const OnePanelConsole: React.FC = () => {
           2. MAIN STAGE: Split View Console (Directory Left + Reading/Listening Right)
          ========================================================================= */}
       <div className="flex-1 flex min-h-0 relative overflow-hidden">
-        {/* Mobile Sidebar Overlay Backdrop */}
-        {isSidebarOpen && (
+        {/* Mobile Sidebar Overlay Backdrop (Paired with drawer for smooth exit) */}
+        {isMobile && (
           <div
             onClick={() => setIsSidebarOpen(false)}
-            className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+            className={`md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-200 ${
+              isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+            }`}
+            style={{
+              transitionTimingFunction: isSidebarOpen ? 'var(--ease-apple-out)' : 'var(--ease-apple-in)'
+            }}
           />
         )}
 
         {/* -----------------------------------------------------------------------
-            LEFT PANEL: Surah & Reciter Directory
+            LEFT PANEL: Minimizable Surah & Reciter Directory
            ----------------------------------------------------------------------- */}
         <aside
-          className={`fixed md:static inset-y-0 left-0 w-80 sm:w-84 xl:w-92 bg-[var(--bg-sidebar)]/95 md:bg-[var(--bg-sidebar)]/70 backdrop-blur-xl border-r border-[var(--border)] z-50 md:z-20 flex flex-col transition-transform duration-300 ease-out flex-shrink-0 ${
-            isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+          className={`bg-[var(--bg-sidebar)]/95 md:bg-[var(--bg-sidebar)]/70 backdrop-blur-xl border-r border-[var(--border)] flex flex-col transition-[width,transform,opacity] duration-250 flex-shrink-0 ${
+            // Mobile behaviour: sliding drawer
+            isMobile
+              ? `fixed inset-y-0 left-0 w-80 z-50 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+              : // Desktop behaviour: minimizable width
+              isSidebarCollapsed
+                ? 'w-0 opacity-0 overflow-hidden border-r-0 pointer-events-none'
+                : 'w-80 sm:w-84 xl:w-88 z-20 opacity-100'
           }`}
+          style={{
+            transitionTimingFunction: 'var(--ease-apple-in-out)'
+          }}
         >
           {/* Header of Sidebar: Reciter Picker Card */}
           <div className="p-3 border-b border-[var(--border)] relative" ref={reciterMenuRef}>
@@ -465,7 +554,7 @@ export const OnePanelConsole: React.FC = () => {
               {isMobile && (
                 <button
                   onClick={() => setIsSidebarOpen(false)}
-                  className="p-1 text-muted hover:text-white rounded-md"
+                  className="p-1 text-muted hover:text-white rounded-md hit-area-44"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -473,28 +562,33 @@ export const OnePanelConsole: React.FC = () => {
             </div>
 
             <button
-              onClick={() => setIsReciterMenuOpen(!isReciterMenuOpen)}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-accent/40 active:scale-[0.99] transition-all text-left"
+              onClick={toggleReciterMenu}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-accent/40 transition-colors text-left"
             >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-7 h-7 rounded-lg bg-accent/15 text-accent flex items-center justify-center font-bold text-xs flex-shrink-0">
-                  {selectedReciter?.englishName?.charAt(0) || 'R'}
+              <div className="min-w-0 flex-1 pr-2">
+                <div className="text-xs font-semibold text-white truncate">
+                  {selectedReciter?.englishName || 'Select Reciter'}
                 </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold text-white truncate">
-                    {selectedReciter?.englishName || 'Select Reciter'}
-                  </div>
-                  <div className="text-[10px] text-muted truncate">
-                    {selectedReciter?.name} • {selectedReciter?.isVerseByVerse ? 'Verse Sync' : 'Full Audio'}
-                  </div>
+                <div className="text-[10px] text-muted truncate">
+                  {selectedReciter?.name} • {selectedReciter?.isVerseByVerse ? 'Verse Sync' : 'Full Audio'}
                 </div>
               </div>
               <ChevronDown className={`w-3.5 h-3.5 text-muted transition-transform duration-200 flex-shrink-0 ${isReciterMenuOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Reciter Dropdown Popover */}
-            {isReciterMenuOpen && (
-              <div className="absolute top-full left-3 right-3 mt-1 bg-[var(--bg-card-active)]/95 backdrop-blur-2xl border border-[var(--border)] rounded-2xl shadow-2xl z-50 p-1.5 max-h-72 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-200">
+            {/* Reciter Dropdown Popover with Origin-Top & Proper Exit */}
+            {isReciterMenuMounted && (
+              <div
+                className={`absolute top-full left-3 right-3 mt-1 bg-[var(--bg-card-active)]/95 backdrop-blur-2xl border border-[var(--border)] rounded-2xl shadow-2xl z-50 p-1.5 max-h-72 overflow-y-auto custom-scrollbar origin-top transition-[transform,opacity] ${
+                  isReciterMenuExiting
+                    ? 'opacity-0 scale-95 -translate-y-1'
+                    : 'opacity-100 scale-100 translate-y-0'
+                }`}
+                style={{
+                  transitionDuration: isReciterMenuExiting ? '150ms' : '200ms',
+                  transitionTimingFunction: isReciterMenuExiting ? 'var(--ease-apple-in)' : 'var(--ease-apple-out)'
+                }}
+              >
                 <div className="px-2 py-1 text-[10px] font-bold text-muted uppercase tracking-wider border-b border-white/[0.06] mb-1">
                   Choose Reciter ({reciters.length})
                 </div>
@@ -504,7 +598,7 @@ export const OnePanelConsole: React.FC = () => {
                     <button
                       key={reciter.identifier}
                       onClick={() => handleSelectReciter(reciter)}
-                      className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all text-xs mb-0.5 ${
+                      className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-colors text-xs mb-0.5 ${
                         isSelected
                           ? 'bg-accent text-white font-semibold shadow-xs'
                           : 'text-muted hover:text-white hover:bg-white/[0.05]'
@@ -528,40 +622,37 @@ export const OnePanelConsole: React.FC = () => {
             )}
           </div>
 
-          {/* Directory Navigation Tabs */}
+          {/* Directory Navigation Tabs (Clean Minimalist Text Pills) */}
           <div className="px-3 pt-2 pb-1.5 flex items-center gap-1 border-b border-[var(--border)] bg-white/[0.01]">
             <button
               onClick={() => setDirectoryTab('surahs')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors text-center ${
                 directoryTab === 'surahs'
                   ? 'bg-accent/15 text-accent font-bold border border-accent/25'
                   : 'text-muted hover:text-white hover:bg-white/[0.04]'
               }`}
             >
-              <BookOpen className="w-3 h-3" />
-              <span>Surahs ({surahs.length})</span>
+              Surahs ({surahs.length})
             </button>
             <button
               onClick={() => setDirectoryTab('juz')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors text-center ${
                 directoryTab === 'juz'
                   ? 'bg-accent/15 text-accent font-bold border border-accent/25'
                   : 'text-muted hover:text-white hover:bg-white/[0.04]'
               }`}
             >
-              <Compass className="w-3 h-3" />
-              <span>Juz (30)</span>
+              Juz (30)
             </button>
             <button
               onClick={() => setDirectoryTab('saved')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors text-center ${
                 directoryTab === 'saved'
                   ? 'bg-accent/15 text-accent font-bold border border-accent/25'
                   : 'text-muted hover:text-white hover:bg-white/[0.04]'
               }`}
             >
-              <BookmarkIcon className="w-3 h-3" />
-              <span>Saved ({bookmarks.length})</span>
+              Saved ({bookmarks.length})
             </button>
           </div>
 
@@ -569,20 +660,23 @@ export const OnePanelConsole: React.FC = () => {
           <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
             {directoryTab === 'surahs' && (
               filteredSurahs.length > 0 ? (
-                filteredSurahs.map((surah) => {
+                filteredSurahs.map((surah, sIdx) => {
                   const isActive = currentSurah?.number === surah.number && !isRadioMode;
                   return (
                     <button
                       key={surah.number}
                       onClick={() => handleSelectSurah(surah)}
-                      className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all duration-200 active:scale-[0.99] group ${
+                      className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-colors group stagger-arrive ${
                         isActive
                           ? 'bg-accent/15 border border-accent/40 text-white font-medium shadow-xs'
                           : 'hover:bg-white/[0.05] border border-transparent text-muted hover:text-white'
                       }`}
+                      style={{
+                        animationDelay: sIdx < 6 ? `${sIdx * 35}ms` : '210ms'
+                      }}
                     >
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <span className={`w-6 h-6 rounded-lg text-[10px] font-mono flex items-center justify-center font-bold flex-shrink-0 transition-colors ${
+                        <span className={`w-6 h-6 rounded-lg text-[10px] font-mono tabular-nums flex items-center justify-center font-bold flex-shrink-0 transition-colors ${
                           isActive
                             ? 'bg-accent text-white shadow-xs'
                             : 'bg-white/[0.06] text-muted group-hover:text-white group-hover:bg-white/10'
@@ -622,14 +716,17 @@ export const OnePanelConsole: React.FC = () => {
             )}
 
             {directoryTab === 'juz' && (
-              filteredJuzs.map((juz) => (
+              filteredJuzs.map((juz, jIdx) => (
                 <button
                   key={juz.number}
                   onClick={() => handleSelectJuz(juz)}
-                  className="w-full flex items-center justify-between p-2.5 rounded-xl text-left hover:bg-white/[0.05] border border-transparent hover:border-white/[0.08] transition-all text-muted hover:text-white group"
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl text-left hover:bg-white/[0.05] border border-transparent hover:border-white/[0.08] transition-colors text-muted hover:text-white group stagger-arrive"
+                  style={{
+                    animationDelay: jIdx < 6 ? `${jIdx * 35}ms` : '210ms'
+                  }}
                 >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <span className="w-6 h-6 rounded-lg text-[10px] font-mono bg-white/[0.06] text-accent flex items-center justify-center font-bold flex-shrink-0">
+                    <span className="w-6 h-6 rounded-lg text-[10px] font-mono tabular-nums bg-white/[0.06] text-accent flex items-center justify-center font-bold flex-shrink-0">
                       {juz.number}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -660,13 +757,13 @@ export const OnePanelConsole: React.FC = () => {
                   <div
                     key={`${bookmark.surahNumber}-${bookmark.ayahNumberInSurah}`}
                     onClick={() => handleSelectBookmark(bookmark)}
-                    className="p-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.06] transition-all cursor-pointer group flex items-center justify-between gap-2"
+                    className="p-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.06] transition-colors cursor-pointer group flex items-center justify-between gap-2"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-semibold text-white group-hover:text-accent transition-colors truncate">
                         {bookmark.surahEnglishName}
                       </div>
-                      <div className="text-[10px] text-muted">
+                      <div className="text-[10px] text-muted tabular-nums">
                         Ayah {bookmark.ayahNumberInSurah}
                       </div>
                     </div>
@@ -674,10 +771,17 @@ export const OnePanelConsole: React.FC = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          quranActions.toggleBookmark(bookmark.surahNumber, bookmark.surahEnglishName, bookmark.ayahNumberInSurah);
+                          const removedBookmark = bookmark;
+                          quranActions.toggleBookmark(removedBookmark.surahNumber, removedBookmark.surahEnglishName, removedBookmark.ayahNumberInSurah);
+                          showToast(`Removed Ayah ${removedBookmark.ayahNumberInSurah} of ${removedBookmark.surahEnglishName}`, {
+                            type: 'undo',
+                            undoAction: () => {
+                              quranActions.toggleBookmark(removedBookmark.surahNumber, removedBookmark.surahEnglishName, removedBookmark.ayahNumberInSurah);
+                            }
+                          });
                         }}
-                        className="p-1 text-muted hover:text-red-400 rounded-md transition-colors"
-                        title="Remove bookmark"
+                        className="p-1.5 text-muted hover:text-red-400 rounded-lg transition-colors hit-area-44"
+                        title="Remove bookmark (with Undo)"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -695,215 +799,306 @@ export const OnePanelConsole: React.FC = () => {
         <main
           ref={containerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-4 sm:px-8 lg:px-16 pt-6 pb-28 custom-scrollbar scroll-smooth"
+          className="flex-1 overflow-y-auto pt-6 pb-28 custom-scrollbar scroll-smooth"
+          style={{
+            paddingLeft: isMobile ? '16px' : `${horizontalPadding}px`,
+            paddingRight: isMobile ? '16px' : `${horizontalPadding}px`
+          }}
         >
-          <div className="max-w-3xl mx-auto space-y-8">
-            {/* Ambient Active Banners (Radio / Range / Pause) */}
-            {isRadioMode && (
-              <div className="p-3.5 rounded-2xl bg-accent/15 border border-accent/30 flex items-center justify-between gap-3 text-xs text-white animate-in fade-in duration-300">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="w-2.5 h-2.5 rounded-full bg-accent animate-ping flex-shrink-0" />
-                  <div className="truncate">
-                    <span className="font-bold text-accent">Quran Live Radio</span> — Continuous peaceful recitation stream
-                  </div>
+          {/* Conditional Center Stage: Radio Mode vs Standard Verse View */}
+          {isRadioMode ? (
+            /* ===================================================================
+               PURE APPLE RADIO MODE VIEW
+               =================================================================== */
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-10 px-4 space-y-8 relative min-h-[65vh] animate-in fade-in zoom-in-95 duration-300 ease-[var(--ease-apple-out)]">
+              {/* Ambient Radiant Glow */}
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
+                <div className="w-[500px] h-[500px] rounded-full bg-accent/10 blur-[130px] animate-pulse" />
+              </div>
+
+              {/* Radio Identity Header */}
+              <div className="relative z-10 space-y-3">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/15 border border-accent/30 text-accent text-xs font-bold tracking-wide shadow-sm">
+                  <span className="w-2 h-2 rounded-full bg-accent animate-ping" />
+                  <span>Quran Live Radio • 24/7 Stream</span>
                 </div>
+
+                <h1 className="font-quran text-4xl sm:text-6xl text-white tracking-wide pt-2" dir="rtl">
+                  {currentSurah?.name}
+                </h1>
+                <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+                  {currentSurah?.englishName}
+                </h2>
+                <p className="text-xs sm:text-sm text-muted tabular-nums">
+                  Ayah {currentAyahIndex + 1} of {currentSurah?.numberOfAyahs} • Recited by {selectedReciter?.englishName}
+                </p>
+              </div>
+
+              {/* Ambient Highlighted Verse Card */}
+              {arabicSurah?.ayahs[currentAyahIndex] && (
+                <div className="relative z-10 w-full max-w-4xl p-6 sm:p-10 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-xl shadow-2xl space-y-6">
+                  <p
+                    className="font-quran text-2xl sm:text-4xl text-white leading-[2.2] text-center"
+                    dir="rtl"
+                    style={{ fontSize: `${displayArabicSize}px` }}
+                  >
+                    {arabicSurah.ayahs[currentAyahIndex].text}
+                  </p>
+                  {englishSurah?.ayahs[currentAyahIndex] && (
+                    <p
+                      className="font-sans text-sm sm:text-lg text-muted text-center leading-relaxed max-w-2xl mx-auto"
+                      style={{ fontSize: `${displayTranslationSize}px` }}
+                    >
+                      {englishSurah.ayahs[currentAyahIndex].text}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Radio Actions */}
+              <div className="relative z-10 pt-2">
                 <button
                   onClick={() => quranActions.toggleRadioMode(false)}
-                  className="px-2.5 py-1 rounded-full bg-accent text-white text-[10px] font-bold uppercase tracking-wider flex-shrink-0"
+                  className="px-5 py-2 rounded-full bg-white/[0.08] hover:bg-white/[0.15] text-xs font-semibold text-muted hover:text-white border border-white/[0.1] btn-press hit-area-44 transition-colors shadow-sm"
                 >
-                  Exit Radio
+                  Exit Radio Mode
                 </button>
               </div>
-            )}
-
-            {playbackRange && (
-              <div className="p-3 rounded-2xl bg-accent/15 border border-accent/30 flex items-center justify-between gap-3 text-xs text-accent animate-in fade-in duration-300">
-                <div className="flex items-center gap-2 truncate">
-                  <SlidersHorizontal className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span className="truncate">
-                    Active Range Loop: {currentSurah?.englishName} (v{playbackRange.startAyahIndex + 1} – v{playbackRange.endAyahIndex + 1})
-                  </span>
-                </div>
-                <button
-                  onClick={() => audioActions.setPlaybackRange(null)}
-                  className="p-1 text-accent hover:text-white"
-                  title="Clear loop"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-
-            {isPausingBetweenVerses && (
-              <div className="p-2 rounded-xl bg-accent/10 border border-accent/20 text-center text-xs text-accent font-medium flex items-center justify-center gap-2 animate-pulse">
-                <Hourglass className="w-3.5 h-3.5 animate-spin" />
-                <span>Reflection Pause: {pauseCountdown}s remaining</span>
-              </div>
-            )}
-
-            {/* Editorial Surah Header */}
-            {currentSurah && (
-              <header className="text-center space-y-3 pt-2 pb-6 border-b border-[var(--border)]">
-                <h2 className="font-quran text-3xl sm:text-5xl text-white tracking-wide" dir="rtl">
-                  {currentSurah.name}
-                </h2>
-                <div className="space-y-1">
-                  <h1 className="text-lg sm:text-2xl font-bold text-white tracking-tight">
-                    {currentSurah.englishName}
-                  </h1>
-                  <p className="text-xs sm:text-sm text-muted">
-                    {currentSurah.englishNameTranslation} • {currentSurah.numberOfAyahs} Verses • {currentSurah.revelationType}
-                  </p>
-                </div>
-
-                {/* Bismillah calligraphy ornament (omitted for Surah 1 & 9) */}
-                {currentSurah.number !== 1 && currentSurah.number !== 9 && (
-                  <div className="pt-4 font-quran text-xl sm:text-2xl text-accent opacity-90" dir="rtl">
-                    بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+            </div>
+          ) : (
+            /* ===================================================================
+               STANDARD TIME-SYNCED READING VIEW (Controlled via Preferences)
+               =================================================================== */
+            <div
+              className="w-full mx-auto space-y-6"
+              style={{
+                maxWidth: readingWidth >= 1800 ? '100%' : `${readingWidth}px`
+              }}
+            >
+              {playbackRange && (
+                <div className="p-3 rounded-2xl bg-accent/15 border border-accent/30 flex items-center justify-between gap-3 text-xs text-accent animate-in fade-in duration-300">
+                  <div className="flex items-center gap-2 truncate">
+                    <SlidersHorizontal className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="truncate tabular-nums">
+                      Active Range Loop: {currentSurah?.englishName} (v{playbackRange.startAyahIndex + 1} – v{playbackRange.endAyahIndex + 1})
+                    </span>
                   </div>
-                )}
-              </header>
-            )}
+                  <button
+                    onClick={() => audioActions.setPlaybackRange(null)}
+                    className="p-1.5 text-accent hover:text-white rounded-md hit-area-44 transition-colors"
+                    title="Clear loop"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
 
-            {/* Error or Loading States */}
-            {isLoadingContent && (
-              <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted">
-                <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-                <span className="text-xs">Loading holy verses...</span>
-              </div>
-            )}
+              {isPausingBetweenVerses && (
+                <div className="p-2 rounded-xl bg-accent/10 border border-accent/20 text-center text-xs text-accent font-medium flex items-center justify-center gap-2 animate-pulse tabular-nums">
+                  <Hourglass className="w-3.5 h-3.5 animate-spin" />
+                  <span>Reflection Pause: {pauseCountdown}s remaining</span>
+                </div>
+              )}
 
-            {contentError && (
-              <div className="p-6 rounded-2xl bg-red-500/10 border border-red-500/20 text-center space-y-3 max-w-sm mx-auto">
-                <AlertTriangle className="w-8 h-8 text-red-400 mx-auto" />
-                <div className="text-xs text-muted">{contentError}</div>
-                <button
-                  onClick={() => quranActions.retryLoadContent()}
-                  className="px-4 py-2 bg-accent text-white text-xs font-semibold rounded-xl active:scale-95 transition-all"
-                >
-                  Retry Connection
-                </button>
-              </div>
-            )}
+              {/* Editorial Surah Header */}
+              {currentSurah && (
+                <header className="text-center space-y-3 pt-2 pb-6 border-b border-[var(--border)]">
+                  <h2 className="font-quran text-3xl sm:text-5xl text-white tracking-wide" dir="rtl">
+                    {currentSurah.name}
+                  </h2>
+                  <div className="space-y-1">
+                    <h1 className="text-lg sm:text-2xl font-bold text-white tracking-tight">
+                      {currentSurah.englishName}
+                    </h1>
+                    <p className="text-xs sm:text-sm text-muted tabular-nums">
+                      {currentSurah.englishNameTranslation} • {currentSurah.numberOfAyahs} Verses • {currentSurah.revelationType}
+                    </p>
+                  </div>
 
-            {/* Time-Synced Apple Music Lyric Verses */}
-            {!isLoadingContent && arabicSurah && (
-              <div className="space-y-4 pb-12">
-                {arabicSurah.ayahs.map((ayah, index) => {
-                  const isActive = currentAyahIndex === index;
-                  const englishAyah = englishSurah?.ayahs[index];
-                  const isBookmarked = quranActions.isBookmarked(currentSurah?.number || 1, ayah.numberInSurah);
+                  {/* Bismillah calligraphy ornament (omitted for Surah 1 & 9) */}
+                  {currentSurah.number !== 1 && currentSurah.number !== 9 && (
+                    <div className="pt-4 font-quran text-xl sm:text-2xl text-accent opacity-90" dir="rtl">
+                      بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+                    </div>
+                  )}
+                </header>
+              )}
 
-                  return (
+              {/* Doherty Threshold Past 1s: Quran Verse Card Skeletons */}
+              {isLoadingContent && (
+                <div className="space-y-4 pb-12 animate-in fade-in duration-300">
+                  {[1, 2, 3].map((sIndex) => (
                     <div
-                      key={ayah.number}
-                      ref={(el) => { verseRefs.current[index] = el; }}
-                      onClick={() => {
-                        if (isVerseByVerse) {
-                          audioActions.setAyahIndex(index);
-                          audioActions.play();
-                        }
-                      }}
-                      className={`group p-4 sm:p-6 md:p-8 rounded-2xl md:rounded-3xl transition-all duration-500 border ${
-                        isVerseByVerse ? 'cursor-pointer' : ''
-                      } ${
-                        isActive
-                          ? 'bg-white/[0.04] border-accent/40 shadow-2xl scale-[1.01] border-l-4 border-l-accent'
-                          : 'bg-transparent border-transparent opacity-35 hover:opacity-85 hover:bg-white/[0.02]'
-                      }`}
+                      key={sIndex}
+                      className="p-5 sm:p-7 md:p-9 rounded-2xl md:rounded-3xl border border-white/[0.04] bg-white/[0.02] space-y-5"
                     >
-                      {/* Verse Header Info */}
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2.5">
-                          <span className={`w-7 h-7 rounded-lg text-xs font-mono font-semibold flex items-center justify-center transition-all ${
-                            isActive
-                              ? 'bg-accent text-white shadow-md shadow-accent/30'
-                              : 'bg-white/[0.06] text-muted'
-                          }`}>
-                            {ayah.numberInSurah}
-                          </span>
-                          {isActive && isPlaying && (
-                            <div className="flex items-center gap-1.5 text-accent text-[10px] font-bold uppercase tracking-wider">
-                              {isBuffering ? (
-                                <span className="animate-pulse">Buffering...</span>
-                              ) : (
-                                <div className="flex gap-0.5 items-end h-2.5">
-                                  <div className="w-0.5 bg-accent animate-[music-bar_0.8s_ease-in-out_infinite] h-full" />
-                                  <div className="w-0.5 bg-accent animate-[music-bar_1.2s_ease-in-out_infinite] h-1.5" />
-                                  <div className="w-0.5 bg-accent animate-[music-bar_1.0s_ease-in-out_infinite] h-2.5" />
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Interactive Controls (Active or Hover) */}
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (currentSurah) {
-                                quranActions.toggleBookmark(currentSurah.number, currentSurah.englishName, ayah.numberInSurah);
-                              }
-                            }}
-                            className={`p-1.5 rounded-lg hover:bg-white/10 transition-colors ${
-                              isBookmarked ? 'text-accent' : 'text-muted hover:text-white'
-                            }`}
-                            title={isBookmarked ? "Remove bookmark" : "Bookmark this verse"}
-                          >
-                            <BookmarkIcon className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-current' : ''}`} />
-                          </button>
-                          <button
-                            onClick={(e) => handleCopyVerse(e, ayah, englishAyah)}
-                            className="p-1.5 rounded-lg hover:bg-white/10 text-muted hover:text-white transition-colors"
-                            title="Copy verse"
-                          >
-                            {copiedAyahNumber === ayah.numberInSurah ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-400" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                          <button
-                            onClick={(e) => handleShareVerse(e, ayah, englishAyah)}
-                            className="p-1.5 rounded-lg hover:bg-white/10 text-muted hover:text-white transition-colors"
-                            title="Share verse"
-                          >
-                            <Share2 className="w-3.5 h-3.5" />
-                          </button>
+                      <div className="flex items-center justify-between">
+                        <div className="w-7 h-7 rounded-lg skeleton-shimmer" />
+                        <div className="flex gap-2">
+                          <div className="w-5 h-5 rounded-md skeleton-shimmer" />
+                          <div className="w-5 h-5 rounded-md skeleton-shimmer" />
                         </div>
                       </div>
-
-                      {/* Arabic Script Text */}
-                      {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ARABIC_ONLY) && (
-                        <p
-                          className={`text-right font-quran leading-[2.4] mb-6 transition-all duration-300 ${
-                            isActive ? 'text-white' : 'text-white/80'
-                          }`}
-                          dir="rtl"
-                          style={{ fontSize: `${displayArabicSize}px` }}
-                        >
-                          {ayah.text}
-                        </p>
-                      )}
-
-                      {/* English Translation Text */}
-                      {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ENGLISH_ONLY) && englishAyah && (
-                        <p
-                          className={`text-left font-sans leading-relaxed transition-all duration-300 ${
-                            isActive ? 'text-white/95 font-normal' : 'text-muted'
-                          }`}
-                          style={{ fontSize: `${displayTranslationSize}px` }}
-                        >
-                          {englishAyah.text}
-                        </p>
-                      )}
+                      <div className="space-y-3 pt-1">
+                        <div className="h-7 skeleton-shimmer rounded-xl w-[90%] ml-auto" />
+                        <div className="h-7 skeleton-shimmer rounded-xl w-[68%] ml-auto" />
+                      </div>
+                      <div className="space-y-2.5 pt-3">
+                        <div className="h-4 skeleton-shimmer rounded-lg w-[80%]" />
+                        <div className="h-4 skeleton-shimmer rounded-lg w-[52%]" />
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+
+              {contentError && (
+                <div className="p-6 rounded-2xl bg-red-500/10 border border-red-500/20 text-center space-y-3 max-w-sm mx-auto">
+                  <AlertTriangle className="w-8 h-8 text-red-400 mx-auto" />
+                  <div className="text-xs text-muted">{contentError}</div>
+                  <button
+                    onClick={() => quranActions.retryLoadContent()}
+                    className="px-4 py-2 bg-accent text-white text-xs font-semibold rounded-xl btn-press hit-area-44 transition-colors"
+                  >
+                    Retry Connection
+                  </button>
+                </div>
+              )}
+
+              {/* Time-Synced Apple Music Lyric Verses */}
+              {!isLoadingContent && arabicSurah && (
+                <div className="space-y-4 pb-12">
+                  {arabicSurah.ayahs.map((ayah, index) => {
+                    const isActive = currentAyahIndex === index;
+                    const englishAyah = englishSurah?.ayahs[index];
+                    const isBookmarked = quranActions.isBookmarked(currentSurah?.number || 1, ayah.numberInSurah);
+
+                    return (
+                      <div
+                        key={ayah.number}
+                        ref={(el) => { verseRefs.current[index] = el; }}
+                        onClick={() => {
+                          if (isVerseByVerse) {
+                            audioActions.setAyahIndex(index);
+                            audioActions.play();
+                          }
+                        }}
+                        className={`group p-5 sm:p-7 md:p-9 rounded-2xl md:rounded-3xl border stagger-arrive ${
+                          isVerseByVerse ? 'cursor-pointer' : ''
+                        } ${
+                          isActive
+                            ? 'bg-white/[0.04] border-accent/40 shadow-2xl border-l-4 border-l-accent'
+                            : 'bg-transparent border-transparent border-l-4 border-l-transparent opacity-40 hover:opacity-90 hover:bg-white/[0.02]'
+                        }`}
+                        style={{
+                          transitionProperty: 'background-color, border-color, opacity, box-shadow',
+                          transitionDuration: '250ms',
+                          transitionTimingFunction: 'var(--ease-apple-out)',
+                          animationDelay: index < 6 ? `${index * 40}ms` : '240ms'
+                        }}
+                      >
+                        {/* Verse Header Info */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2.5">
+                            <span className={`w-7 h-7 rounded-lg text-xs font-mono tabular-nums font-semibold flex items-center justify-center transition-colors ${
+                              isActive
+                                ? 'bg-accent text-white shadow-md shadow-accent/30'
+                                : 'bg-white/[0.06] text-muted'
+                            }`}>
+                              {ayah.numberInSurah}
+                            </span>
+                            {isActive && isPlaying && (
+                              <div className="flex items-center gap-1.5 text-accent text-[10px] font-bold uppercase tracking-wider">
+                                {isBuffering ? (
+                                  <span className="animate-pulse">Buffering...</span>
+                                ) : (
+                                  <div className="flex gap-0.5 items-end h-2.5">
+                                    <div className="w-0.5 bg-accent animate-[music-bar_0.8s_ease-in-out_infinite] h-full" />
+                                    <div className="w-0.5 bg-accent animate-[music-bar_1.2s_ease-in-out_infinite] h-1.5" />
+                                    <div className="w-0.5 bg-accent animate-[music-bar_1.0s_ease-in-out_infinite] h-2.5" />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Interactive Controls (Active or Hover) */}
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (currentSurah) {
+                                  quranActions.toggleBookmark(currentSurah.number, currentSurah.englishName, ayah.numberInSurah);
+                                  if (!isBookmarked) {
+                                    showToast(`Saved Ayah ${ayah.numberInSurah} to Bookmarks`, { type: 'success' });
+                                  }
+                                }
+                              }}
+                              className={`p-1.5 rounded-lg hover:bg-white/10 transition-colors hit-area-44 ${
+                                isBookmarked ? 'text-accent' : 'text-muted hover:text-white'
+                              }`}
+                              title={isBookmarked ? "Remove bookmark" : "Bookmark this verse"}
+                            >
+                              <BookmarkIcon className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-current' : ''}`} />
+                            </button>
+                            
+                            {/* Copy Verse with Dual-Icon Replacement & Toast */}
+                            <button
+                              onClick={(e) => handleCopyVerse(e, ayah, englishAyah)}
+                              className="p-1.5 rounded-lg hover:bg-white/10 text-muted hover:text-white transition-colors hit-area-44 relative"
+                              title="Copy verse"
+                            >
+                              <div className="relative w-3.5 h-3.5 flex items-center justify-center">
+                                <Check className={`w-3.5 h-3.5 text-emerald-400 absolute transition-[transform,opacity] duration-200 ${
+                                  copiedAyahNumber === ayah.numberInSurah ? 'scale-100 opacity-100' : 'scale-50 opacity-0 pointer-events-none'
+                                }`} />
+                                <Copy className={`w-3.5 h-3.5 absolute transition-[transform,opacity] duration-200 ${
+                                  copiedAyahNumber === ayah.numberInSurah ? 'scale-50 opacity-0 pointer-events-none' : 'scale-100 opacity-100'
+                                }`} />
+                              </div>
+                            </button>
+
+                            <button
+                              onClick={(e) => handleShareVerse(e, ayah, englishAyah)}
+                              className="p-1.5 rounded-lg hover:bg-white/10 text-muted hover:text-white transition-colors hit-area-44"
+                              title="Share verse"
+                            >
+                              <Share2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Arabic Script Text */}
+                        {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ARABIC_ONLY) && (
+                          <p
+                            className={`text-right font-quran leading-[2.4] mb-6 transition-colors duration-250 ${
+                              isActive ? 'text-white' : 'text-white/80'
+                            }`}
+                            dir="rtl"
+                            style={{ fontSize: `${displayArabicSize}px` }}
+                          >
+                            {ayah.text}
+                          </p>
+                        )}
+
+                        {/* English Translation Text */}
+                        {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ENGLISH_ONLY) && englishAyah && (
+                          <p
+                            className={`text-left font-sans leading-relaxed transition-colors duration-250 ${
+                              isActive ? 'text-white/95 font-normal' : 'text-muted'
+                            }`}
+                            style={{ fontSize: `${displayTranslationSize}px` }}
+                          >
+                            {englishAyah.text}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </main>
       </div>
 
@@ -911,12 +1106,15 @@ export const OnePanelConsole: React.FC = () => {
           3. BOTTOM DOCKED BAR: Apple Music-Grade Persistent Player (Height: 76px)
          ========================================================================= */}
       <footer className="h-[76px] bg-[var(--bg-sidebar)]/90 backdrop-blur-2xl border-t border-[var(--border)] relative z-40 flex flex-col justify-between p-3 sm:px-6 shadow-2xl flex-shrink-0">
-        {/* Full-Width Liquid Scrubber */}
-        <div className="absolute top-0 inset-x-0 h-1 hover:h-2 group transition-all cursor-pointer z-50">
+        {/* Full-Width Liquid Scrubber (GPU-Accelerated transform scaleX, No Reflow) */}
+        <div className="absolute top-0 inset-x-0 h-1.5 hover:h-2.5 group transition-[height] duration-150 cursor-pointer z-50">
           <div className="absolute inset-0 bg-white/[0.08]" />
           <div
-            className="absolute top-0 left-0 h-full bg-accent transition-all duration-150 ease-linear shadow-[0_0_10px_var(--accent)]"
-            style={{ width: `${progress}%` }}
+            className="absolute top-0 left-0 h-full w-full bg-accent origin-left transition-transform duration-150 shadow-[0_0_10px_var(--accent)]"
+            style={{
+              transform: `scaleX(${progress / 100})`,
+              transitionTimingFunction: 'linear'
+            }}
           />
           <input
             type="range"
@@ -924,25 +1122,20 @@ export const OnePanelConsole: React.FC = () => {
             max="100"
             value={progress}
             onChange={(e) => audioActions.seek(Number(e.target.value))}
-            className="absolute -top-2 inset-x-0 w-full h-5 opacity-0 cursor-pointer"
+            className="absolute -top-3.5 inset-x-0 w-full h-8 opacity-0 cursor-pointer hit-area-44"
             aria-label="Audio scrubber"
           />
         </div>
 
         {/* Player Controls Row */}
         <div className="flex items-center justify-between gap-3 h-full max-w-6xl mx-auto w-full pt-1">
-          {/* Left: Now Playing Info */}
-          <div className="flex items-center gap-3 min-w-0 max-w-[200px] sm:max-w-xs">
-            <div className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/25 text-accent flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-xs">
-              <BookOpen className="w-5 h-5" />
+          {/* Left: Clean Now Playing Typography */}
+          <div className="min-w-0 max-w-[200px] sm:max-w-xs">
+            <div className="text-xs sm:text-sm font-semibold text-white truncate">
+              {currentSurah?.englishName || 'HearQuran'}
             </div>
-            <div className="min-w-0">
-              <div className="text-xs sm:text-sm font-semibold text-white truncate">
-                {currentSurah?.englishName || 'HearQuran'}
-              </div>
-              <div className="text-[10px] sm:text-xs text-muted truncate">
-                {verseNumber ? `Ayah ${verseNumber} • ` : ''}{selectedReciter?.englishName}
-              </div>
+            <div className="text-[10px] sm:text-xs text-muted truncate tabular-nums">
+              {verseNumber ? `Ayah ${verseNumber} • ` : ''}{selectedReciter?.englishName}
             </div>
           </div>
 
@@ -953,26 +1146,31 @@ export const OnePanelConsole: React.FC = () => {
               <button
                 onClick={audioActions.prevAyah}
                 disabled={isRadioMode}
-                className={`p-2 text-muted hover:text-white active:scale-95 transition-all ${
+                className={`p-2 text-muted hover:text-white transition-colors btn-press hit-area-44 ${
                   isRadioMode ? 'opacity-30 cursor-not-allowed' : ''
                 }`}
-                title="Previous Ayah"
+                title="Previous Ayah (←)"
               >
                 <SkipBack className="w-5 h-5" />
               </button>
 
-              {/* Play / Pause (Apple Sonic Blue Circular Button) */}
+              {/* Play / Pause (Apple Sonic Blue Circular Button with Dual-Icon Morph) */}
               <button
                 onClick={audioActions.togglePlay}
-                className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-accent text-white flex items-center justify-center shadow-lg shadow-accent/30 hover:scale-105 active:scale-95 transition-all flex-shrink-0"
-                title={isPlaying ? "Pause" : "Play"}
+                className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-accent text-white flex items-center justify-center shadow-lg shadow-accent/30 hover:scale-105 active:scale-95 transition-transform flex-shrink-0 hit-area-44 btn-press relative overflow-hidden"
+                title={isPlaying ? "Pause (Space)" : "Play (Space)"}
               >
                 {isBuffering ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : isPlaying ? (
-                  <Pause className="w-5 h-5 fill-current" />
                 ) : (
-                  <Play className="w-5 h-5 fill-current ml-0.5" />
+                  <div className="relative w-5 h-5 flex items-center justify-center">
+                    <Pause className={`w-5 h-5 fill-current absolute transition-[transform,opacity] duration-150 ${
+                      isPlaying ? 'scale-100 opacity-100' : 'scale-50 opacity-0 pointer-events-none'
+                    }`} />
+                    <Play className={`w-5 h-5 fill-current ml-0.5 absolute transition-[transform,opacity] duration-150 ${
+                      isPlaying ? 'scale-50 opacity-0 pointer-events-none' : 'scale-100 opacity-100'
+                    }`} />
+                  </div>
                 )}
               </button>
 
@@ -980,17 +1178,17 @@ export const OnePanelConsole: React.FC = () => {
               <button
                 onClick={audioActions.nextAyah}
                 disabled={isRadioMode}
-                className={`p-2 text-muted hover:text-white active:scale-95 transition-all ${
+                className={`p-2 text-muted hover:text-white transition-colors btn-press hit-area-44 ${
                   isRadioMode ? 'opacity-30 cursor-not-allowed' : ''
                 }`}
-                title="Next Ayah"
+                title="Next Ayah (→)"
               >
                 <SkipForward className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Time Indicators */}
-            <div className="flex items-center gap-2 text-[10px] font-mono text-muted/80">
+            {/* Time Indicators (Tabular Numerals to Prevent Jitter) */}
+            <div className="flex items-center gap-2 text-[10px] font-mono tabular-nums text-muted/80">
               <span>{formatTime(currentTime)}</span>
               <span>/</span>
               <span>{formatTime(duration)}</span>
@@ -1003,7 +1201,7 @@ export const OnePanelConsole: React.FC = () => {
             <button
               onClick={handleRepeatToggle}
               disabled={isFullSurahAudio || isRadioMode}
-              className={`p-2 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all ${
+              className={`p-2 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors btn-press hit-area-44 ${
                 verseRepeatLimit !== 1
                   ? 'text-accent font-bold bg-accent/15'
                   : 'text-muted hover:text-white hover:bg-white/[0.05]'
@@ -1012,14 +1210,14 @@ export const OnePanelConsole: React.FC = () => {
             >
               <Repeat className="w-4 h-4" />
               {verseRepeatLimit !== 1 && (
-                <span className="text-[10px] font-mono">{verseRepeatLimit === -1 ? '∞' : `${verseRepeatLimit}x`}</span>
+                <span className="text-[10px] font-mono tabular-nums">{verseRepeatLimit === -1 ? '∞' : `${verseRepeatLimit}x`}</span>
               )}
             </button>
 
             {/* Sleep Timer Pill */}
             <button
               onClick={handleSleepTimerToggle}
-              className={`p-2 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all ${
+              className={`p-2 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors btn-press hit-area-44 ${
                 sleepTimer !== null
                   ? 'text-accent font-bold bg-accent/15'
                   : 'text-muted hover:text-white hover:bg-white/[0.05]'
@@ -1028,7 +1226,7 @@ export const OnePanelConsole: React.FC = () => {
             >
               <Clock className="w-4 h-4" />
               {sleepTimer !== null && (
-                <span className="text-[10px] font-mono">{sleepTimer}m</span>
+                <span className="text-[10px] font-mono tabular-nums">{sleepTimer}m</span>
               )}
             </button>
           </div>
@@ -1036,16 +1234,32 @@ export const OnePanelConsole: React.FC = () => {
       </footer>
 
       {/* =========================================================================
-          4. SLIDE-OVER SETTINGS DRAWER: Apple Inset Grouped Preferences
+          4. SLIDE-OVER SETTINGS DRAWER: Apple Inset Grouped Preferences with Exit Animation
          ========================================================================= */}
-      {isSettingsOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end animate-in fade-in duration-200">
+      {isSettingsMounted && (
+        <div
+          className={`fixed inset-0 z-50 flex justify-end transition-opacity ${
+            isSettingsExiting ? 'opacity-0' : 'opacity-100'
+          }`}
+          style={{
+            transitionDuration: isSettingsExiting ? '200ms' : '280ms',
+            transitionTimingFunction: isSettingsExiting ? 'var(--ease-apple-in)' : 'var(--ease-apple-out)'
+          }}
+        >
           <div
-            onClick={() => setIsSettingsOpen(false)}
+            onClick={closeSettings}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm"
           />
 
-          <div className="relative w-full max-w-sm bg-[var(--bg-sidebar)]/95 backdrop-blur-2xl border-l border-[var(--border)] h-full shadow-2xl p-6 overflow-y-auto custom-scrollbar flex flex-col justify-between z-10 animate-in slide-in-from-right-8 duration-300">
+          <div
+            className={`relative w-full max-w-sm bg-[var(--bg-sidebar)]/95 backdrop-blur-2xl border-l border-[var(--border)] h-full shadow-2xl p-6 overflow-y-auto custom-scrollbar flex flex-col justify-between z-10 transition-transform ${
+              isSettingsExiting ? 'translate-x-full' : 'translate-x-0'
+            }`}
+            style={{
+              transitionDuration: isSettingsExiting ? '200ms' : '280ms',
+              transitionTimingFunction: isSettingsExiting ? 'var(--ease-apple-in)' : 'var(--ease-apple-out)'
+            }}
+          >
             <div className="space-y-6">
               {/* Header */}
               <div className="flex items-center justify-between pb-4 border-b border-[var(--border)]">
@@ -1054,8 +1268,9 @@ export const OnePanelConsole: React.FC = () => {
                   <h3 className="font-bold text-base text-white">Preferences</h3>
                 </div>
                 <button
-                  onClick={() => setIsSettingsOpen(false)}
-                  className="p-1 text-muted hover:text-white rounded-lg hover:bg-white/10"
+                  onClick={closeSettings}
+                  className="p-1.5 text-muted hover:text-white rounded-lg hover:bg-white/10 transition-colors hit-area-44"
+                  title="Close (Esc)"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1068,7 +1283,7 @@ export const OnePanelConsole: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs text-muted">
                     <span>Arabic Font Size</span>
-                    <span className="font-mono text-accent">{arabicFontSize}px</span>
+                    <span className="font-mono tabular-nums text-accent">{arabicFontSize}px</span>
                   </div>
                   <input
                     type="range"
@@ -1083,7 +1298,7 @@ export const OnePanelConsole: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs text-muted">
                     <span>Translation Font Size</span>
-                    <span className="font-mono text-accent">{translationFontSize}px</span>
+                    <span className="font-mono tabular-nums text-accent">{translationFontSize}px</span>
                   </div>
                   <input
                     type="range"
@@ -1096,13 +1311,75 @@ export const OnePanelConsole: React.FC = () => {
                 </div>
               </div>
 
-              {/* Group 2: Display Script Mode */}
+              {/* Group 2: Horizontal Reading Space (Sliders) */}
+              <div className="space-y-4 bg-white/[0.03] p-4 rounded-2xl border border-white/[0.06]">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Horizontal Space</h4>
+                  <button
+                    onClick={() => {
+                      setReadingWidth(1800);
+                      setHorizontalPadding(0);
+                    }}
+                    className="text-[10px] text-accent hover:underline font-semibold"
+                  >
+                    Set Max (Border to Border)
+                  </button>
+                </div>
+
+                {/* Slider 1: Reading Width */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs text-muted">
+                    <span>Reading Width</span>
+                    <span className="font-mono tabular-nums text-accent font-semibold">
+                      {readingWidth >= 1800 ? 'Max (Border to Border)' : `${readingWidth}px`}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="600"
+                    max="1800"
+                    step="20"
+                    value={readingWidth}
+                    onChange={(e) => setReadingWidth(Number(e.target.value))}
+                    className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-accent"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted/60 font-mono">
+                    <span>Compact (600px)</span>
+                    <span>Max (100% Border)</span>
+                  </div>
+                </div>
+
+                {/* Slider 2: Side Margins */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex justify-between text-xs text-muted">
+                    <span>Side Margin Inset</span>
+                    <span className="font-mono tabular-nums text-accent font-semibold">
+                      {horizontalPadding === 0 ? '0px (Flush Border)' : `${horizontalPadding}px`}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="48"
+                    step="4"
+                    value={horizontalPadding}
+                    onChange={(e) => setHorizontalPadding(Number(e.target.value))}
+                    className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-accent"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted/60 font-mono">
+                    <span>0px (Flush Border)</span>
+                    <span>48px</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Group 3: Display Script Mode */}
               <div className="space-y-3 bg-white/[0.03] p-4 rounded-2xl border border-white/[0.06]">
                 <h4 className="text-xs font-bold text-white uppercase tracking-wider">Display Mode</h4>
                 <div className="grid grid-cols-3 gap-1.5">
                   <button
                     onClick={() => setDisplayMode(DisplayMode.BOTH)}
-                    className={`py-2 text-xs font-semibold rounded-xl transition-all ${
+                    className={`py-2 text-xs font-semibold rounded-xl transition-colors ${
                       displayMode === DisplayMode.BOTH
                         ? 'bg-accent text-white shadow-xs'
                         : 'bg-white/[0.05] text-muted hover:text-white'
@@ -1112,7 +1389,7 @@ export const OnePanelConsole: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setDisplayMode(DisplayMode.ARABIC_ONLY)}
-                    className={`py-2 text-xs font-semibold rounded-xl transition-all ${
+                    className={`py-2 text-xs font-semibold rounded-xl transition-colors ${
                       displayMode === DisplayMode.ARABIC_ONLY
                         ? 'bg-accent text-white shadow-xs'
                         : 'bg-white/[0.05] text-muted hover:text-white'
@@ -1122,7 +1399,7 @@ export const OnePanelConsole: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setDisplayMode(DisplayMode.ENGLISH_ONLY)}
-                    className={`py-2 text-xs font-semibold rounded-xl transition-all ${
+                    className={`py-2 text-xs font-semibold rounded-xl transition-colors ${
                       displayMode === DisplayMode.ENGLISH_ONLY
                         ? 'bg-accent text-white shadow-xs'
                         : 'bg-white/[0.05] text-muted hover:text-white'
@@ -1133,7 +1410,7 @@ export const OnePanelConsole: React.FC = () => {
                 </div>
               </div>
 
-              {/* Group 3: Verse Pause (Reflection Delay) */}
+              {/* Group 4: Verse Pause (Reflection Delay) */}
               <div className="space-y-3 bg-white/[0.03] p-4 rounded-2xl border border-white/[0.06]">
                 <h4 className="text-xs font-bold text-white uppercase tracking-wider">Verse Reflection Pause</h4>
                 <p className="text-[11px] text-muted leading-tight">
@@ -1144,7 +1421,7 @@ export const OnePanelConsole: React.FC = () => {
                     <button
                       key={String(delay)}
                       onClick={() => audioActions.setVersePauseDelay(delay)}
-                      className={`py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                      className={`py-1.5 text-xs font-semibold rounded-lg transition-colors ${
                         versePauseDelay === delay
                           ? 'bg-accent text-white shadow-xs'
                           : 'bg-white/[0.05] text-muted hover:text-white'
@@ -1156,12 +1433,14 @@ export const OnePanelConsole: React.FC = () => {
                 </div>
               </div>
 
-              {/* Group 4: Shortcuts Helper */}
+              {/* Group 5: Shortcuts Helper */}
               <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.04] text-[11px] text-muted space-y-1.5">
                 <div className="font-semibold text-white">Keyboard Shortcuts</div>
                 <div className="flex justify-between"><span>Play / Pause</span><kbd className="font-mono bg-white/10 px-1.5 py-0.5 rounded text-white">Space</kbd></div>
                 <div className="flex justify-between"><span>Previous / Next Ayah</span><kbd className="font-mono bg-white/10 px-1.5 py-0.5 rounded text-white">← / →</kbd></div>
-                <div className="flex justify-between"><span>Toggle Sidebar</span><kbd className="font-mono bg-white/10 px-1.5 py-0.5 rounded text-white">Esc</kbd></div>
+                <div className="flex justify-between"><span>Toggle Sidebar</span><kbd className="font-mono bg-white/10 px-1.5 py-0.5 rounded text-white">⌘B</kbd></div>
+                <div className="flex justify-between"><span>Close Overlays / Modals</span><kbd className="font-mono bg-white/10 px-1.5 py-0.5 rounded text-white">Esc</kbd></div>
+                <div className="flex justify-between"><span>Fullscreen Mode</span><kbd className="font-mono bg-white/10 px-1.5 py-0.5 rounded text-white">F</kbd></div>
               </div>
             </div>
 

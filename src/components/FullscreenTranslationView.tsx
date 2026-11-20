@@ -195,7 +195,7 @@ const FullscreenTranslationView: React.FC = () => {
 
   return (
     <div
-      className={`fixed inset-0 w-screen h-screen bg-black text-white z-[9999] select-none transition-all duration-500 overflow-hidden ${
+      className={`fixed inset-0 w-screen h-screen bg-black text-white z-[9999] select-none transition-colors duration-250 overflow-hidden ${
         showHUD ? 'cursor-default' : 'cursor-none'
       }`}
     >
@@ -240,9 +240,13 @@ const FullscreenTranslationView: React.FC = () => {
 
       {/* TOP HEADER (HUD) */}
       <header
-        className={`absolute top-0 inset-x-0 flex flex-col sm:flex-row items-center justify-between p-4 md:p-6 gap-3 sm:gap-0 bg-gradient-to-b from-black/80 to-transparent transition-opacity duration-500 z-50 ${
+        className={`absolute top-0 inset-x-0 flex flex-col sm:flex-row items-center justify-between p-4 md:p-6 gap-3 sm:gap-0 bg-gradient-to-b from-black/80 to-transparent transition-opacity z-50 ${
           showHUD ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
+        style={{
+          transitionDuration: showHUD ? '250ms' : '180ms',
+          transitionTimingFunction: showHUD ? 'var(--ease-apple-out)' : 'var(--ease-apple-in)'
+        }}
       >
         {/* Info */}
         <div className="flex flex-col gap-1 text-center sm:text-left items-center sm:items-start">
@@ -267,7 +271,7 @@ const FullscreenTranslationView: React.FC = () => {
             </select>
             <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[8px] text-neutral-400">▼</span>
           </div>
-          <p className="text-[10px] md:text-xs text-neutral-400">
+          <p className="text-[10px] md:text-xs text-neutral-400 tabular-nums">
             Verse {currentEnglishAyah ? currentEnglishAyah.numberInSurah : activeIndex + 1} of {currentSurah.numberOfAyahs}
           </p>
         </div>
@@ -278,7 +282,7 @@ const FullscreenTranslationView: React.FC = () => {
           <div className="flex items-center bg-white/5 border border-white/10 rounded-lg p-0.5">
             <button
               onClick={() => setFullscreenLayoutMode('single')}
-              className={`p-1.5 rounded-md transition-colors ${
+              className={`p-1.5 rounded-md transition-colors hit-area-40 ${
                 fullscreenLayoutMode === 'single'
                   ? 'bg-white text-black font-bold shadow-sm'
                   : 'text-neutral-400 hover:text-white'
@@ -289,7 +293,7 @@ const FullscreenTranslationView: React.FC = () => {
             </button>
             <button
               onClick={() => setFullscreenLayoutMode('scroll')}
-              className={`p-1.5 rounded-md transition-colors ${
+              className={`p-1.5 rounded-md transition-colors hit-area-40 ${
                 fullscreenLayoutMode === 'scroll'
                   ? 'bg-white text-black font-bold shadow-sm'
                   : 'text-neutral-400 hover:text-white'
@@ -305,17 +309,17 @@ const FullscreenTranslationView: React.FC = () => {
             <Type className="w-3.5 h-3.5" />
             <button
               onClick={decreaseFontSize}
-              className="p-1 hover:text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded hover:bg-white/10"
+              className="p-1 hover:text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 hit-area-40 transition-colors"
               title="Decrease Font Size"
             >
               -
             </button>
-            <span className="text-xs font-mono text-white min-w-[28px] text-center">
+            <span className="text-xs font-mono tabular-nums text-white min-w-[28px] text-center">
               {translationFontSize}px
             </span>
             <button
               onClick={increaseFontSize}
-              className="p-1 hover:text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded hover:bg-white/10"
+              className="p-1 hover:text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 hit-area-40 transition-colors"
               title="Increase Font Size"
             >
               +
@@ -336,7 +340,7 @@ const FullscreenTranslationView: React.FC = () => {
                 setShowUnlockButton(false);
               }, 3000);
             }}
-            className="p-2 bg-white/5 hover:bg-white/10 active:scale-95 transition-all rounded-lg border border-white/10 text-neutral-400 hover:text-white"
+            className="p-2 bg-white/5 hover:bg-white/10 btn-press hit-area-44 transition-colors rounded-lg border border-white/10 text-neutral-400 hover:text-white"
             title="Lock Controls"
           >
             <Lock className="w-4 h-4 md:w-5 md:h-5" />
@@ -345,8 +349,8 @@ const FullscreenTranslationView: React.FC = () => {
           {/* Exit Button */}
           <button
             onClick={() => setIsFullscreenTranslation(false)}
-            className="p-2 bg-white/10 hover:bg-white/20 active:scale-95 transition-all rounded-lg border border-white/10"
-            title="Exit Fullscreen Translation"
+            className="p-2 bg-white/10 hover:bg-white/20 btn-press hit-area-44 transition-colors rounded-lg border border-white/10"
+            title="Exit Fullscreen Translation (Esc)"
           >
             <X className="w-4 h-4 md:w-5 md:h-5 text-white" />
           </button>
@@ -355,7 +359,7 @@ const FullscreenTranslationView: React.FC = () => {
 
       {/* Reflection Pause Indicator Pill */}
       {isPausingBetweenVerses && (
-        <div className="absolute top-16 sm:top-20 inset-x-0 mx-auto w-fit bg-black/85 border border-white/20 px-4 py-1.5 rounded-full text-xs font-semibold text-white backdrop-blur-md z-[60] flex items-center gap-2 animate-pulse shadow-2xl">
+        <div className="absolute top-16 sm:top-20 inset-x-0 mx-auto w-fit bg-black/85 border border-white/20 px-4 py-1.5 rounded-full text-xs font-semibold text-white backdrop-blur-md z-[60] flex items-center gap-2 animate-pulse shadow-2xl tabular-nums">
           <Hourglass className="w-3.5 h-3.5 animate-spin text-[var(--accent)]" />
           <span>Reflection Pause ({pauseCountdown}s)</span>
         </div>
@@ -429,7 +433,7 @@ const FullscreenTranslationView: React.FC = () => {
                   onClick={() => {
                     setUserFocusedIndex(index);
                   }}
-                  className={`text-center cursor-pointer transition-all duration-700 py-4 md:py-6 flex flex-col items-center gap-3 md:gap-4 ${opacityClass}`}
+                  className={`text-center cursor-pointer transition-opacity duration-250 py-4 md:py-6 flex flex-col items-center gap-3 md:gap-4 ${opacityClass}`}
                 >
                   {/* Arabic text */}
                   {(displayMode === DisplayMode.BOTH || displayMode === DisplayMode.ARABIC_ONLY) && (
@@ -453,7 +457,7 @@ const FullscreenTranslationView: React.FC = () => {
                   )}
 
                   {/* Metadata */}
-                  <p className={`text-[8px] md:text-[9px] font-mono tracking-widest transition-opacity duration-500 ${
+                  <p className={`text-[8px] md:text-[9px] font-mono tracking-widest tabular-nums transition-opacity duration-200 ${
                     isActive ? 'opacity-40 text-neutral-400' : 'opacity-0'
                   }`}>
                     Verse {ayah.numberInSurah}
@@ -468,7 +472,7 @@ const FullscreenTranslationView: React.FC = () => {
         {userFocusedIndex !== null && !isLocked && !isFullSurahAudio && (
           <button
             onClick={() => setUserFocusedIndex(null)}
-            className="absolute bottom-6 md:bottom-12 bg-white text-black font-semibold text-[11px] md:text-xs py-2 px-4 rounded-full shadow-2xl border border-neutral-200 flex items-center gap-1.5 hover:bg-neutral-200 active:scale-95 transition-all z-[100] animate-bounce"
+            className="absolute bottom-6 md:bottom-12 bg-white text-black font-semibold text-[11px] md:text-xs py-2 px-4 rounded-full shadow-2xl border border-neutral-200 flex items-center gap-1.5 hover:bg-neutral-200 btn-press hit-area-44 transition-colors z-[100] animate-bounce"
           >
             <Maximize2 className="w-3.5 h-3.5 rotate-45" />
             <span>Sync to Audio</span>
@@ -478,22 +482,27 @@ const FullscreenTranslationView: React.FC = () => {
 
       {/* FLOATING BOTTOM CONTROLS HUD */}
       <footer
-        className={`absolute bottom-0 inset-x-0 p-4 md:p-6 bg-gradient-to-t from-black/80 to-transparent flex flex-col gap-3 md:gap-4 items-center transition-opacity duration-500 z-50 ${
+        className={`absolute bottom-0 inset-x-0 p-4 md:p-6 bg-gradient-to-t from-black/80 to-transparent flex flex-col gap-3 md:gap-4 items-center transition-opacity z-50 ${
           showHUD ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
+        style={{
+          transitionDuration: showHUD ? '250ms' : '180ms',
+          transitionTimingFunction: showHUD ? 'var(--ease-apple-out)' : 'var(--ease-apple-in)'
+        }}
       >
-        {/* Scrubber and timings */}
-        <div className="w-full max-w-3xl flex items-center gap-2 md:gap-4 text-[10px] md:text-xs font-mono text-neutral-400">
+        {/* Scrubber and timings with Tabular Numerals */}
+        <div className="w-full max-w-3xl flex items-center gap-2 md:gap-4 text-[10px] md:text-xs font-mono tabular-nums text-neutral-400">
           <span>{formatTime(currentTime)}</span>
-          <div className="flex-1 relative group cursor-pointer h-1 flex items-center">
-            {/* Range Scrubber */}
+          <div className="flex-1 relative group cursor-pointer h-1.5 flex items-center">
+            {/* Range Scrubber with 44px hit target */}
             <input
               type="range"
               min="0"
               max="100"
               value={progress}
               onChange={(e) => seek(Number(e.target.value))}
-              className="hud-slider w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white"
+              className="hud-slider w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white hit-area-44"
+              aria-label="Audio scrubber"
             />
           </div>
           <span>{formatTime(duration)}</span>
@@ -504,7 +513,7 @@ const FullscreenTranslationView: React.FC = () => {
           {/* Sleep Timer Button */}
           <button
             onClick={handleSleepTimerToggle}
-            className={`p-2 md:p-3 transition-colors relative active:scale-95 transition-transform ${
+            className={`p-2 md:p-3 transition-colors relative btn-press hit-area-44 ${
               sleepTimer 
                 ? 'text-white' 
                 : 'text-neutral-400 hover:text-white'
@@ -514,7 +523,7 @@ const FullscreenTranslationView: React.FC = () => {
           >
             <Clock className="w-4 h-4 md:w-5 md:h-5" />
             {sleepTimer && (
-              <span className="absolute top-0.5 right-0.5 text-[8px] md:text-[9px] font-mono bg-white text-black rounded-full w-3.5 h-3.5 md:w-4 md:h-4 flex items-center justify-center border border-black shadow-sm">
+              <span className="absolute top-0.5 right-0.5 text-[8px] md:text-[9px] font-mono tabular-nums bg-white text-black rounded-full w-3.5 h-3.5 md:w-4 md:h-4 flex items-center justify-center border border-black shadow-sm">
                 {sleepTimer}
               </span>
             )}
@@ -522,7 +531,7 @@ const FullscreenTranslationView: React.FC = () => {
 
           <button
             onClick={prevAyah}
-            className="p-2 md:p-3 text-neutral-400 hover:text-white transition-colors active:scale-95"
+            className="p-2 md:p-3 text-neutral-400 hover:text-white transition-colors btn-press hit-area-44"
             title="Previous Verse"
           >
             <SkipBack className="w-4 h-4 md:w-5 md:h-5" />
@@ -531,21 +540,26 @@ const FullscreenTranslationView: React.FC = () => {
           <button
             onClick={togglePlay}
             disabled={isBuffering}
-            className="w-10 h-10 md:w-12 md:h-12 bg-white text-black hover:bg-neutral-200 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all"
+            className="w-10 h-10 md:w-12 md:h-12 bg-white text-black hover:bg-neutral-200 rounded-full flex items-center justify-center shadow-lg btn-press hit-area-44 transition-colors relative overflow-hidden"
             title={isPlaying ? 'Pause' : 'Play'}
           >
             {isBuffering ? (
               <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-            ) : isPlaying ? (
-              <Pause className="w-4 h-4 md:w-5 md:h-5 fill-current text-black" />
             ) : (
-              <Play className="w-4 h-4 md:w-5 md:h-5 ml-0.5 fill-current text-black" />
+              <div className="relative w-4 h-4 md:w-5 md:h-5 flex items-center justify-center">
+                <Pause className={`w-4 h-4 md:w-5 md:h-5 fill-current text-black absolute transition-[transform,opacity] duration-150 ${
+                  isPlaying ? 'scale-100 opacity-100' : 'scale-50 opacity-0 pointer-events-none'
+                }`} />
+                <Play className={`w-4 h-4 md:w-5 md:h-5 ml-0.5 fill-current text-black absolute transition-[transform,opacity] duration-150 ${
+                  isPlaying ? 'scale-50 opacity-0 pointer-events-none' : 'scale-100 opacity-100'
+                }`} />
+              </div>
             )}
           </button>
 
           <button
             onClick={nextAyah}
-            className="p-2 md:p-3 text-neutral-400 hover:text-white transition-colors active:scale-95"
+            className="p-2 md:p-3 text-neutral-400 hover:text-white transition-colors btn-press hit-area-44"
             title="Next Verse"
           >
             <SkipForward className="w-4 h-4 md:w-5 md:h-5" />
@@ -562,7 +576,7 @@ const FullscreenTranslationView: React.FC = () => {
             setShowHUD(true);
             setShowUnlockButton(false);
           }}
-          className={`fixed bottom-6 right-6 px-4 py-3 bg-black/80 hover:bg-black/90 text-white rounded-full shadow-2xl border border-white/20 backdrop-blur-md transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 z-[10000] ${
+          className={`fixed bottom-6 right-6 px-4 py-3 bg-black/80 hover:bg-black/90 text-white rounded-full shadow-2xl border border-white/20 backdrop-blur-md transition-[transform,opacity] duration-200 flex items-center justify-center gap-2 btn-press z-[10000] ${
             showUnlockButton ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-90 pointer-events-none'
           }`}
           title="Unlock Controls"

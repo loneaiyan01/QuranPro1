@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuran } from '../contexts/QuranContext';
 import { useAudio } from '../contexts/AudioContext';
 import { X, Play, SlidersHorizontal, Search, ChevronDown, Check, ArrowRight } from 'lucide-react';
@@ -18,6 +18,10 @@ export const RangeModal: React.FC<RangeModalProps> = ({
   const { surahs, currentSurah, actions: quranActions } = useQuran();
   const { actions: audioActions } = useAudio();
 
+  // Exit Animation State
+  const [isMounted, setIsMounted] = useState<boolean>(isOpen);
+  const [isExiting, setIsExiting] = useState<boolean>(false);
+
   const [startSurahNumber, setStartSurahNumber] = useState<number>(
     initialSurahNumber || currentSurah?.number || 1
   );
@@ -33,6 +37,21 @@ export const RangeModal: React.FC<RangeModalProps> = ({
   
   const [isStartDropdownOpen, setIsStartDropdownOpen] = useState<boolean>(false);
   const [isEndDropdownOpen, setIsEndDropdownOpen] = useState<boolean>(false);
+
+  // Sync mounted & exit states with 180ms exit duration
+  useEffect(() => {
+    if (isOpen) {
+      setIsMounted(true);
+      setIsExiting(false);
+    } else if (isMounted) {
+      setIsExiting(true);
+      const timer = setTimeout(() => {
+        setIsMounted(false);
+        setIsExiting(false);
+      }, 180);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, isMounted]);
 
   // Sync selected surahs when modal opens
   useEffect(() => {
@@ -70,7 +89,6 @@ export const RangeModal: React.FC<RangeModalProps> = ({
   }, [surahs, startSearch]);
 
   const filteredEndSurahs = useMemo(() => {
-    // Only allow end surah >= start surah
     const eligible = surahs.filter(s => s.number >= startSurahNumber);
     if (!endSearch) return eligible;
     const q = endSearch.toLowerCase();
@@ -81,7 +99,6 @@ export const RangeModal: React.FC<RangeModalProps> = ({
     );
   }, [surahs, startSurahNumber, endSearch]);
 
-  // Adjust bounds when Start Surah changes
   const handleSelectStartSurah = (surahNum: number) => {
     setStartSurahNumber(surahNum);
     setStartAyah(1);
@@ -144,7 +161,7 @@ export const RangeModal: React.FC<RangeModalProps> = ({
     }
   };
 
-  const handlePlayRange = async () => {
+  const handlePlayRange = useCallback(async () => {
     if (!startSurah || !endSurah) return;
     await quranActions.selectSurah(startSurah);
     const startIdx = Math.max(0, startAyah - 1);
@@ -160,19 +177,56 @@ export const RangeModal: React.FC<RangeModalProps> = ({
 
     setTimeout(() => {
       audioActions.play();
-    }, 300);
+    }, 250);
 
     onClose();
-  };
+  }, [startSurah, endSurah, startAyah, endAyah, maxEndAyahs, quranActions, audioActions, onClose]);
 
-  if (!isOpen) return null;
+  // Jakob's Law: Escape closes modal, Enter submits
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+      } else if (e.key === 'Enter') {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT') {
+          e.preventDefault();
+          handlePlayRange();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose, handlePlayRange]);
+
+  if (!isMounted) return null;
 
   const totalSurahsInRange = endSurahNumber - startSurahNumber + 1;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+    <div
+      onClick={onClose}
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-md transition-opacity ${
+        isExiting ? 'opacity-0' : 'opacity-100'
+      }`}
+      style={{
+        transitionDuration: isExiting ? '180ms' : '250ms',
+        transitionTimingFunction: isExiting ? 'var(--ease-apple-in)' : 'var(--ease-apple-out)'
+      }}
+    >
       <div 
-        className="w-full max-w-lg bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[88vh] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-300"
+        className={`w-full max-w-lg bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[88vh] transition-[transform,opacity] ${
+          isExiting
+            ? 'opacity-0 scale-95 translate-y-3 sm:translate-y-0'
+            : 'opacity-100 scale-100 translate-y-0'
+        }`}
+        style={{
+          transitionDuration: isExiting ? '180ms' : '250ms',
+          transitionTimingFunction: isExiting ? 'var(--ease-apple-in)' : 'var(--ease-apple-out)'
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mobile Drag Handle */}
@@ -191,7 +245,8 @@ export const RangeModal: React.FC<RangeModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-muted hover:text-main hover:bg-[var(--bg-card-active)] transition-colors"
+            className="p-2 rounded-xl text-muted hover:text-main hover:bg-[var(--bg-card-active)] transition-colors hit-area-44"
+            title="Close (Esc)"
           >
             <X className="w-5 h-5" />
           </button>
@@ -209,28 +264,28 @@ export const RangeModal: React.FC<RangeModalProps> = ({
               <button
                 type="button"
                 onClick={() => handleSelectPreset('1-10')}
-                className="py-1.5 px-1 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 text-main transition-all text-center"
+                className="py-1.5 px-1 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 text-main transition-colors text-center"
               >
                 This Surah (1-10)
               </button>
               <button
                 type="button"
                 onClick={() => handleSelectPreset('full')}
-                className="py-1.5 px-1 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 text-main transition-all text-center"
+                className="py-1.5 px-1 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 text-main transition-colors text-center"
               >
                 Full Surah
               </button>
               <button
                 type="button"
                 onClick={() => handleSelectPreset('next3')}
-                className="py-1.5 px-1 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 text-accent transition-all text-center"
+                className="py-1.5 px-1 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 text-accent transition-colors text-center"
               >
                 Next 3 Surahs
               </button>
               <button
                 type="button"
                 onClick={() => handleSelectPreset('next5')}
-                className="py-1.5 px-1 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 text-accent transition-all text-center"
+                className="py-1.5 px-1 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 text-accent transition-colors text-center"
               >
                 Next 5 Surahs
               </button>
@@ -244,7 +299,7 @@ export const RangeModal: React.FC<RangeModalProps> = ({
                 <span className="w-2 h-2 rounded-full bg-accent" />
                 FROM (Start)
               </span>
-              <span className="text-[11px] font-mono text-muted">Surah {startSurah?.number} • {maxStartAyahs} Ayahs</span>
+              <span className="text-[11px] font-mono text-muted tabular-nums">Surah {startSurah?.number} • {maxStartAyahs} Ayahs</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -256,7 +311,7 @@ export const RangeModal: React.FC<RangeModalProps> = ({
                     setIsStartDropdownOpen(!isStartDropdownOpen);
                     setIsEndDropdownOpen(false);
                   }}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] border border-[var(--border)] rounded-xl text-left transition-all"
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] border border-[var(--border)] rounded-xl text-left transition-colors"
                 >
                   <span className="text-xs font-bold text-main truncate">
                     {startSurah?.number}. {startSurah?.englishName}
@@ -266,7 +321,7 @@ export const RangeModal: React.FC<RangeModalProps> = ({
 
                 {/* Dropdown Menu */}
                 {isStartDropdownOpen && (
-                  <div className="absolute left-0 right-0 top-full mt-1.5 z-30 bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden max-h-52 flex flex-col animate-in fade-in duration-150">
+                  <div className="absolute left-0 right-0 top-full mt-1.5 z-30 bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden max-h-52 flex flex-col origin-top animate-in fade-in zoom-in-95 duration-150">
                     <div className="p-2 border-b border-[var(--border)] sticky top-0 bg-[var(--bg-sidebar)]">
                       <div className="relative">
                         <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
@@ -305,7 +360,8 @@ export const RangeModal: React.FC<RangeModalProps> = ({
                   type="button"
                   onClick={() => handleStartAyahChange(startAyah - 1)}
                   disabled={startAyah <= 1}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-main hover:bg-[var(--bg-card-active)] disabled:opacity-30 transition-colors"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-main hover:bg-[var(--bg-card-active)] disabled:opacity-30 transition-colors hit-area-44"
+                  title="Decrease Ayah"
                 >
                   -
                 </button>
@@ -315,13 +371,14 @@ export const RangeModal: React.FC<RangeModalProps> = ({
                   max={maxStartAyahs}
                   value={startAyah}
                   onChange={(e) => handleStartAyahChange(parseInt(e.target.value) || 1)}
-                  className="w-full text-center bg-transparent text-xs font-bold text-main focus:outline-none"
+                  className="w-full text-center bg-transparent text-xs font-bold text-main focus:outline-none tabular-nums"
                 />
                 <button
                   type="button"
                   onClick={() => handleStartAyahChange(startAyah + 1)}
                   disabled={startAyah >= maxStartAyahs}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-main hover:bg-[var(--bg-card-active)] disabled:opacity-30 transition-colors"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-main hover:bg-[var(--bg-card-active)] disabled:opacity-30 transition-colors hit-area-44"
+                  title="Increase Ayah"
                 >
                   +
                 </button>
@@ -343,7 +400,7 @@ export const RangeModal: React.FC<RangeModalProps> = ({
                 <span className="w-2 h-2 rounded-full bg-accent" />
                 TO (End)
               </span>
-              <span className="text-[11px] font-mono text-muted">Surah {endSurah?.number} • {maxEndAyahs} Ayahs</span>
+              <span className="text-[11px] font-mono text-muted tabular-nums">Surah {endSurah?.number} • {maxEndAyahs} Ayahs</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -355,7 +412,7 @@ export const RangeModal: React.FC<RangeModalProps> = ({
                     setIsEndDropdownOpen(!isEndDropdownOpen);
                     setIsStartDropdownOpen(false);
                   }}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] border border-[var(--border)] rounded-xl text-left transition-all"
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] border border-[var(--border)] rounded-xl text-left transition-colors"
                 >
                   <span className="text-xs font-bold text-main truncate">
                     {endSurah?.number}. {endSurah?.englishName}
@@ -365,7 +422,7 @@ export const RangeModal: React.FC<RangeModalProps> = ({
 
                 {/* Dropdown Menu */}
                 {isEndDropdownOpen && (
-                  <div className="absolute left-0 right-0 top-full mt-1.5 z-30 bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden max-h-52 flex flex-col animate-in fade-in duration-150">
+                  <div className="absolute left-0 right-0 top-full mt-1.5 z-30 bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden max-h-52 flex flex-col origin-top animate-in fade-in zoom-in-95 duration-150">
                     <div className="p-2 border-b border-[var(--border)] sticky top-0 bg-[var(--bg-sidebar)]">
                       <div className="relative">
                         <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
@@ -404,7 +461,8 @@ export const RangeModal: React.FC<RangeModalProps> = ({
                   type="button"
                   onClick={() => handleEndAyahChange(endAyah - 1)}
                   disabled={startSurahNumber === endSurahNumber ? endAyah <= startAyah : endAyah <= 1}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-main hover:bg-[var(--bg-card-active)] disabled:opacity-30 transition-colors"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-main hover:bg-[var(--bg-card-active)] disabled:opacity-30 transition-colors hit-area-44"
+                  title="Decrease Ayah"
                 >
                   -
                 </button>
@@ -414,13 +472,14 @@ export const RangeModal: React.FC<RangeModalProps> = ({
                   max={maxEndAyahs}
                   value={endAyah}
                   onChange={(e) => handleEndAyahChange(parseInt(e.target.value) || 1)}
-                  className="w-full text-center bg-transparent text-xs font-bold text-main focus:outline-none"
+                  className="w-full text-center bg-transparent text-xs font-bold text-main focus:outline-none tabular-nums"
                 />
                 <button
                   type="button"
                   onClick={() => handleEndAyahChange(endAyah + 1)}
                   disabled={endAyah >= maxEndAyahs}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-main hover:bg-[var(--bg-card-active)] disabled:opacity-30 transition-colors"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-main hover:bg-[var(--bg-card-active)] disabled:opacity-30 transition-colors hit-area-44"
+                  title="Increase Ayah"
                 >
                   +
                 </button>
@@ -433,7 +492,7 @@ export const RangeModal: React.FC<RangeModalProps> = ({
             <p className="text-xs font-semibold text-accent truncate">
               {startSurah?.englishName} (Ayah {startAyah}) → {endSurah?.englishName} (Ayah {endAyah})
             </p>
-            <p className="text-[10px] text-muted mt-0.5">
+            <p className="text-[10px] text-muted mt-0.5 tabular-nums">
               {totalSurahsInRange === 1
                 ? `1 Surah (${Math.max(1, endAyah - startAyah + 1)} Verses)`
                 : `${totalSurahsInRange} Surahs in range`}
@@ -447,7 +506,7 @@ export const RangeModal: React.FC<RangeModalProps> = ({
           <button
             type="button"
             onClick={handlePlayRange}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-accent hover:bg-accent/90 text-white font-bold text-xs sm:text-sm shadow-md transition-all active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-accent hover:bg-accent/90 text-white font-bold text-xs sm:text-sm shadow-md transition-colors btn-press hit-area-44"
           >
             <Play className="w-4 h-4 fill-current" />
             <span>Play Range ({startSurah?.englishName} v{startAyah} → {endSurah?.englishName} v{endAyah})</span>

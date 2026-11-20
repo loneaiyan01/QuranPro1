@@ -78,12 +78,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     <>
       {/* Overlay for mobile */}
       <div
-        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 md:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-250 md:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
       />
 
       {/* Sidebar Panel */}
-      <div className={`fixed inset-y-0 right-0 w-[85vw] sm:w-80 bg-sidebar shadow-[var(--shadow-lg)] transform transition-transform duration-300 ease-in-out z-[100] flex flex-col md:hidden ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed inset-y-0 right-0 w-[85vw] sm:w-80 bg-sidebar shadow-[var(--shadow-lg)] transform transition-transform duration-250 ease-[var(--ease-apple-out)] z-[100] flex flex-col md:hidden ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
         {/* Header */}
         <div className="p-6 border-b border-[var(--border)] flex justify-between items-center bg-sidebar">
@@ -102,7 +102,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               e.stopPropagation();
               onClose();
             }}
-            className="p-2 hover:bg-[var(--accent-muted)] rounded-full text-muted transition-colors z-50 md:hidden"
+            className="p-2 hover:bg-[var(--accent-muted)] rounded-full text-muted transition-colors z-50 md:hidden hit-area-44"
             aria-label="Close Sidebar"
             title="Close Sidebar"
           >
@@ -193,7 +193,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <div className="flex border-b border-[var(--border)] mb-3 flex-shrink-0">
             <button
               onClick={() => { setActiveTab('surah'); setSearchQuery(''); }}
-              className={`flex-1 text-center pb-2 text-[11px] font-bold uppercase tracking-wider transition-all duration-300 border-b-2 ${
+              className={`flex-1 text-center pb-2 text-[11px] font-bold uppercase tracking-wider transition-colors duration-150 border-b-2 ${
                 activeTab === 'surah'
                   ? 'border-accent text-accent'
                   : 'border-transparent text-muted hover:text-main'
@@ -203,7 +203,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </button>
             <button
               onClick={() => { setActiveTab('juz'); setSearchQuery(''); }}
-              className={`flex-1 text-center pb-2 text-[11px] font-bold uppercase tracking-wider transition-all duration-300 border-b-2 ${
+              className={`flex-1 text-center pb-2 text-[11px] font-bold uppercase tracking-wider transition-colors duration-150 border-b-2 ${
                 activeTab === 'juz'
                   ? 'border-accent text-accent'
                   : 'border-transparent text-muted hover:text-main'
@@ -213,7 +213,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </button>
             <button
               onClick={() => { setActiveTab('hizb'); setSearchQuery(''); }}
-              className={`flex-1 text-center pb-2 text-[11px] font-bold uppercase tracking-wider transition-all duration-300 border-b-2 ${
+              className={`flex-1 text-center pb-2 text-[11px] font-bold uppercase tracking-wider transition-colors duration-150 border-b-2 ${
                 activeTab === 'hizb'
                   ? 'border-accent text-accent'
                   : 'border-transparent text-muted hover:text-main'

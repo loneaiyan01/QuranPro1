@@ -102,20 +102,20 @@ const PlayerControls: React.FC = () => {
       )}
 
       {/* Full-Width Dynamic Progress Bar */}
-      <div className={`absolute top-0 left-0 w-full h-1 overflow-visible z-40 ${isRadioMode ? 'pointer-events-none' : 'group cursor-pointer hover:h-1.5 transition-[height] duration-300 ease-in-out'}`}>
+      <div className={`absolute top-0 left-0 w-full h-1 overflow-visible z-40 origin-top ${isRadioMode ? 'pointer-events-none' : 'group cursor-pointer group-hover:scale-y-150 transition-transform duration-150'}`}>
         {/* Background / Track */}
         <div className="absolute inset-0 bg-[var(--accent-muted)] opacity-30 group-hover:opacity-50 transition-opacity" />
 
-        {/* Buffered Layer */}
+        {/* Buffered Layer (GPU scaleX) */}
         <div
-          className="absolute top-0 left-0 h-full bg-[var(--accent)] opacity-20 transition-[width] duration-500 ease-out"
-          style={{ width: `${buffered}%` }}
+          className="absolute top-0 left-0 h-full w-full bg-[var(--accent)] opacity-20 origin-left transition-transform duration-300"
+          style={{ transform: `scaleX(${buffered / 100})` }}
         />
 
-        {/* Active Progress Fill with Glow */}
+        {/* Active Progress Fill with Glow (GPU scaleX, no reflow) */}
         <div
-          className="absolute top-0 left-0 h-full bg-accent transition-all duration-150 ease-linear shadow-[0_0_12px_var(--accent)]"
-          style={{ width: `${progress}%` }}
+          className="absolute top-0 left-0 h-full w-full bg-accent origin-left transition-transform duration-150 shadow-[0_0_12px_var(--accent)]"
+          style={{ transform: `scaleX(${progress / 100})`, transitionTimingFunction: 'linear' }}
         >
           {/* Subtle horizontal gradient for a "liquid" look */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
@@ -130,13 +130,13 @@ const PlayerControls: React.FC = () => {
           onChange={(e) => seek(Number(e.target.value))}
           disabled={isRadioMode}
           aria-label="Seek timeline"
-          className="absolute -top-3 inset-x-0 w-full h-8 opacity-0 focus-visible:opacity-100 focus-visible:accent-[var(--accent)] cursor-pointer z-50 disabled:cursor-not-allowed"
+          className="absolute -top-3.5 inset-x-0 w-full h-8 opacity-0 focus-visible:opacity-100 focus-visible:accent-[var(--accent)] cursor-pointer z-50 disabled:cursor-not-allowed hit-area-44"
         />
 
         {/* Premium Scrubber Thumb */}
         {!isRadioMode && (
           <div
-            className="absolute top-1/2 -translate-y-1/2 -ml-2 h-4 w-4 pointer-events-none transition-all duration-300 opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-110"
+            className="absolute top-1/2 -translate-y-1/2 -ml-2 h-4 w-4 pointer-events-none transition-[transform,opacity] duration-150 opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-110"
             style={{ left: `${progress}%` }}
           >
             {/* External Halo */}
@@ -197,7 +197,7 @@ const PlayerControls: React.FC = () => {
             <button
               onClick={prevAyah}
               disabled={isRadioMode}
-              className={`p-2.5 sm:p-3 md:p-2 text-muted hover:text-accent transition-colors active:scale-95 transition-transform flex-shrink-0 ${isRadioMode ? 'opacity-20 cursor-not-allowed pointer-events-none' : ''}`}
+              className={`p-2.5 sm:p-3 md:p-2 text-muted hover:text-accent transition-colors btn-press hit-area-44 flex-shrink-0 ${isRadioMode ? 'opacity-20 cursor-not-allowed pointer-events-none' : ''}`}
               aria-label="Previous Verse"
             >
               <SkipBack className="w-6 h-6" />
@@ -207,7 +207,7 @@ const PlayerControls: React.FC = () => {
             <button
               onClick={togglePlay}
               aria-label={isBuffering ? 'Loading audio' : isPlaying ? 'Pause playback' : 'Play playback'}
-              className="w-13 h-13 sm:w-14 sm:h-14 bg-accent hover:bg-accent/90 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-accent/30 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-main)] transition-all duration-300 flex-shrink-0"
+              className="w-13 h-13 sm:w-14 sm:h-14 bg-accent hover:bg-accent/90 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-accent/30 btn-press hit-area-44 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-main)] transition-colors duration-150 flex-shrink-0"
             >
               {isBuffering ? (
                 <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -222,7 +222,7 @@ const PlayerControls: React.FC = () => {
             <button
               onClick={nextAyah}
               disabled={isRadioMode}
-              className={`p-2.5 sm:p-3 md:p-2 text-muted hover:text-accent transition-colors active:scale-95 transition-transform flex-shrink-0 ${isRadioMode ? 'opacity-20 cursor-not-allowed pointer-events-none' : ''}`}
+              className={`p-2.5 sm:p-3 md:p-2 text-muted hover:text-accent transition-colors btn-press hit-area-44 flex-shrink-0 ${isRadioMode ? 'opacity-20 cursor-not-allowed pointer-events-none' : ''}`}
               aria-label="Next Verse"
             >
               <SkipForward className="w-6 h-6" />

@@ -223,8 +223,8 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             nextSurah = surahs.find(s => s.number === firstSurahNum) || surahs[0];
         }
 
-        const ayyub = reciters.find(r => r.identifier === 'ar.muhammadayyoub');
-        const activeReciter = ayyub || reciters[0];
+        const minshawi = reciters.find(r => r.identifier === 'ar.minshawimujawwad');
+        const activeReciter = minshawi || reciters.find(r => r.identifier === 'ar.muhammadayyoub') || reciters[0];
 
         setSelectedReciter(activeReciter);
         setRadioStartAyahIndex(0); // Sequence transitions play from verse 1 (index 0)
@@ -236,9 +236,9 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (active) {
             setCurrentPage('radio');
             
-            // Enforce Sheikh Muhammad Ayyub for VBV accuracy
-            const ayyub = reciters.find(r => r.identifier === 'ar.muhammadayyoub');
-            const activeReciter = ayyub || reciters[0];
+            // Default to Sheikh Mohamed Siddiq Al-Minshawi (Mujawwad) for Radio
+            const minshawi = reciters.find(r => r.identifier === 'ar.minshawimujawwad');
+            const activeReciter = minshawi || reciters.find(r => r.identifier === 'ar.muhammadayyoub') || reciters[0];
             setSelectedReciter(activeReciter);
 
             if (surahs.length > 0) {
@@ -251,14 +251,22 @@ export const QuranProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         } else {
             setRadioStartAyahIndex(null);
             setCurrentPage('player');
+            // Restore saved reciter if previously saved
+            const savedReciterId = localStorage.getItem('tarteela_reciter');
+            if (savedReciterId) {
+                const savedMatch = reciters.find(r => r.identifier === savedReciterId);
+                if (savedMatch) {
+                    setSelectedReciter(savedMatch);
+                }
+            }
         }
     }, [surahs, reciters, selectSurah]);
 
     // Auto-tune to correct live position if radio mode was loaded/selected before surahs fetched
     useEffect(() => {
         if (isRadioMode && !currentSurah && surahs.length > 0 && reciters.length > 0) {
-            const ayyub = reciters.find(r => r.identifier === 'ar.muhammadayyoub');
-            const activeReciter = ayyub || reciters[0];
+            const minshawi = reciters.find(r => r.identifier === 'ar.minshawimujawwad');
+            const activeReciter = minshawi || reciters.find(r => r.identifier === 'ar.muhammadayyoub') || reciters[0];
             setSelectedReciter(activeReciter);
 
             const pos = getRadioPosition(surahs);

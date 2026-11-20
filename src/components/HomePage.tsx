@@ -143,14 +143,14 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-4 pt-20 sm:pt-24 pb-28 md:pb-12 md:pt-20 lg:px-12 custom-scrollbar w-full max-w-full box-border">
-      <div className="max-w-6xl mx-auto space-y-8 sm:space-y-12 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full max-w-full min-w-0">
+      <div className="max-w-6xl mx-auto space-y-8 sm:space-y-12 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-300 ease-[var(--ease-apple-out)] w-full max-w-full min-w-0">
         
         {/* Quick Action Bar & Surah Search */}
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full max-w-full min-w-0">
           {/* Quran Live Radio Button */}
           <button
             onClick={() => quranActions.toggleRadioMode(true)}
-            className="group flex-1 flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 active:scale-[0.98] text-left min-w-0"
+            className="group flex-1 flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm btn-press transition-colors text-left min-w-0"
           >
             <div className="flex items-center gap-3 min-w-0">
               <span className="w-8 h-8 rounded-lg bg-accent-muted text-accent flex items-center justify-center flex-shrink-0 group-hover:bg-accent group-hover:text-white transition-colors">
@@ -170,7 +170,7 @@ export const HomePage: React.FC = () => {
           {/* Play Verse Range Button */}
           <button
             onClick={() => setIsRangeModalOpen(true)}
-            className="group flex-1 flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 active:scale-[0.98] text-left min-w-0"
+            className="group flex-1 flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm btn-press transition-colors text-left min-w-0"
           >
             <div className="flex items-center gap-3 min-w-0">
               <span className="w-8 h-8 rounded-lg bg-accent-muted text-accent flex items-center justify-center flex-shrink-0 group-hover:bg-accent group-hover:text-white transition-colors">
@@ -195,12 +195,12 @@ export const HomePage: React.FC = () => {
               placeholder={activeTab === 'surah' ? "Search Surah (e.g. 36, Yaseen, Kahf)..." : activeTab === 'juz' ? "Search Juz by number or surah..." : "Search Hizb by number (1-60) or surah..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-9 py-3 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] border border-[var(--border)] focus:border-accent/60 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent/40 text-main placeholder-muted transition-all shadow-sm"
+              className="w-full pl-10 pr-9 py-3 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] border border-[var(--border)] focus:border-accent/60 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent/40 text-main placeholder-muted transition-colors shadow-sm"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-main rounded-md hover:bg-white/10 transition-colors"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-main rounded-md hover:bg-white/10 hit-area-40 transition-colors"
                 title="Clear Search"
               >
                 <X className="w-4 h-4" />
@@ -229,13 +229,13 @@ export const HomePage: React.FC = () => {
                 <div
                   key={item.surahNumber}
                   onClick={() => handleResumeRecent(item)}
-                  className="group cursor-pointer p-3 rounded-xl border border-[var(--border)] bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 shadow-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.97] flex flex-col justify-between gap-2.5 w-[155px] sm:w-[180px] flex-shrink-0 relative"
+                  className="group cursor-pointer p-3 rounded-xl border border-[var(--border)] bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] hover:border-accent/40 shadow-sm transition-colors btn-press flex flex-col justify-between gap-2.5 w-[155px] sm:w-[180px] flex-shrink-0 relative"
                 >
                   <div className="flex items-center justify-between w-full">
-                    <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-accent-muted text-accent flex items-center justify-center text-[10px] sm:text-[11px] font-semibold group-hover:bg-accent group-hover:text-white transition-colors">
+                    <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-accent-muted text-accent flex items-center justify-center text-[10px] sm:text-[11px] font-semibold group-hover:bg-accent group-hover:text-white transition-colors tabular-nums">
                       {item.surahNumber}
                     </span>
-                    <span className="text-[9px] text-muted font-mono">
+                    <span className="text-[9px] text-muted font-mono tabular-nums">
                       {formatRelativeTime(item.timestamp)}
                     </span>
                   </div>
@@ -250,11 +250,11 @@ export const HomePage: React.FC = () => {
                   </div>
 
                   <div className="pt-1.5 border-t border-[var(--border)]/60 flex items-center justify-between text-[10px]">
-                    <span className="text-accent font-semibold flex items-center gap-1">
+                    <span className="text-accent font-semibold flex items-center gap-1 tabular-nums">
                       <Play className="w-2.5 h-2.5 fill-current" />
                       v{item.ayahIndex + 1}
                     </span>
-                    <span className="text-muted text-[9px]">
+                    <span className="text-muted text-[9px] tabular-nums">
                       {item.numberOfAyahs} ayahs
                     </span>
                   </div>
@@ -281,7 +281,7 @@ export const HomePage: React.FC = () => {
           <div className="flex items-center gap-4 sm:gap-6 border-b border-[var(--border)] pb-2 overflow-x-auto custom-scrollbar">
             <button
               onClick={() => { setActiveTab('surah'); }}
-              className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-base sm:text-lg md:text-xl transition-all duration-300 flex-shrink-0 ${
+              className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-base sm:text-lg md:text-xl transition-colors duration-200 hit-area-44 flex-shrink-0 ${
                 activeTab === 'surah'
                   ? 'border-accent text-accent'
                   : 'border-transparent text-muted hover:text-main'
@@ -292,7 +292,7 @@ export const HomePage: React.FC = () => {
             </button>
             <button
               onClick={() => { setActiveTab('juz'); }}
-              className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-base sm:text-lg md:text-xl transition-all duration-300 flex-shrink-0 ${
+              className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-base sm:text-lg md:text-xl transition-colors duration-200 hit-area-44 flex-shrink-0 ${
                 activeTab === 'juz'
                   ? 'border-accent text-accent'
                   : 'border-transparent text-muted hover:text-main'
@@ -303,7 +303,7 @@ export const HomePage: React.FC = () => {
             </button>
             <button
               onClick={() => { setActiveTab('hizb'); }}
-              className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-base sm:text-lg md:text-xl transition-all duration-300 flex-shrink-0 ${
+              className={`flex items-center gap-2 pb-3 -mb-2.5 border-b-2 font-sans font-bold text-base sm:text-lg md:text-xl transition-colors duration-200 hit-area-44 flex-shrink-0 ${
                 activeTab === 'hizb'
                   ? 'border-accent text-accent'
                   : 'border-transparent text-muted hover:text-main'
@@ -322,10 +322,10 @@ export const HomePage: React.FC = () => {
                   <div
                     key={surah.number}
                     onClick={() => handlePlaySurah(surah)}
-                    className="group cursor-pointer p-3.5 sm:p-4 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-[0.97] flex items-center justify-between gap-3 min-w-0 w-full overflow-hidden"
+                    className="group cursor-pointer p-3.5 sm:p-4 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm btn-press transition-colors flex items-center justify-between gap-3 min-w-0 w-full overflow-hidden"
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold group-hover:scale-105 transition-transform flex-shrink-0">
+                      <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold tabular-nums flex-shrink-0">
                         {surah.number}
                       </span>
                       <div className="min-w-0 flex-1">
@@ -341,7 +341,7 @@ export const HomePage: React.FC = () => {
                       <span className="inline-block px-1.5 py-0.5 rounded bg-white/5 text-[9px] font-medium text-muted uppercase tracking-wider">
                         {surah.revelationType}
                       </span>
-                      <p className="text-[10px] text-muted mt-1">{surah.numberOfAyahs} ayahs</p>
+                      <p className="text-[10px] text-muted mt-1 tabular-nums">{surah.numberOfAyahs} ayahs</p>
                     </div>
                   </div>
                 ))}
@@ -351,7 +351,7 @@ export const HomePage: React.FC = () => {
                 <p className="text-sm text-muted">No Surahs found matching "{searchQuery}"</p>
                 <button 
                   onClick={() => setSearchQuery('')}
-                  className="text-xs font-medium text-accent hover:underline"
+                  className="text-xs font-medium text-accent hover:underline hit-area-44"
                 >
                   Clear Search Query
                 </button>
@@ -364,10 +364,10 @@ export const HomePage: React.FC = () => {
                   <div
                     key={juz.number}
                     onClick={() => handlePlayJuz(juz)}
-                    className="group cursor-pointer p-3.5 sm:p-4 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-[0.97] flex items-center justify-between gap-3 min-w-0 w-full overflow-hidden"
+                    className="group cursor-pointer p-3.5 sm:p-4 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm btn-press transition-colors flex items-center justify-between gap-3 min-w-0 w-full overflow-hidden"
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold group-hover:scale-105 transition-transform flex-shrink-0">
+                      <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold tabular-nums flex-shrink-0">
                         {juz.number}
                       </span>
                       <div className="min-w-0 flex-1">
@@ -395,7 +395,7 @@ export const HomePage: React.FC = () => {
                 <p className="text-sm text-muted">No Juzs found matching "{searchQuery}"</p>
                 <button 
                   onClick={() => setSearchQuery('')}
-                  className="text-xs font-medium text-accent hover:underline"
+                  className="text-xs font-medium text-accent hover:underline hit-area-44"
                 >
                   Clear Search Query
                 </button>
@@ -408,10 +408,10 @@ export const HomePage: React.FC = () => {
                   <div
                     key={hizb.number}
                     onClick={() => handlePlayHizb(hizb)}
-                    className="group cursor-pointer p-3.5 sm:p-4 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-[0.97] flex items-center justify-between gap-3 min-w-0 w-full overflow-hidden"
+                    className="group cursor-pointer p-3.5 sm:p-4 rounded-xl border border-[var(--border)] hover:border-accent/40 bg-[var(--bg-sidebar)] hover:bg-[var(--bg-card-active)] shadow-sm btn-press transition-colors flex items-center justify-between gap-3 min-w-0 w-full overflow-hidden"
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold group-hover:scale-105 transition-transform flex-shrink-0">
+                      <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent-muted text-accent flex items-center justify-center text-xs font-semibold tabular-nums flex-shrink-0">
                         {hizb.number}
                       </span>
                       <div className="min-w-0 flex-1">
@@ -439,7 +439,7 @@ export const HomePage: React.FC = () => {
                 <p className="text-sm text-muted">No Hizbs found matching "{searchQuery}"</p>
                 <button 
                   onClick={() => setSearchQuery('')}
-                  className="text-xs font-medium text-accent hover:underline"
+                  className="text-xs font-medium text-accent hover:underline hit-area-44"
                 >
                   Clear Search Query
                 </button>
