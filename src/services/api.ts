@@ -1,7 +1,47 @@
-import { Surah, Reciter, SurahContent, AudioAyah } from '../types';
+import { Surah, Reciter, SurahContent, AudioAyah, MushafPageData } from '../types';
 import { ALLOWED_IDENTIFIERS, MANUAL_RECITERS } from '../config/reciters';
 
 const BASE_URL = 'https://api.alquran.cloud/v1';
+
+const pageCache = new Map<number, MushafPageData>();
+
+export const fetchMushafPage = async (pageNumber: number): Promise<MushafPageData | null> => {
+  if (pageNumber < 1 || pageNumber > 604) return null;
+  if (pageCache.has(pageNumber)) {
+    return pageCache.get(pageNumber)!;
+  }
+  try {
+    const [arabicRes, englishRes] = await Promise.all([
+      fetch(`${BASE_URL}/page/${pageNumber}/quran-uthmani`),
+      fetch(`${BASE_URL}/page/${pageNumber}/en.hilali`)
+    ]);
+    if (!arabicRes.ok || !englishRes.ok) {
+      throw new Error(`Failed to fetch page ${pageNumber}`);
+    }
+    const arabicJson = await arabicRes.json();
+    const englishJson = await englishRes.json();
+
+    const data: MushafPageData = {
+      pageNumber,
+      ayahs: arabicJson.data.ayahs,
+      englishAyahs: englishJson.data.ayahs
+    };
+    pageCache.set(pageNumber, data);
+
+    // Background prefetch adjacent pages for instantaneous page flipping
+    if (pageNumber + 1 <= 604 && !pageCache.has(pageNumber + 1)) {
+      setTimeout(() => fetchMushafPage(pageNumber + 1).catch(() => {}), 300);
+    }
+    if (pageNumber - 1 >= 1 && !pageCache.has(pageNumber - 1)) {
+      setTimeout(() => fetchMushafPage(pageNumber - 1).catch(() => {}), 500);
+    }
+
+    return data;
+  } catch (error) {
+    console.error(`Error fetching Mushaf page ${pageNumber}:`, error);
+    return null;
+  }
+};
 
 export const fetchSurahs = async (): Promise<Surah[]> => {
   try {

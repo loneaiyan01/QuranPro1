@@ -84,3 +84,29 @@ export interface RecentSurahItem {
   ayahIndex: number;
   timestamp: number;
 }
+
+export interface PageAyah {
+  number: number;
+  text: string;
+  numberInSurah: number;
+  juz: number;
+  manzil: number;
+  page: number;
+  ruku: number;
+  hizbQuarter: number;
+  sajda: boolean | { id: number; recommended: boolean; obligatory: boolean };
+  surah: {
+    number: number;
+    name: string;
+    englishName: string;
+    englishNameTranslation: string;
+    numberOfAyahs: number;
+    revelationType: string;
+  };
+}
+
+export interface MushafPageData {
+  pageNumber: number;
+  ayahs: PageAyah[];
+  englishAyahs: PageAyah[];
+}

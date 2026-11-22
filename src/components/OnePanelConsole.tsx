@@ -7,10 +7,14 @@ import { useIsMobile } from '../hooks/useIsMobile';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { RangeModal } from './RangeModal';
 import FullscreenTranslationView from './FullscreenTranslationView';
+import { MushafPageView } from './MushafPageView';
+import { MushafStandWrapper } from './MushafStandWrapper';
+import { MushafBottomBar } from './MushafBottomBar';
 import { formatTime, getRepeatText } from '../utils/formatTime';
 import { JUZ_LIST } from '../utils/juzData';
 import { HIZB_LIST } from '../utils/hizbData';
-import { DisplayMode, Surah, Reciter, Ayah, Bookmark } from '../types';
+import { SURAH_START_PAGES, JUZ_START_PAGES } from '../utils/mushafData';
+import { DisplayMode, Surah, Reciter, Ayah, Bookmark, PageAyah } from '../types';
 import {
   Play,
   Pause,
@@ -33,7 +37,9 @@ import {
   RefreshCw,
   AlertTriangle,
   PanelLeft,
-  Trash2
+  Trash2,
+  BookOpen,
+  Layers
 } from 'lucide-react';
 
 export const OnePanelConsole: React.FC = () => {
@@ -66,6 +72,7 @@ export const OnePanelConsole: React.FC = () => {
     isFullSurahAudio,
     sleepTimer,
     playbackRange,
+    speed,
     actions: audioActions
   } = useAudio();
 
@@ -250,11 +257,118 @@ export const OnePanelConsole: React.FC = () => {
     closeReciterMenu();
   };
 
+  // View Mode: 'mushaf' (default) or 'cards'
+  const [viewMode, setViewMode] = useState<'mushaf' | 'cards'>(() => {
+    const saved = localStorage.getItem('tarteela_view_mode');
+    return saved === 'cards' ? 'cards' : 'mushaf';
+  });
+
+  // Optional Wooden Stand Addon State
+  const [isStandMode, setIsStandMode] = useState<boolean>(() => {
+    const saved = localStorage.getItem('tarteela_stand_mode');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  const toggleStandMode = useCallback(() => {
+    setIsStandMode(prev => {
+      const next = !prev;
+      localStorage.setItem('tarteela_stand_mode', String(next));
+      showToast(next ? 'Wooden Stand Mode: ON' : 'Wooden Stand Mode: OFF (Flat View)', { type: 'info' });
+      return next;
+    });
+  }, [showToast]);
+
+  const toggleViewMode = useCallback(() => {
+    setViewMode(prev => {
+      const next = prev === 'mushaf' ? 'cards' : 'mushaf';
+      localStorage.setItem('tarteela_view_mode', next);
+      showToast(next === 'mushaf' ? 'Madani Mushaf Page View' : 'Verse Cards View', { type: 'info' });
+      return next;
+    });
+  }, [showToast]);
+
+  // Mushaf Page State (1 to 604)
+  const [mushafPage, setMushafPage] = useState<number>(() => {
+    const saved = localStorage.getItem('tarteela_mushaf_page');
+    const num = saved ? parseInt(saved, 10) : 1;
+    return num >= 1 && num <= 604 ? num : 1;
+  });
+
+  const handlePageChange = useCallback((newPage: number) => {
+    if (newPage >= 1 && newPage <= 604) {
+      setMushafPage(newPage);
+      localStorage.setItem('tarteela_mushaf_page', String(newPage));
+    }
+  }, []);
+
+  const [selectedMushafAyah, setSelectedMushafAyah] = useState<PageAyah | null>(null);
+  const [activeTranslationText, setActiveTranslationText] = useState<string | null>(null);
+
+  // Sync active ayah and page when recitation progresses
+  useEffect(() => {
+    if (currentSurah && surahText?.arabic?.ayahs?.[currentAyahIndex]) {
+      const currentAyah = surahText.arabic.ayahs[currentAyahIndex];
+      const currentEnglish = surahText.english?.ayahs?.[currentAyahIndex];
+
+      if (currentAyah) {
+        if (currentAyah.page && currentAyah.page !== mushafPage) {
+          setMushafPage(currentAyah.page);
+        }
+
+        setSelectedMushafAyah({
+          number: currentAyah.number,
+          numberInSurah: currentAyah.numberInSurah,
+          text: currentAyah.text,
+          juz: currentAyah.juz,
+          manzil: currentAyah.manzil,
+          page: currentAyah.page,
+          ruku: currentAyah.ruku,
+          hizbQuarter: currentAyah.hizbQuarter,
+          sajda: currentAyah.sajda,
+          surah: {
+            number: currentSurah.number,
+            name: currentSurah.name,
+            englishName: currentSurah.englishName,
+            englishNameTranslation: currentSurah.englishNameTranslation,
+            numberOfAyahs: currentSurah.numberOfAyahs,
+            revelationType: currentSurah.revelationType
+          }
+        });
+
+        if (currentEnglish?.text) {
+          setActiveTranslationText(currentEnglish.text);
+        }
+      }
+    }
+  }, [currentAyahIndex, currentSurah, surahText, mushafPage]);
+
+  const handlePlayAyahOnMushaf = async (surahNumber: number, ayahNumberInSurah: number) => {
+    if (!currentSurah || currentSurah.number !== surahNumber) {
+      const targetSurah = surahs.find(s => s.number === surahNumber);
+      if (targetSurah) {
+        await quranActions.selectSurah(targetSurah);
+      }
+    }
+    audioActions.setAyahIndex(ayahNumberInSurah - 1);
+    setTimeout(() => {
+      audioActions.play();
+    }, 200);
+  };
+
+  const handleSelectMushafAyah = useCallback((ayah: PageAyah) => {
+    setSelectedMushafAyah(ayah);
+    if (currentSurah && currentSurah.number === ayah.surah.number && surahText?.english?.ayahs?.[ayah.numberInSurah - 1]) {
+      setActiveTranslationText(surahText.english.ayahs[ayah.numberInSurah - 1].text);
+    }
+  }, [currentSurah, surahText]);
+
   // Surah Selection Handler
   const handleSelectSurah = async (surah: Surah) => {
     if (isRadioMode) {
       quranActions.toggleRadioMode(false);
     }
+    const startPage = SURAH_START_PAGES[surah.number] || 1;
+    setMushafPage(startPage);
     await quranActions.selectSurah(surah);
     audioActions.setAyahIndex(0);
     if (isMobile) setIsSidebarOpen(false);
@@ -268,6 +382,8 @@ export const OnePanelConsole: React.FC = () => {
     if (isRadioMode) {
       quranActions.toggleRadioMode(false);
     }
+    const startPage = JUZ_START_PAGES[juz.number - 1] || 1;
+    setMushafPage(startPage);
     const targetSurah = surahs.find(s => s.number === juz.startSurahNumber);
     if (targetSurah) {
       await quranActions.selectSurah(targetSurah);
@@ -431,6 +547,36 @@ export const OnePanelConsole: React.FC = () => {
 
         {/* Right: Quick Action Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+          {/* View Mode Toggle (Madani Mushaf Page vs Cards) */}
+          <button
+            onClick={toggleViewMode}
+            className={`px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors btn-press hit-area-40 border ${
+              viewMode === 'mushaf'
+                ? 'bg-accent/20 border-accent/40 text-accent font-bold'
+                : 'bg-white/[0.05] hover:bg-white/[0.1] text-muted hover:text-white border-white/[0.08]'
+            }`}
+            title={viewMode === 'mushaf' ? "Switch to Verse Cards List View" : "Switch to Madani Mushaf Page View"}
+          >
+            <BookOpen className="w-3.5 h-3.5 text-accent" />
+            <span className="hidden sm:inline">{viewMode === 'mushaf' ? 'Mushaf' : 'Cards'}</span>
+          </button>
+
+          {/* Wooden Stand Mode Addon Toggle (Optional!) */}
+          {viewMode === 'mushaf' && (
+            <button
+              onClick={toggleStandMode}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors btn-press hit-area-40 border ${
+                isStandMode
+                  ? 'bg-amber-950/60 text-amber-300 border-amber-600/40 shadow-xs font-bold'
+                  : 'bg-white/[0.05] hover:bg-white/[0.1] text-muted hover:text-white border-white/[0.08]'
+              }`}
+              title={isStandMode ? "Wooden Stand is ON (Click to turn off for flat clean view)" : "Turn ON Wooden Stand Mode"}
+            >
+              <Layers className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden md:inline">{isStandMode ? 'Stand: ON' : 'Stand'}</span>
+            </button>
+          )}
+
           {/* Live Radio Toggle */}
           <button
             onClick={handleToggleRadio}
@@ -799,10 +945,12 @@ export const OnePanelConsole: React.FC = () => {
         <main
           ref={containerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto pt-6 pb-28 custom-scrollbar scroll-smooth"
+          className={`flex-1 overflow-y-auto pt-4 sm:pt-6 custom-scrollbar scroll-smooth ${
+            viewMode === 'mushaf' ? 'pb-36 sm:pb-40' : 'pb-28'
+          }`}
           style={{
-            paddingLeft: isMobile ? '16px' : `${horizontalPadding}px`,
-            paddingRight: isMobile ? '16px' : `${horizontalPadding}px`
+            paddingLeft: isMobile ? '12px' : `${horizontalPadding}px`,
+            paddingRight: isMobile ? '12px' : `${horizontalPadding}px`
           }}
         >
           {/* Conditional Center Stage: Radio Mode vs Standard Verse View */}
@@ -864,6 +1012,30 @@ export const OnePanelConsole: React.FC = () => {
                   Exit Radio Mode
                 </button>
               </div>
+            </div>
+          ) : viewMode === 'mushaf' ? (
+            /* ===================================================================
+               KING FAHD MADANI MUSHAF PAGE VIEW WITH OPTIONAL STAND ADDON
+               =================================================================== */
+            <div className="w-full mx-auto max-w-5xl py-2 sm:py-4 animate-in fade-in duration-300">
+              <MushafStandWrapper
+                enabled={isStandMode}
+                onToggle={toggleStandMode}
+                pageNumber={mushafPage}
+              >
+                <MushafPageView
+                  pageNumber={mushafPage}
+                  onPageChange={handlePageChange}
+                  activeSurahNumber={currentSurah?.number || null}
+                  activeAyahNumberInSurah={currentAyahIndex + 1}
+                  isPlaying={isPlaying}
+                  onPlayAyah={handlePlayAyahOnMushaf}
+                  onSelectAyah={handleSelectMushafAyah}
+                  isStandMode={isStandMode}
+                  onToggleStandMode={toggleStandMode}
+                  isMobile={isMobile}
+                />
+              </MushafStandWrapper>
             </div>
           ) : (
             /* ===================================================================
@@ -1103,135 +1275,164 @@ export const OnePanelConsole: React.FC = () => {
       </div>
 
       {/* =========================================================================
-          3. BOTTOM DOCKED BAR: Apple Music-Grade Persistent Player (Height: 76px)
+          3. BOTTOM DOCKED BAR: Madani Mushaf Translation Dock vs Standard Player
          ========================================================================= */}
-      <footer className="h-[76px] bg-[var(--bg-sidebar)]/90 backdrop-blur-2xl border-t border-[var(--border)] relative z-40 flex flex-col justify-between p-3 sm:px-6 shadow-2xl flex-shrink-0">
-        {/* Full-Width Liquid Scrubber (GPU-Accelerated transform scaleX, No Reflow) */}
-        <div className="absolute top-0 inset-x-0 h-1.5 hover:h-2.5 group transition-[height] duration-150 cursor-pointer z-50">
-          <div className="absolute inset-0 bg-white/[0.08]" />
-          <div
-            className="absolute top-0 left-0 h-full w-full bg-accent origin-left transition-transform duration-150 shadow-[0_0_10px_var(--accent)]"
-            style={{
-              transform: `scaleX(${progress / 100})`,
-              transitionTimingFunction: 'linear'
-            }}
-          />
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={progress}
-            onChange={(e) => audioActions.seek(Number(e.target.value))}
-            className="absolute -top-3.5 inset-x-0 w-full h-8 opacity-0 cursor-pointer hit-area-44"
-            aria-label="Audio scrubber"
-          />
-        </div>
-
-        {/* Player Controls Row */}
-        <div className="flex items-center justify-between gap-3 h-full max-w-6xl mx-auto w-full pt-1">
-          {/* Left: Clean Now Playing Typography */}
-          <div className="min-w-0 max-w-[200px] sm:max-w-xs">
-            <div className="text-xs sm:text-sm font-semibold text-white truncate">
-              {currentSurah?.englishName || 'HearQuran'}
-            </div>
-            <div className="text-[10px] sm:text-xs text-muted truncate tabular-nums">
-              {verseNumber ? `Ayah ${verseNumber} • ` : ''}{selectedReciter?.englishName}
-            </div>
+      {viewMode === 'mushaf' ? (
+        <MushafBottomBar
+          currentSurah={currentSurah}
+          activeAyah={selectedMushafAyah}
+          activeTranslation={activeTranslationText}
+          selectedReciter={selectedReciter}
+          isPlaying={isPlaying}
+          isBuffering={isBuffering}
+          progress={progress}
+          currentTime={currentTime}
+          duration={duration}
+          onTogglePlay={audioActions.togglePlay}
+          onNextAyah={audioActions.nextAyah}
+          onPrevAyah={audioActions.prevAyah}
+          onSeek={audioActions.seek}
+          speed={speed}
+          onSpeedChange={audioActions.setSpeed}
+          verseRepeatLimit={verseRepeatLimit}
+          onRepeatToggle={handleRepeatToggle}
+          sleepTimer={sleepTimer}
+          onSleepTimerToggle={handleSleepTimerToggle}
+          isStandMode={isStandMode}
+          onToggleStandMode={toggleStandMode}
+          viewMode={viewMode}
+          onToggleViewMode={toggleViewMode}
+          isMobile={isMobile}
+        />
+      ) : (
+        <footer className="h-[76px] bg-[var(--bg-sidebar)]/90 backdrop-blur-2xl border-t border-[var(--border)] relative z-40 flex flex-col justify-between p-3 sm:px-6 shadow-2xl flex-shrink-0">
+          {/* Full-Width Liquid Scrubber (GPU-Accelerated transform scaleX, No Reflow) */}
+          <div className="absolute top-0 inset-x-0 h-1.5 hover:h-2.5 group transition-[height] duration-150 cursor-pointer z-50">
+            <div className="absolute inset-0 bg-white/[0.08]" />
+            <div
+              className="absolute top-0 left-0 h-full w-full bg-accent origin-left transition-transform duration-150 shadow-[0_0_10px_var(--accent)]"
+              style={{
+                transform: `scaleX(${progress / 100})`,
+                transitionTimingFunction: 'linear'
+              }}
+            />
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={progress}
+              onChange={(e) => audioActions.seek(Number(e.target.value))}
+              className="absolute -top-3.5 inset-x-0 w-full h-8 opacity-0 cursor-pointer hit-area-44"
+              aria-label="Audio scrubber"
+            />
           </div>
 
-          {/* Center: Playback Core Controls */}
-          <div className="flex flex-col items-center gap-0.5">
-            <div className="flex items-center gap-3 sm:gap-6">
-              {/* Skip Back */}
-              <button
-                onClick={audioActions.prevAyah}
-                disabled={isRadioMode}
-                className={`p-2 text-muted hover:text-white transition-colors btn-press hit-area-44 ${
-                  isRadioMode ? 'opacity-30 cursor-not-allowed' : ''
-                }`}
-                title="Previous Ayah (←)"
-              >
-                <SkipBack className="w-5 h-5" />
-              </button>
+          {/* Player Controls Row */}
+          <div className="flex items-center justify-between gap-3 h-full max-w-6xl mx-auto w-full pt-1">
+            {/* Left: Clean Now Playing Typography */}
+            <div className="min-w-0 max-w-[200px] sm:max-w-xs">
+              <div className="text-xs sm:text-sm font-semibold text-white truncate">
+                {currentSurah?.englishName || 'HearQuran'}
+              </div>
+              <div className="text-[10px] sm:text-xs text-muted truncate tabular-nums">
+                {verseNumber ? `Ayah ${verseNumber} • ` : ''}{selectedReciter?.englishName}
+              </div>
+            </div>
 
-              {/* Play / Pause (Apple Sonic Blue Circular Button with Dual-Icon Morph) */}
+            {/* Center: Playback Core Controls */}
+            <div className="flex flex-col items-center gap-0.5">
+              <div className="flex items-center gap-3 sm:gap-6">
+                {/* Skip Back */}
+                <button
+                  onClick={audioActions.prevAyah}
+                  disabled={isRadioMode}
+                  className={`p-2 text-muted hover:text-white transition-colors btn-press hit-area-44 ${
+                    isRadioMode ? 'opacity-30 cursor-not-allowed' : ''
+                  }`}
+                  title="Previous Ayah (←)"
+                >
+                  <SkipBack className="w-5 h-5" />
+                </button>
+
+                {/* Play / Pause (Apple Sonic Blue Circular Button with Dual-Icon Morph) */}
+                <button
+                  onClick={audioActions.togglePlay}
+                  className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-accent text-white flex items-center justify-center shadow-lg shadow-accent/30 hover:scale-105 active:scale-95 transition-transform flex-shrink-0 hit-area-44 btn-press relative overflow-hidden"
+                  title={isPlaying ? "Pause (Space)" : "Play (Space)"}
+                >
+                  {isBuffering ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <div className="relative w-5 h-5 flex items-center justify-center">
+                      <Pause className={`w-5 h-5 fill-current absolute transition-[transform,opacity] duration-150 ${
+                        isPlaying ? 'scale-100 opacity-100' : 'scale-50 opacity-0 pointer-events-none'
+                      }`} />
+                      <Play className={`w-5 h-5 fill-current ml-0.5 absolute transition-[transform,opacity] duration-150 ${
+                        isPlaying ? 'scale-50 opacity-0 pointer-events-none' : 'scale-100 opacity-100'
+                      }`} />
+                    </div>
+                  )}
+                </button>
+
+                {/* Skip Forward */}
+                <button
+                  onClick={audioActions.nextAyah}
+                  disabled={isRadioMode}
+                  className={`p-2 text-muted hover:text-white transition-colors btn-press hit-area-44 ${
+                    isRadioMode ? 'opacity-30 cursor-not-allowed' : ''
+                  }`}
+                  title="Next Ayah (→)"
+                >
+                  <SkipForward className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Time Indicators (Tabular Numerals to Prevent Jitter) */}
+              <div className="flex items-center gap-2 text-[10px] font-mono tabular-nums text-muted/80">
+                <span>{formatTime(currentTime)}</span>
+                <span>/</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+            </div>
+
+            {/* Right: Audio Utility Buttons */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* Repeat Pill */}
               <button
-                onClick={audioActions.togglePlay}
-                className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-accent text-white flex items-center justify-center shadow-lg shadow-accent/30 hover:scale-105 active:scale-95 transition-transform flex-shrink-0 hit-area-44 btn-press relative overflow-hidden"
-                title={isPlaying ? "Pause (Space)" : "Play (Space)"}
+                onClick={handleRepeatToggle}
+                disabled={isFullSurahAudio || isRadioMode}
+                className={`p-2 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors btn-press hit-area-44 ${
+                  verseRepeatLimit !== 1
+                    ? 'text-accent font-bold bg-accent/15'
+                    : 'text-muted hover:text-white hover:bg-white/[0.05]'
+                } ${isFullSurahAudio || isRadioMode ? 'opacity-30 cursor-not-allowed' : ''}`}
+                title={`Repeat: ${getRepeatText(verseRepeatLimit)}`}
               >
-                {isBuffering ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <div className="relative w-5 h-5 flex items-center justify-center">
-                    <Pause className={`w-5 h-5 fill-current absolute transition-[transform,opacity] duration-150 ${
-                      isPlaying ? 'scale-100 opacity-100' : 'scale-50 opacity-0 pointer-events-none'
-                    }`} />
-                    <Play className={`w-5 h-5 fill-current ml-0.5 absolute transition-[transform,opacity] duration-150 ${
-                      isPlaying ? 'scale-50 opacity-0 pointer-events-none' : 'scale-100 opacity-100'
-                    }`} />
-                  </div>
+                <Repeat className="w-4 h-4" />
+                {verseRepeatLimit !== 1 && (
+                  <span className="text-[10px] font-mono tabular-nums">{verseRepeatLimit === -1 ? '∞' : `${verseRepeatLimit}x`}</span>
                 )}
               </button>
 
-              {/* Skip Forward */}
+              {/* Sleep Timer Pill */}
               <button
-                onClick={audioActions.nextAyah}
-                disabled={isRadioMode}
-                className={`p-2 text-muted hover:text-white transition-colors btn-press hit-area-44 ${
-                  isRadioMode ? 'opacity-30 cursor-not-allowed' : ''
+                onClick={handleSleepTimerToggle}
+                className={`p-2 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors btn-press hit-area-44 ${
+                  sleepTimer !== null
+                    ? 'text-accent font-bold bg-accent/15'
+                    : 'text-muted hover:text-white hover:bg-white/[0.05]'
                 }`}
-                title="Next Ayah (→)"
+                title={sleepTimer ? `Sleep Timer: ${sleepTimer}m` : 'Set Sleep Timer'}
               >
-                <SkipForward className="w-5 h-5" />
+                <Clock className="w-4 h-4" />
+                {sleepTimer !== null && (
+                  <span className="text-[10px] font-mono tabular-nums">{sleepTimer}m</span>
+                )}
               </button>
             </div>
-
-            {/* Time Indicators (Tabular Numerals to Prevent Jitter) */}
-            <div className="flex items-center gap-2 text-[10px] font-mono tabular-nums text-muted/80">
-              <span>{formatTime(currentTime)}</span>
-              <span>/</span>
-              <span>{formatTime(duration)}</span>
-            </div>
           </div>
-
-          {/* Right: Audio Utility Buttons */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Repeat Pill */}
-            <button
-              onClick={handleRepeatToggle}
-              disabled={isFullSurahAudio || isRadioMode}
-              className={`p-2 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors btn-press hit-area-44 ${
-                verseRepeatLimit !== 1
-                  ? 'text-accent font-bold bg-accent/15'
-                  : 'text-muted hover:text-white hover:bg-white/[0.05]'
-              } ${isFullSurahAudio || isRadioMode ? 'opacity-30 cursor-not-allowed' : ''}`}
-              title={`Repeat: ${getRepeatText(verseRepeatLimit)}`}
-            >
-              <Repeat className="w-4 h-4" />
-              {verseRepeatLimit !== 1 && (
-                <span className="text-[10px] font-mono tabular-nums">{verseRepeatLimit === -1 ? '∞' : `${verseRepeatLimit}x`}</span>
-              )}
-            </button>
-
-            {/* Sleep Timer Pill */}
-            <button
-              onClick={handleSleepTimerToggle}
-              className={`p-2 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors btn-press hit-area-44 ${
-                sleepTimer !== null
-                  ? 'text-accent font-bold bg-accent/15'
-                  : 'text-muted hover:text-white hover:bg-white/[0.05]'
-              }`}
-              title={sleepTimer ? `Sleep Timer: ${sleepTimer}m` : 'Set Sleep Timer'}
-            >
-              <Clock className="w-4 h-4" />
-              {sleepTimer !== null && (
-                <span className="text-[10px] font-mono tabular-nums">{sleepTimer}m</span>
-              )}
-            </button>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      )}
 
       {/* =========================================================================
           4. SLIDE-OVER SETTINGS DRAWER: Apple Inset Grouped Preferences with Exit Animation

@@ -28,6 +28,7 @@ interface AudioContextType {
     isPausingBetweenVerses: boolean;
     pauseCountdown: number;
     playbackRange: PlaybackRange | null;
+    speed: number;
     actions: {
         togglePlay: () => void;
         play: () => void;
@@ -42,6 +43,7 @@ interface AudioContextType {
         cancelVersePause: () => void;
         playVerse: (index: number) => void;
         setPlaybackRange: (range: PlaybackRange | null) => void;
+        setSpeed: (speed: number) => void;
     };
 }
 
@@ -64,6 +66,14 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const [sleepTimer, setSleepTimer] = useState<number | null>(null);
     const [verseRepeatLimit, setVerseRepeatLimit] = useState<number>(1);
     const [playbackRange, setPlaybackRange] = useState<PlaybackRange | null>(null);
+    const [speed, setSpeedState] = useState<number>(1.0);
+
+    const setSpeed = useCallback((newSpeed: number) => {
+        setSpeedState(newSpeed);
+        if (audioRef.current) {
+            audioRef.current.playbackRate = newSpeed;
+        }
+    }, []);
 
     // Auto-clear malformed or legacy playbackRange objects
     useEffect(() => {
@@ -330,6 +340,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
                 audioRef.current.src = audioUrl;
                 audioRef.current.volume = 1;
+                audioRef.current.playbackRate = speed;
                 audioRef.current.load();
 
                 if (wasPlaying) {
@@ -794,8 +805,9 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setVersePauseDelay,
         cancelVersePause,
         playVerse,
-        setPlaybackRange
-    }), [togglePlay, play, pause, nextAyah, prevAyah, seek, setAyahIndex, handleSetSleepTimer, setVerseRepeatLimit, setVersePauseDelay, cancelVersePause, playVerse, setPlaybackRange]);
+        setPlaybackRange,
+        setSpeed
+    }), [togglePlay, play, pause, nextAyah, prevAyah, seek, setAyahIndex, handleSetSleepTimer, setVerseRepeatLimit, setVersePauseDelay, cancelVersePause, playVerse, setPlaybackRange, setSpeed]);
 
     return (
         <AudioContext.Provider
@@ -815,6 +827,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 isPausingBetweenVerses,
                 pauseCountdown,
                 playbackRange,
+                speed,
                 actions: audioActions
             }}
         >
