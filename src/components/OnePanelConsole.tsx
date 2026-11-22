@@ -8,13 +8,12 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { RangeModal } from './RangeModal';
 import FullscreenTranslationView from './FullscreenTranslationView';
 import { MushafPageView } from './MushafPageView';
-import { MushafStandWrapper } from './MushafStandWrapper';
 import { MushafBottomBar } from './MushafBottomBar';
 import { formatTime, getRepeatText } from '../utils/formatTime';
 import { JUZ_LIST } from '../utils/juzData';
 import { HIZB_LIST } from '../utils/hizbData';
-import { SURAH_START_PAGES, JUZ_START_PAGES } from '../utils/mushafData';
-import { DisplayMode, Surah, Reciter, Ayah, Bookmark, PageAyah } from '../types';
+import { SURAH_START_PAGES, JUZ_START_PAGES, getJuzForPage } from '../utils/mushafData';
+import { DisplayMode, Surah, Reciter, Ayah, Bookmark } from '../types';
 import {
   Play,
   Pause,
@@ -39,7 +38,8 @@ import {
   PanelLeft,
   Trash2,
   BookOpen,
-  Layers
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export const OnePanelConsole: React.FC = () => {
@@ -263,17 +263,17 @@ export const OnePanelConsole: React.FC = () => {
     return saved === 'cards' ? 'cards' : 'mushaf';
   });
 
-  // Optional Wooden Stand Addon State
-  const [isStandMode, setIsStandMode] = useState<boolean>(() => {
-    const saved = localStorage.getItem('tarteela_stand_mode');
-    return saved !== null ? saved === 'true' : true;
+  // Mushaf Page Theme: 'cream' (default authentic) or 'dark'
+  const [pageTheme, setPageTheme] = useState<'cream' | 'dark'>(() => {
+    const saved = localStorage.getItem('tarteela_mushaf_theme');
+    return saved === 'dark' ? 'dark' : 'cream';
   });
 
-  const toggleStandMode = useCallback(() => {
-    setIsStandMode(prev => {
-      const next = !prev;
-      localStorage.setItem('tarteela_stand_mode', String(next));
-      showToast(next ? 'Wooden Stand Mode: ON' : 'Wooden Stand Mode: OFF (Flat View)', { type: 'info' });
+  const togglePageTheme = useCallback(() => {
+    setPageTheme(prev => {
+      const next = prev === 'cream' ? 'dark' : 'cream';
+      localStorage.setItem('tarteela_mushaf_theme', next);
+      showToast(next === 'cream' ? 'King Fahd Cream Mushaf' : 'Night Dark Mushaf', { type: 'info' });
       return next;
     });
   }, [showToast]);
@@ -301,8 +301,12 @@ export const OnePanelConsole: React.FC = () => {
     }
   }, []);
 
-  const [selectedMushafAyah, setSelectedMushafAyah] = useState<PageAyah | null>(null);
   const [activeTranslationText, setActiveTranslationText] = useState<string | null>(null);
+
+  // Active Verse Key (e.g. "1:1", "18:2")
+  const activeVerseKey = useMemo(() => {
+    return currentSurah ? `${currentSurah.number}:${currentAyahIndex + 1}` : null;
+  }, [currentSurah, currentAyahIndex]);
 
   // Sync active ayah and page when recitation progresses
   useEffect(() => {
@@ -315,26 +319,6 @@ export const OnePanelConsole: React.FC = () => {
           setMushafPage(currentAyah.page);
         }
 
-        setSelectedMushafAyah({
-          number: currentAyah.number,
-          numberInSurah: currentAyah.numberInSurah,
-          text: currentAyah.text,
-          juz: currentAyah.juz,
-          manzil: currentAyah.manzil,
-          page: currentAyah.page,
-          ruku: currentAyah.ruku,
-          hizbQuarter: currentAyah.hizbQuarter,
-          sajda: currentAyah.sajda,
-          surah: {
-            number: currentSurah.number,
-            name: currentSurah.name,
-            englishName: currentSurah.englishName,
-            englishNameTranslation: currentSurah.englishNameTranslation,
-            numberOfAyahs: currentSurah.numberOfAyahs,
-            revelationType: currentSurah.revelationType
-          }
-        });
-
         if (currentEnglish?.text) {
           setActiveTranslationText(currentEnglish.text);
         }
@@ -342,25 +326,24 @@ export const OnePanelConsole: React.FC = () => {
     }
   }, [currentAyahIndex, currentSurah, surahText, mushafPage]);
 
-  const handlePlayAyahOnMushaf = async (surahNumber: number, ayahNumberInSurah: number) => {
-    if (!currentSurah || currentSurah.number !== surahNumber) {
-      const targetSurah = surahs.find(s => s.number === surahNumber);
+  const handlePlayVerseKey = useCallback(async (verseKey: string) => {
+    const [sStr, aStr] = verseKey.split(':');
+    const surahNum = parseInt(sStr, 10);
+    const ayahNum = parseInt(aStr, 10);
+    if (!surahNum || !ayahNum) return;
+
+    if (!currentSurah || currentSurah.number !== surahNum) {
+      const targetSurah = surahs.find(s => s.number === surahNum);
       if (targetSurah) {
         await quranActions.selectSurah(targetSurah);
       }
     }
-    audioActions.setAyahIndex(ayahNumberInSurah - 1);
-    setTimeout(() => {
-      audioActions.play();
-    }, 200);
-  };
+    audioActions.playVerse(ayahNum - 1);
+  }, [currentSurah, surahs, quranActions, audioActions]);
 
-  const handleSelectMushafAyah = useCallback((ayah: PageAyah) => {
-    setSelectedMushafAyah(ayah);
-    if (currentSurah && currentSurah.number === ayah.surah.number && surahText?.english?.ayahs?.[ayah.numberInSurah - 1]) {
-      setActiveTranslationText(surahText.english.ayahs[ayah.numberInSurah - 1].text);
-    }
-  }, [currentSurah, surahText]);
+  const handleActiveTranslationChange = useCallback((translation: string, _verseKey: string) => {
+    setActiveTranslationText(translation);
+  }, []);
 
   // Surah Selection Handler
   const handleSelectSurah = async (surah: Surah) => {
@@ -561,19 +544,19 @@ export const OnePanelConsole: React.FC = () => {
             <span className="hidden sm:inline">{viewMode === 'mushaf' ? 'Mushaf' : 'Cards'}</span>
           </button>
 
-          {/* Wooden Stand Mode Addon Toggle (Optional!) */}
+          {/* Mushaf Page Theme (Original Cream vs Night Dark) */}
           {viewMode === 'mushaf' && (
             <button
-              onClick={toggleStandMode}
+              onClick={togglePageTheme}
               className={`px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors btn-press hit-area-40 border ${
-                isStandMode
-                  ? 'bg-amber-950/60 text-amber-300 border-amber-600/40 shadow-xs font-bold'
+                pageTheme === 'cream'
+                  ? 'bg-amber-100/90 text-amber-950 border-amber-300 font-bold shadow-xs'
                   : 'bg-white/[0.05] hover:bg-white/[0.1] text-muted hover:text-white border-white/[0.08]'
               }`}
-              title={isStandMode ? "Wooden Stand is ON (Click to turn off for flat clean view)" : "Turn ON Wooden Stand Mode"}
+              title={pageTheme === 'cream' ? "Switch to Night Dark Mushaf Mode" : "Switch to Authentic King Fahd Cream Mode"}
             >
-              <Layers className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden md:inline">{isStandMode ? 'Stand: ON' : 'Stand'}</span>
+              {pageTheme === 'cream' ? <Sun className="w-3.5 h-3.5 text-amber-600" /> : <Moon className="w-3.5 h-3.5 text-amber-300" />}
+              <span className="hidden md:inline">{pageTheme === 'cream' ? 'Cream' : 'Dark'}</span>
             </button>
           )}
 
@@ -1015,27 +998,20 @@ export const OnePanelConsole: React.FC = () => {
             </div>
           ) : viewMode === 'mushaf' ? (
             /* ===================================================================
-               KING FAHD MADANI MUSHAF PAGE VIEW WITH OPTIONAL STAND ADDON
+               KING FAHD MADANI MUSHAF PAGE VIEW (KFGQPC V2 15-LINE FORMAT)
                =================================================================== */
             <div className="w-full mx-auto max-w-5xl py-2 sm:py-4 animate-in fade-in duration-300">
-              <MushafStandWrapper
-                enabled={isStandMode}
-                onToggle={toggleStandMode}
+              <MushafPageView
                 pageNumber={mushafPage}
-              >
-                <MushafPageView
-                  pageNumber={mushafPage}
-                  onPageChange={handlePageChange}
-                  activeSurahNumber={currentSurah?.number || null}
-                  activeAyahNumberInSurah={currentAyahIndex + 1}
-                  isPlaying={isPlaying}
-                  onPlayAyah={handlePlayAyahOnMushaf}
-                  onSelectAyah={handleSelectMushafAyah}
-                  isStandMode={isStandMode}
-                  onToggleStandMode={toggleStandMode}
-                  isMobile={isMobile}
-                />
-              </MushafStandWrapper>
+                onPageChange={handlePageChange}
+                activeVerseKey={activeVerseKey}
+                isPlaying={isPlaying}
+                onPlayVerseKey={handlePlayVerseKey}
+                onActiveTranslationChange={handleActiveTranslationChange}
+                pageTheme={pageTheme}
+                onTogglePageTheme={togglePageTheme}
+                isMobile={isMobile}
+              />
             </div>
           ) : (
             /* ===================================================================
@@ -1280,9 +1256,11 @@ export const OnePanelConsole: React.FC = () => {
       {viewMode === 'mushaf' ? (
         <MushafBottomBar
           currentSurah={currentSurah}
-          activeAyah={selectedMushafAyah}
+          activeVerseKey={activeVerseKey}
           activeTranslation={activeTranslationText}
           selectedReciter={selectedReciter}
+          pageNumber={mushafPage}
+          juzNumber={getJuzForPage(mushafPage)}
           isPlaying={isPlaying}
           isBuffering={isBuffering}
           progress={progress}
@@ -1298,8 +1276,8 @@ export const OnePanelConsole: React.FC = () => {
           onRepeatToggle={handleRepeatToggle}
           sleepTimer={sleepTimer}
           onSleepTimerToggle={handleSleepTimerToggle}
-          isStandMode={isStandMode}
-          onToggleStandMode={toggleStandMode}
+          pageTheme={pageTheme}
+          onTogglePageTheme={togglePageTheme}
           viewMode={viewMode}
           onToggleViewMode={toggleViewMode}
           isMobile={isMobile}

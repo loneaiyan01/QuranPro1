@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PageAyah, Surah, Reciter } from '../types';
+import { Surah, Reciter } from '../types';
 import { formatTime, getRepeatText } from '../utils/formatTime';
 import {
   Play,
@@ -10,19 +10,21 @@ import {
   Clock,
   ChevronUp,
   ChevronDown,
-  Layers,
   Copy,
   Check,
   BookOpen,
-  Volume2
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 
 interface MushafBottomBarProps {
   currentSurah: Surah | null;
-  activeAyah: PageAyah | null;
+  activeVerseKey: string | null;
   activeTranslation: string | null;
   selectedReciter: Reciter | null;
+  pageNumber: number;
+  juzNumber: number;
   isPlaying: boolean;
   isBuffering: boolean;
   progress: number;
@@ -38,8 +40,8 @@ interface MushafBottomBarProps {
   onRepeatToggle: () => void;
   sleepTimer: number | null;
   onSleepTimerToggle: () => void;
-  isStandMode: boolean;
-  onToggleStandMode: () => void;
+  pageTheme: 'cream' | 'dark';
+  onTogglePageTheme: () => void;
   viewMode: 'mushaf' | 'cards';
   onToggleViewMode: () => void;
   isMobile: boolean;
@@ -47,9 +49,11 @@ interface MushafBottomBarProps {
 
 export const MushafBottomBar: React.FC<MushafBottomBarProps> = ({
   currentSurah,
-  activeAyah,
+  activeVerseKey,
   activeTranslation,
   selectedReciter,
+  pageNumber,
+  juzNumber,
   isPlaying,
   isBuffering,
   progress,
@@ -65,8 +69,8 @@ export const MushafBottomBar: React.FC<MushafBottomBarProps> = ({
   onRepeatToggle,
   sleepTimer,
   onSleepTimerToggle,
-  isStandMode,
-  onToggleStandMode,
+  pageTheme,
+  onTogglePageTheme,
   viewMode,
   onToggleViewMode,
   isMobile
@@ -77,12 +81,12 @@ export const MushafBottomBar: React.FC<MushafBottomBarProps> = ({
 
   const handleCopyTranslation = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!activeTranslation || !activeAyah) return;
-    const textToCopy = `"${activeTranslation}"\n\n— ${activeAyah.surah.englishName} [${activeAyah.surah.number}:${activeAyah.numberInSurah}]`;
+    if (!activeTranslation) return;
+    const textToCopy = `"${activeTranslation}"\n\n— ${currentSurah?.englishName || 'Quran'} [${activeVerseKey || ''}]`;
     try {
       await navigator.clipboard.writeText(textToCopy);
       setIsCopied(true);
-      showToast(`Copied translation of Ayah ${activeAyah.numberInSurah}`, { type: 'success' });
+      showToast(`Copied translation of Ayah ${activeVerseKey || ''}`, { type: 'success' });
       setTimeout(() => setIsCopied(false), 2000);
     } catch {
       showToast('Unable to copy translation', { type: 'info' });
@@ -122,7 +126,7 @@ export const MushafBottomBar: React.FC<MushafBottomBarProps> = ({
       <div className="max-w-6xl mx-auto px-3 sm:px-6 py-2 sm:py-2.5 flex flex-col justify-between">
         
         {/* ===================================================================
-            SECTION 1: TRANSLATION DISPLAY SECTION (The User Request)
+            SECTION 1: ACTIVE AYAH TRANSLATION DOCK
            =================================================================== */}
         {isExpanded && activeTranslation && (
           <div className="pb-2 mb-1.5 border-b border-white/[0.06] flex items-start justify-between gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
@@ -130,13 +134,11 @@ export const MushafBottomBar: React.FC<MushafBottomBarProps> = ({
               {/* Header Badges */}
               <div className="flex items-center gap-2 mb-1 text-[11px] font-medium text-muted">
                 <span className="px-2 py-0.5 rounded-md bg-accent/15 text-accent font-semibold text-[10px]">
-                  {activeAyah ? `${activeAyah.surah.englishName} [${activeAyah.surah.number}:${activeAyah.numberInSurah}]` : 'Translation'}
+                  {currentSurah?.englishName || 'Surah'} [{activeVerseKey || '1:1'}]
                 </span>
-                {activeAyah?.page && (
-                  <span className="text-[10px] text-muted/70">
-                    Page {activeAyah.page} • Juz {activeAyah.juz}
-                  </span>
-                )}
+                <span className="text-[10px] text-muted/70">
+                  Page {pageNumber} • Juz {juzNumber}
+                </span>
               </div>
 
               {/* Translation Text (Hilali-Khan Clear English) */}
@@ -173,7 +175,7 @@ export const MushafBottomBar: React.FC<MushafBottomBarProps> = ({
            =================================================================== */}
         <div className="flex items-center justify-between gap-2 sm:gap-4 h-12">
           
-          {/* Left: Now Playing Metadata & Expand Translation Toggle */}
+          {/* Left: Metadata & Expand Translation Toggle */}
           <div className="flex items-center gap-2 min-w-0 max-w-[140px] sm:max-w-xs">
             {!isExpanded && (
               <button
@@ -188,11 +190,11 @@ export const MushafBottomBar: React.FC<MushafBottomBarProps> = ({
 
             <div className="min-w-0">
               <div className="text-xs sm:text-sm font-semibold text-white truncate">
-                {activeAyah ? activeAyah.surah.englishName : (currentSurah?.englishName || 'HearQuran')}
+                {currentSurah?.englishName || 'HearQuran'}
               </div>
               <div className="text-[10px] sm:text-xs text-muted truncate tabular-nums">
-                {activeAyah ? `Ayah ${activeAyah.numberInSurah} • ` : ''}
-                {selectedReciter?.englishName || 'Recitation'}
+                {activeVerseKey ? `Ayah ${activeVerseKey.split(':')[1]} • ` : ''}
+                {selectedReciter?.englishName || 'Reciter'}
               </div>
             </div>
           </div>
@@ -242,21 +244,21 @@ export const MushafBottomBar: React.FC<MushafBottomBarProps> = ({
             </div>
           </div>
 
-          {/* Right: Addons & Utility Toggles (Wooden Stand Addon, Speed, Repeat) */}
+          {/* Right: Page Theme, View Mode & Speed Toggles */}
           <div className="flex items-center gap-1 sm:gap-2">
             
-            {/* Wooden Stand Mode Addon Toggle (Optional!) */}
+            {/* Mushaf Page Theme (Original Cream vs Night Dark) */}
             <button
-              onClick={onToggleStandMode}
+              onClick={onTogglePageTheme}
               className={`px-2 py-1 sm:px-2.5 sm:py-1 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors btn-press hit-area-40 border ${
-                isStandMode
-                  ? 'bg-amber-950/60 text-amber-300 border-amber-600/40 shadow-xs'
-                  : 'bg-white/[0.04] text-muted hover:text-white border-white/[0.08]'
+                pageTheme === 'cream'
+                  ? 'bg-amber-100/90 text-amber-950 border-amber-300 font-bold shadow-xs'
+                  : 'bg-white/[0.06] text-muted hover:text-white border-white/[0.08]'
               }`}
-              title={isStandMode ? "Wooden Stand is ON (Click to switch to Clean Flat mode)" : "Turn ON Wooden Stand Mode"}
+              title={pageTheme === 'cream' ? "Switch Mushaf to Night Dark Mode" : "Switch Mushaf to Original King Fahd Cream Mode"}
             >
-              <Layers className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden md:inline">{isStandMode ? 'Stand: ON' : 'Stand'}</span>
+              {pageTheme === 'cream' ? <Sun className="w-3.5 h-3.5 text-amber-600" /> : <Moon className="w-3.5 h-3.5 text-amber-300" />}
+              <span className="hidden md:inline">{pageTheme === 'cream' ? 'Cream' : 'Dark'}</span>
             </button>
 
             {/* View Mode Toggle: Mushaf Page vs Cards */}

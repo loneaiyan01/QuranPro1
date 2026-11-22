@@ -1,70 +1,65 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { PageAyah, MushafPageData } from '../types';
-import { fetchMushafPage } from '../services/api';
-import { toArabicNumerals, ARABIC_JUZ_NAMES, getJuzForPage } from '../utils/mushafData';
-import { ChevronLeft, ChevronRight, Bookmark as BookmarkIcon, Check, Copy, Share2, Sparkles, Volume2 } from 'lucide-react';
-import { useToast } from '../contexts/ToastContext';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { KfgqpcPageData, KfgqpcWord, KfgqpcLine } from '../types';
+import { fetchKfgqpcPage } from '../services/api';
+import { toArabicNumerals, ARABIC_JUZ_NAMES, getJuzForPage, SURAH_META } from '../utils/mushafData';
+import { ChevronLeft, ChevronRight, Sun, Moon, Volume2 } from 'lucide-react';
 
 interface MushafPageViewProps {
   pageNumber: number;
   onPageChange: (newPage: number) => void;
-  activeSurahNumber: number | null;
-  activeAyahNumberInSurah: number | null;
+  activeVerseKey: string | null; // e.g. "1:1", "18:2"
   isPlaying: boolean;
-  onPlayAyah: (surahNumber: number, ayahNumberInSurah: number) => void;
-  onSelectAyah?: (ayah: PageAyah) => void;
-  isStandMode: boolean;
-  onToggleStandMode: () => void;
+  onPlayVerseKey: (verseKey: string) => void;
+  onActiveTranslationChange?: (translation: string, verseKey: string) => void;
   isMobile: boolean;
+  pageTheme?: 'cream' | 'dark';
+  onTogglePageTheme?: () => void;
 }
 
 export const MushafPageView: React.FC<MushafPageViewProps> = ({
   pageNumber,
   onPageChange,
-  activeSurahNumber,
-  activeAyahNumberInSurah,
+  activeVerseKey,
   isPlaying,
-  onPlayAyah,
-  onSelectAyah,
-  isStandMode,
-  onToggleStandMode,
-  isMobile
+  onPlayVerseKey,
+  onActiveTranslationChange,
+  isMobile,
+  pageTheme = 'cream',
+  onTogglePageTheme
 }) => {
-  const [pageData, setPageData] = useState<MushafPageData | null>(null);
+  const [pageData, setPageData] = useState<KfgqpcPageData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const [touchEndX, setTouchEndX] = useState<number | null>(null);
 
-  const { showToast } = useToast();
-  const activeAyahRef = useRef<HTMLSpanElement | null>(null);
+  const activeWordRef = useRef<HTMLSpanElement | null>(null);
 
-  // Load Page Data
+  // Load KFGQPC V2 Page Data
   useEffect(() => {
     let isCurrent = true;
     setIsLoading(true);
     setError(null);
 
-    fetchMushafPage(pageNumber)
+    fetchKfgqpcPage(pageNumber)
       .then((data) => {
         if (!isCurrent) return;
-        if (data && data.ayahs.length > 0) {
+        if (data && data.lines.length > 0) {
           setPageData(data);
-          // Auto select first ayah or currently active ayah for bottom translation
-          if (onSelectAyah && data.ayahs.length > 0) {
-            const currentMatch = data.ayahs.find(
-              a => a.surah.number === activeSurahNumber && a.numberInSurah === activeAyahNumberInSurah
-            );
-            onSelectAyah(currentMatch || data.ayahs[0]);
+
+          // Update active translation for the current verse or first verse on page
+          if (onActiveTranslationChange && data.verses.length > 0) {
+            const currentVerse = data.verses.find(v => v.verseKey === activeVerseKey);
+            const target = currentVerse || data.verses[0];
+            onActiveTranslationChange(target.translation, target.verseKey);
           }
         } else {
-          setError('Failed to load Mushaf page.');
+          setError('Failed to load page data.');
         }
         setIsLoading(false);
       })
       .catch((err) => {
         if (!isCurrent) return;
-        setError('Connection error while fetching Mushaf page.');
+        setError('Connection error loading King Fahd Mushaf page.');
         setIsLoading(false);
       });
 
@@ -73,178 +68,136 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
     };
   }, [pageNumber]);
 
-  // Update selected ayah when active recitation verse changes on this page
+  // Update translation when active verse changes
   useEffect(() => {
-    if (pageData && onSelectAyah) {
-      const match = pageData.ayahs.find(
-        a => a.surah.number === activeSurahNumber && a.numberInSurah === activeAyahNumberInSurah
-      );
+    if (pageData && activeVerseKey && onActiveTranslationChange) {
+      const match = pageData.verses.find(v => v.verseKey === activeVerseKey);
       if (match) {
-        onSelectAyah(match);
+        onActiveTranslationChange(match.translation, match.verseKey);
       }
     }
-  }, [activeSurahNumber, activeAyahNumberInSurah, pageData, onSelectAyah]);
+  }, [activeVerseKey, pageData, onActiveTranslationChange]);
 
-  // Smooth scroll active ayah into view if needed
+  // Smooth scroll active verse into view
   useEffect(() => {
-    if (activeAyahRef.current) {
-      activeAyahRef.current.scrollIntoView({
+    if (activeWordRef.current) {
+      activeWordRef.current.scrollIntoView({
         behavior: 'smooth',
         block: 'nearest'
       });
     }
-  }, [activeSurahNumber, activeAyahNumberInSurah]);
+  }, [activeVerseKey]);
 
-  // Navigation Handlers
+  // Navigation Handlers (Physical Mushaf flips left for next page)
   const handleNextPage = useCallback(() => {
-    // In traditional Arabic Mushaf, reading is Right-to-Left, so next page is pageNumber + 1
-    if (pageNumber < 604) {
-      onPageChange(pageNumber + 1);
-    }
+    if (pageNumber < 604) onPageChange(pageNumber + 1);
   }, [pageNumber, onPageChange]);
 
   const handlePrevPage = useCallback(() => {
-    if (pageNumber > 1) {
-      onPageChange(pageNumber - 1);
-    }
+    if (pageNumber > 1) onPageChange(pageNumber - 1);
   }, [pageNumber, onPageChange]);
 
-  // Touch Gesture Handling for Mobile & Tablets
+  // Mobile Touch Swipe Handling
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStartX(e.targetTouches[0].clientX);
-    setTouchEndX(null);
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEndX(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStartX || !touchEndX) return;
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartX) return;
+    const touchEndX = e.changedTouches[0].clientX;
     const distance = touchStartX - touchEndX;
-    const minSwipeDistance = 50;
-
-    // Swiping Left (next page in LTR, but in Arabic physical Mushaf turning next page flips left)
-    if (distance > minSwipeDistance) {
+    if (distance > 50) {
       handleNextPage();
-    } else if (distance < -minSwipeDistance) {
+    } else if (distance < -50) {
       handlePrevPage();
     }
     setTouchStartX(null);
-    setTouchEndX(null);
   };
 
-  // Keyboard navigation (Left/Right arrows for pages when not typing)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
-      if (e.key === 'PageDown' || (e.ctrlKey && e.key === 'ArrowRight')) {
-        handleNextPage();
-      } else if (e.key === 'PageUp' || (e.ctrlKey && e.key === 'ArrowLeft')) {
-        handlePrevPage();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleNextPage, handlePrevPage]);
-
-  // Derive Primary Page Metadata
-  const primarySurah = pageData?.ayahs[0]?.surah;
-  const primaryJuzNumber = pageData?.ayahs[0]?.juz || getJuzForPage(pageNumber);
+  const isCream = pageTheme === 'cream';
+  const primarySurah = SURAH_META[pageData?.primarySurahNumber || 1];
+  const primaryJuzNumber = pageData?.juzNumber || getJuzForPage(pageNumber);
   const arabicJuzName = ARABIC_JUZ_NAMES[primaryJuzNumber - 1] || `الجزء ${toArabicNumerals(primaryJuzNumber)}`;
-
-  // Group ayahs by Surah so we can render authentic King Fahd Surah headers
-  const surahSections = useMemo(() => {
-    if (!pageData) return [];
-    const sections: {
-      surah: PageAyah['surah'];
-      isSurahStart: boolean;
-      ayahs: PageAyah[];
-    }[] = [];
-
-    pageData.ayahs.forEach((ayah) => {
-      const lastSection = sections[sections.length - 1];
-      if (!lastSection || lastSection.surah.number !== ayah.surah.number) {
-        sections.push({
-          surah: ayah.surah,
-          isSurahStart: ayah.numberInSurah === 1,
-          ayahs: [ayah]
-        });
-      } else {
-        lastSection.ayahs.push(ayah);
-      }
-    });
-
-    return sections;
-  }, [pageData]);
-
-  // Clean Bismillah prefix if ayah 1 contains it (except Surah 1 & 9)
-  const cleanAyahText = (text: string, numberInSurah: number, surahNumber: number) => {
-    if (numberInSurah === 1 && surahNumber !== 1 && surahNumber !== 9) {
-      const bismillahPrefix = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
-      if (text.startsWith(bismillahPrefix)) {
-        return text.slice(bismillahPrefix.length).trim();
-      }
-    }
-    return text;
-  };
 
   return (
     <div
-      className="relative w-full flex flex-col items-center justify-center my-auto transition-all select-none"
+      className="relative w-full flex flex-col items-center justify-center select-none py-2 transition-all duration-300"
       onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       {/* =====================================================================
-          MUSHAF PAGE FRAME (King Fahd Complex Standard Dimensions & Border)
+          KING FAHD GLORIOUS QURAN PRINTING COMPLEX (KFGQPC V2) MUSHAF PAGE
          ===================================================================== */}
       <div
-        className={`w-full relative transition-all duration-300 rounded-2xl md:rounded-3xl border ${
-          isStandMode
-            ? 'bg-[#181310] border-amber-900/50 shadow-2xl text-amber-50'
-            : 'bg-[var(--bg-card)]/90 border-white/[0.08] shadow-2xl text-white'
+        className={`w-full max-w-[780px] rounded-2xl shadow-2xl transition-all duration-200 border-2 relative overflow-hidden ${
+          isCream
+            ? 'bg-[#FCFBF7] text-[#141210] border-[#C5A059]/40 shadow-[0_20px_50px_rgba(0,0,0,0.35)]'
+            : 'bg-[#0E0F13] text-[#EDE8DF] border-[#C5A059]/40 shadow-[0_20px_50px_rgba(0,0,0,0.8)]'
         }`}
-        style={{
-          boxShadow: isStandMode
-            ? 'inset 0 0 40px rgba(0,0,0,0.6), 0 20px 50px rgba(0,0,0,0.8)'
-            : '0 20px 50px rgba(0,0,0,0.5)'
-        }}
       >
-        {/* Ornate Double-Line Decorative Margin Frame */}
+        {/* Outer Ornate King Fahd Gold & Teal Border Frame */}
         <div
-          className={`m-2 sm:m-3.5 md:m-5 p-3 sm:p-5 md:p-8 rounded-xl md:rounded-2xl border-2 relative ${
-            isStandMode
-              ? 'border-amber-600/35 bg-[#1C1511]/90'
-              : 'border-white/[0.09] bg-black/20'
+          className={`m-2 sm:m-4 md:m-5 p-2 sm:p-4 md:p-6 rounded-xl border-2 relative ${
+            isCream
+              ? 'border-[#C5A059] bg-[#FAF7EE]'
+              : 'border-[#C5A059]/60 bg-[#121318]'
           }`}
+          style={{
+            boxShadow: isCream
+              ? 'inset 0 0 15px rgba(197, 160, 89, 0.12)'
+              : 'inset 0 0 20px rgba(0, 0, 0, 0.7)'
+          }}
         >
-          {/* Decorative Corner Ornaments (Islamic Arabesque Medallions) */}
-          <div className="absolute top-1.5 left-1.5 w-3 h-3 border-t-2 border-l-2 border-amber-500/50 rounded-tl-sm pointer-events-none" />
-          <div className="absolute top-1.5 right-1.5 w-3 h-3 border-t-2 border-r-2 border-amber-500/50 rounded-tr-sm pointer-events-none" />
-          <div className="absolute bottom-1.5 left-1.5 w-3 h-3 border-b-2 border-l-2 border-amber-500/50 rounded-bl-sm pointer-events-none" />
-          <div className="absolute bottom-1.5 right-1.5 w-3 h-3 border-b-2 border-r-2 border-amber-500/50 rounded-br-sm pointer-events-none" />
+          {/* Classical Arabesque Corner Ornaments */}
+          <div className="absolute top-1 left-1 w-3.5 h-3.5 border-t-2 border-l-2 border-[#C5A059] pointer-events-none" />
+          <div className="absolute top-1 right-1 w-3.5 h-3.5 border-t-2 border-r-2 border-[#C5A059] pointer-events-none" />
+          <div className="absolute bottom-1 left-1 w-3.5 h-3.5 border-b-2 border-l-2 border-[#C5A059] pointer-events-none" />
+          <div className="absolute bottom-1 right-1 w-3.5 h-3.5 border-b-2 border-r-2 border-[#C5A059] pointer-events-none" />
 
           {/* ===================================================================
               TOP PAGE HEADER (Surah Name Right • Page/Hizb Center • Juz Left)
              =================================================================== */}
-          <header className="flex items-center justify-between pb-3 sm:pb-4 mb-3 sm:mb-4 border-b border-amber-500/20 text-xs sm:text-sm font-semibold select-none text-muted">
+          <header className="flex items-center justify-between pb-2 mb-2 sm:mb-3 border-b border-[#C5A059]/30 text-xs sm:text-sm font-semibold select-none">
             {/* Left: Juz in Arabic */}
             <div className="text-right flex items-center gap-1.5">
-              <span className="font-quran text-accent text-sm sm:text-base font-bold" dir="rtl">
+              <span
+                className={`font-quran text-sm sm:text-base font-bold ${
+                  isCream ? 'text-[#1B3B48]' : 'text-amber-400'
+                }`}
+                dir="rtl"
+              >
                 {arabicJuzName}
               </span>
             </div>
 
-            {/* Center: Page indicator / Jump Input */}
-            <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-mono tabular-nums text-muted/70">
-              <span className="hidden sm:inline">Madani Mushaf •</span>
-              <span>Page {pageNumber} of 604</span>
+            {/* Center: Mushaf Info & Theme Toggle */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] sm:text-xs font-mono tabular-nums opacity-60">
+                مصحف المدينة النبوية • {pageNumber}
+              </span>
+              {onTogglePageTheme && (
+                <button
+                  onClick={onTogglePageTheme}
+                  className={`p-1 rounded-full transition-colors border ${
+                    isCream
+                      ? 'bg-amber-100/70 border-amber-300 text-amber-900 hover:bg-amber-200'
+                      : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                  }`}
+                  title={isCream ? 'Switch to Night Mode' : 'Switch to Original Cream Parchment'}
+                >
+                  {isCream ? <Moon className="w-3 h-3" /> : <Sun className="w-3 h-3 text-amber-300" />}
+                </button>
+              )}
             </div>
 
             {/* Right: Surah Name in Arabic */}
             <div className="text-left flex items-center gap-1.5">
-              <span className="font-quran text-white text-sm sm:text-base font-bold" dir="rtl">
+              <span
+                className={`font-quran text-sm sm:text-base font-bold ${
+                  isCream ? 'text-[#1B3B48]' : 'text-amber-400'
+                }`}
+                dir="rtl"
+              >
                 {primarySurah?.name || ''}
               </span>
             </div>
@@ -252,13 +205,13 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
 
           {/* Loading Shimmer State */}
           {isLoading && (
-            <div className="py-20 space-y-4 animate-in fade-in duration-200">
-              <div className="h-10 skeleton-shimmer rounded-xl w-3/4 mx-auto mb-8" />
-              {[...Array(12)].map((_, i) => (
+            <div className="py-24 space-y-4 animate-in fade-in duration-200">
+              <div className="h-10 skeleton-shimmer rounded-xl w-3/4 mx-auto mb-6" />
+              {[...Array(13)].map((_, i) => (
                 <div
                   key={i}
                   className="h-6 skeleton-shimmer rounded-lg mx-auto"
-                  style={{ width: `${88 - (i % 3) * 6}%` }}
+                  style={{ width: `${92 - (i % 4) * 4}%` }}
                 />
               ))}
             </div>
@@ -266,107 +219,128 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
 
           {/* Error State */}
           {error && !isLoading && (
-            <div className="py-20 text-center space-y-3">
+            <div className="py-24 text-center space-y-3">
               <p className="text-red-400 text-xs">{error}</p>
               <button
                 onClick={() => onPageChange(pageNumber)}
-                className="px-4 py-1.5 bg-accent text-white rounded-lg text-xs font-semibold"
+                className="px-4 py-1.5 bg-[#C5A059] text-white rounded-lg text-xs font-semibold"
               >
-                Retry
+                Retry Loading
               </button>
             </div>
           )}
 
           {/* ===================================================================
-              AUTHENTIC 15-LINE KING FAHD UTHMANI TEXT FLOW
+              THE EXACT 15-LINE KING FAHD COMPLEX (KFGQPC V2) MUSHAF LAYOUT
              =================================================================== */}
           {!isLoading && pageData && (
             <div
-              className="font-quran text-right leading-[2.6] sm:leading-[2.9] md:leading-[3.2] text-justify px-1 sm:px-2 md:px-3"
+              className="flex flex-col justify-between w-full select-none"
               dir="rtl"
               style={{
-                fontSize: isMobile ? '23px' : '29px',
-                textAlignLast: pageNumber <= 2 ? 'center' : 'justify'
+                fontFamily: 'KFGQPC_V2, Uthmani_Hafs, serif',
+                minHeight: isMobile ? '480px' : '580px'
               }}
             >
-              {surahSections.map((section, sIdx) => {
-                const isStart = section.isSurahStart;
-                const hasBismillah = isStart && section.surah.number !== 1 && section.surah.number !== 9;
-
-                return (
-                  <div key={`${section.surah.number}-${sIdx}`} className="inline">
-                    {/* ---------------------------------------------------------
-                        SURAH HEADER BANNER (Fawatih as-Suwar Cartouche)
-                       --------------------------------------------------------- */}
-                    {isStart && (
-                      <div className="block my-5 sm:my-7 text-center select-none clear-both">
-                        <div
-                          className="relative inline-flex flex-col items-center justify-center px-6 sm:px-12 py-2 sm:py-3 rounded-2xl border-2 shadow-lg w-full max-w-lg mx-auto overflow-hidden"
-                          style={{
-                            background: isStandMode
-                              ? 'linear-gradient(135deg, #2D1A10 0%, #3D2214 50%, #2D1A10 100%)'
-                              : 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
-                            borderColor: 'rgba(245, 158, 11, 0.4)'
-                          }}
-                        >
-                          {/* Inner Islamic Star Ornament Accent */}
-                          <div className="text-lg sm:text-2xl font-bold font-quran text-amber-300 drop-shadow-sm">
-                            {section.surah.name}
-                          </div>
-                          <div className="text-[11px] sm:text-xs text-amber-200/80 font-sans tracking-wide mt-0.5 tabular-nums flex items-center gap-2">
-                            <span>{section.surah.englishName}</span>
-                            <span>•</span>
-                            <span>{section.surah.revelationType === 'Meccan' ? 'مَكِّيَّةٌ' : 'مَدَنِيَّةٌ'}</span>
-                            <span>•</span>
-                            <span>{toArabicNumerals(section.surah.numberOfAyahs)} آيَاتُهَا</span>
-                          </div>
+              {pageData.lines.map((line: KfgqpcLine) => {
+                // 1. Surah Opening Header Cartouche Banner
+                if (line.type === 'surah_header') {
+                  const s = SURAH_META[line.surahNumber || 1];
+                  return (
+                    <div
+                      key={`line-${line.lineNumber}`}
+                      className="my-1 sm:my-1.5 text-center select-none w-full flex items-center justify-center"
+                    >
+                      <div
+                        className={`w-full py-1.5 sm:py-2 px-4 rounded-xl border-2 flex items-center justify-between shadow-sm relative overflow-hidden ${
+                          isCream
+                            ? 'bg-[#EFE8D6] border-[#C5A059] text-[#1B3B48]'
+                            : 'bg-[#181B22] border-[#C5A059]/70 text-amber-300'
+                        }`}
+                      >
+                        {/* Right: Ayahs count */}
+                        <div className="text-[10px] sm:text-xs font-quran font-bold opacity-80 tabular-nums">
+                          {toArabicNumerals(s?.numberOfAyahs || line.numberOfAyahs || 0)} آيَاتُهَا
                         </div>
 
-                        {/* Calligraphic Bismillah Ornament */}
-                        {hasBismillah && (
-                          <div className="text-xl sm:text-2xl text-amber-400/90 font-quran my-3 sm:my-4 drop-shadow-sm">
-                            بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
-                          </div>
-                        )}
-                      </div>
-                    )}
+                        {/* Center: Surah Title */}
+                        <div className="text-base sm:text-xl font-bold font-quran drop-shadow-xs">
+                          {s?.name || line.surahName || ''}
+                        </div>
 
-                    {/* Continuous Quranic Calligraphy Verses with Real-Time Highlighting */}
-                    {section.ayahs.map((ayah) => {
-                      const isVerseActive =
-                        activeSurahNumber === ayah.surah.number &&
-                        activeAyahNumberInSurah === ayah.numberInSurah;
+                        {/* Left: Makkiyyah / Madaniyyah */}
+                        <div className="text-[10px] sm:text-xs font-quran font-bold opacity-80">
+                          {s?.revelationType === 'Meccan' ? 'مَكِّيَّةٌ' : 'مَدَنِيَّةٌ'}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // 2. Calligraphic Bismillah Ornament Line
+                if (line.type === 'bismillah') {
+                  return (
+                    <div
+                      key={`line-${line.lineNumber}`}
+                      className={`text-center my-0.5 sm:my-1 font-quran text-lg sm:text-2xl font-bold select-none ${
+                        isCream ? 'text-[#1B3B48]' : 'text-amber-400'
+                      }`}
+                    >
+                      بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
+                    </div>
+                  );
+                }
+
+                // 3. Regular 15-Line Quranic Text Line
+                const words = line.words || [];
+                // Center short lines at the end of surahs or pages 1 & 2
+                const isCentered = pageNumber <= 2 || words.length <= 4;
+
+                return (
+                  <div
+                    key={`line-${line.lineNumber}`}
+                    className={`w-full flex items-center leading-normal py-0.5 my-[1px] transition-all ${
+                      isCentered ? 'justify-center gap-3 sm:gap-4' : 'justify-between'
+                    }`}
+                    style={{
+                      fontSize: isMobile ? '19px' : '25px'
+                    }}
+                  >
+                    {words.map((word: KfgqpcWord, wIdx: number) => {
+                      const isVerseActive = activeVerseKey === word.verseKey;
+                      const isEnd = word.charTypeName === 'end';
 
                       return (
                         <span
-                          key={ayah.number}
-                          ref={isVerseActive ? activeAyahRef : null}
-                          onClick={() => {
-                            onPlayAyah(ayah.surah.number, ayah.numberInSurah);
-                            if (onSelectAyah) onSelectAyah(ayah);
-                          }}
-                          className={`cursor-pointer inline transition-all duration-200 rounded-md px-1.5 py-0.5 my-0.5 group relative ${
+                          key={`${word.id}-${wIdx}`}
+                          ref={isVerseActive && wIdx === 0 ? activeWordRef : null}
+                          onClick={() => onPlayVerseKey(word.verseKey)}
+                          className={`cursor-pointer inline-flex items-center justify-center transition-all duration-150 rounded px-0.5 ${
                             isVerseActive
-                              ? 'bg-amber-400/25 text-amber-100 font-semibold shadow-[0_0_15px_rgba(251,191,36,0.4)] ring-1.5 ring-amber-400/60'
-                              : 'hover:bg-white/[0.08] hover:text-white'
+                              ? isCream
+                                ? 'bg-amber-300/45 text-[#000000] font-bold shadow-[0_0_8px_rgba(245,158,11,0.5)] ring-1 ring-amber-500/60'
+                                : 'bg-amber-400/35 text-amber-200 font-bold shadow-[0_0_12px_rgba(245,158,11,0.5)] ring-1 ring-amber-400/60'
+                              : isCream
+                              ? 'hover:bg-amber-200/40 text-[#161311]'
+                              : 'hover:bg-white/10 text-[#EDE8DF]'
                           }`}
-                          title={`Click to listen to Ayah ${ayah.numberInSurah}`}
+                          title={`Click to listen to Ayah ${word.verseKey}`}
                         >
-                          {cleanAyahText(ayah.text, ayah.numberInSurah, ayah.surah.number)}
-
-                          {/* Authentic King Fahd Ayah End Medallion ۝ with Eastern Arabic Numeral */}
-                          <span
-                            className={`inline-flex items-center justify-center mx-1 select-none font-quran text-sm sm:text-base transition-colors ${
-                              isVerseActive
-                                ? 'text-amber-300 font-bold scale-110 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]'
-                                : 'text-amber-500/80 group-hover:text-amber-400'
-                            }`}
-                          >
-                            <span className="font-quran">۝</span>
-                            <span className="text-[11px] sm:text-xs font-mono font-bold -mr-0.5">
-                              {toArabicNumerals(ayah.numberInSurah)}
+                          {isEnd ? (
+                            <span
+                              className={`inline-flex items-center justify-center mx-0.5 font-quran select-none text-[15px] sm:text-[19px] ${
+                                isVerseActive
+                                  ? 'text-amber-600 font-bold'
+                                  : isCream
+                                  ? 'text-[#C5A059]'
+                                  : 'text-amber-400/90'
+                              }`}
+                            >
+                              ۝{toArabicNumerals(parseInt(word.text, 10) || word.position)}
                             </span>
-                          </span>
+                          ) : (
+                            <span>{word.text}</span>
+                          )}
                         </span>
                       );
                     })}
@@ -379,12 +353,14 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
           {/* ===================================================================
               BOTTOM PAGE FOOTER (Page Number Center in Eastern Numerals)
              =================================================================== */}
-          <footer className="pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-amber-500/20 flex items-center justify-between text-xs font-mono text-muted select-none">
+          <footer className="pt-2 mt-2 sm:mt-3 border-t border-[#C5A059]/30 flex items-center justify-between text-xs font-mono select-none">
             {/* Quick jump to Previous Page */}
             <button
               onClick={handlePrevPage}
               disabled={pageNumber <= 1}
-              className="p-1 sm:px-2.5 sm:py-1 rounded-lg hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-colors text-[11px] font-semibold flex items-center gap-1 hit-area-40"
+              className={`p-1 sm:px-2.5 sm:py-1 rounded-lg transition-colors text-[11px] font-semibold flex items-center gap-1 disabled:opacity-20 disabled:cursor-not-allowed ${
+                isCream ? 'hover:bg-black/5 text-[#1B3B48]' : 'hover:bg-white/10 text-muted hover:text-white'
+              }`}
               title="Previous Page (PageUp)"
             >
               <ChevronRight className="w-3.5 h-3.5" />
@@ -393,7 +369,11 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
 
             {/* Central Ornate Page Number Medallion */}
             <div className="flex items-center gap-2">
-              <span className="text-amber-400 font-quran text-base sm:text-lg font-bold">
+              <span
+                className={`font-quran text-base sm:text-lg font-bold ${
+                  isCream ? 'text-[#C5A059]' : 'text-amber-400'
+                }`}
+              >
                 — {toArabicNumerals(pageNumber)} —
               </span>
             </div>
@@ -402,7 +382,9 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
             <button
               onClick={handleNextPage}
               disabled={pageNumber >= 604}
-              className="p-1 sm:px-2.5 sm:py-1 rounded-lg hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-colors text-[11px] font-semibold flex items-center gap-1 hit-area-40"
+              className={`p-1 sm:px-2.5 sm:py-1 rounded-lg transition-colors text-[11px] font-semibold flex items-center gap-1 disabled:opacity-20 disabled:cursor-not-allowed ${
+                isCream ? 'hover:bg-black/5 text-[#1B3B48]' : 'hover:bg-white/10 text-muted hover:text-white'
+              }`}
               title="Next Page (PageDown)"
             >
               <span className="hidden sm:inline">Next Page</span>
@@ -412,11 +394,11 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
         </div>
       </div>
 
-      {/* Floating Left & Right Page Navigation Chevrons for Desktop/Tablet */}
+      {/* Floating Left & Right Page Navigation Chevrons for Desktop */}
       <button
         onClick={handlePrevPage}
         disabled={pageNumber <= 1}
-        className="hidden lg:flex fixed left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 hover:bg-black/90 border border-white/15 text-white/70 hover:text-white backdrop-blur-xl disabled:opacity-10 transition-all shadow-xl z-20 hit-area-44"
+        className="hidden xl:flex fixed left-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/50 hover:bg-black/80 border border-white/15 text-white/80 hover:text-white backdrop-blur-xl disabled:opacity-10 transition-all shadow-xl z-20 hit-area-44"
         title="Previous Page"
       >
         <ChevronRight className="w-5 h-5" />
@@ -425,7 +407,7 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
       <button
         onClick={handleNextPage}
         disabled={pageNumber >= 604}
-        className="hidden lg:flex fixed right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 hover:bg-black/90 border border-white/15 text-white/70 hover:text-white backdrop-blur-xl disabled:opacity-10 transition-all shadow-xl z-20 hit-area-44"
+        className="hidden xl:flex fixed right-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/50 hover:bg-black/80 border border-white/15 text-white/80 hover:text-white backdrop-blur-xl disabled:opacity-10 transition-all shadow-xl z-20 hit-area-44"
         title="Next Page"
       >
         <ChevronLeft className="w-5 h-5" />

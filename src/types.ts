@@ -110,3 +110,40 @@ export interface MushafPageData {
   ayahs: PageAyah[];
   englishAyahs: PageAyah[];
 }
+
+export interface KfgqpcWord {
+  id: number;
+  position: number;
+  audioUrl?: string;
+  charTypeName: 'word' | 'end';
+  text: string;
+  lineNumber: number;
+  verseKey: string;
+  pageNumber: number;
+}
+
+export interface KfgqpcLine {
+  lineNumber: number;
+  type: 'text' | 'surah_header' | 'bismillah';
+  surahNumber?: number;
+  surahName?: string;
+  surahEnglishName?: string;
+  revelationType?: string;
+  numberOfAyahs?: number;
+  words?: KfgqpcWord[];
+}
+
+export interface KfgqpcPageData {
+  pageNumber: number;
+  juzNumber: number;
+  hizbNumber: number;
+  rubNumber: number;
+  primarySurahNumber: number;
+  lines: KfgqpcLine[];
+  verses: {
+    verseKey: string;
+    surahNumber: number;
+    ayahNumber: number;
+    translation: string;
+  }[];
+}

@@ -1,9 +1,201 @@
-import { Surah, Reciter, SurahContent, AudioAyah, MushafPageData } from '../types';
+import { Surah, Reciter, SurahContent, AudioAyah, MushafPageData, KfgqpcPageData, KfgqpcLine, KfgqpcWord } from '../types';
 import { ALLOWED_IDENTIFIERS, MANUAL_RECITERS } from '../config/reciters';
+import { SURAH_META, getJuzForPage } from '../utils/mushafData';
 
 const BASE_URL = 'https://api.alquran.cloud/v1';
 
 const pageCache = new Map<number, MushafPageData>();
+const kfgqpcPageCache = new Map<number, KfgqpcPageData>();
+
+export const fetchKfgqpcPage = async (pageNumber: number): Promise<KfgqpcPageData | null> => {
+  if (pageNumber < 1 || pageNumber > 604) return null;
+  if (kfgqpcPageCache.has(pageNumber)) {
+    return kfgqpcPageCache.get(pageNumber)!;
+  }
+
+  try {
+    const [quranRes, translationRes] = await Promise.all([
+      fetch(`https://api.quran.com/api/v4/verses/by_page/${pageNumber}?words=true&word_fields=text_qpc_hafs,line_number`),
+      fetch(`${BASE_URL}/page/${pageNumber}/en.hilali`)
+    ]);
+
+    if (!quranRes.ok) {
+      throw new Error(`Failed to fetch Quran.com page ${pageNumber}`);
+    }
+
+    const quranJson = await quranRes.json();
+    const translationJson = translationRes.ok ? await translationRes.json() : null;
+
+    // Build verse translations map: "surah:ayah" -> translation text
+    const translationsMap: Record<string, string> = {};
+    if (translationJson?.data?.ayahs) {
+      translationJson.data.ayahs.forEach((a: any) => {
+        const key = `${a.surah.number}:${a.numberInSurah}`;
+        translationsMap[key] = a.text;
+      });
+    }
+
+    const rawVerses = quranJson.verses || [];
+    if (rawVerses.length === 0) return null;
+
+    // Group words by line_number
+    const lineWordsMap = new Map<number, KfgqpcWord[]>();
+    const surahStarts = new Map<number, number>(); // line_number -> surah_number
+
+    rawVerses.forEach((v: any) => {
+      const [sStr, aStr] = v.verse_key.split(':');
+      const sNum = parseInt(sStr, 10);
+      const aNum = parseInt(aStr, 10);
+
+      const words: any[] = v.words || [];
+      if (aNum === 1 && words.length > 0) {
+        surahStarts.set(words[0].line_number, sNum);
+      }
+
+      words.forEach((w: any) => {
+        const lineNum = w.line_number;
+        if (!lineWordsMap.has(lineNum)) {
+          lineWordsMap.set(lineNum, []);
+        }
+        lineWordsMap.get(lineNum)!.push({
+          id: w.id,
+          position: w.position,
+          audioUrl: w.audio_url,
+          charTypeName: w.char_type_name,
+          text: w.text_qpc_hafs || w.text || '',
+          lineNumber: lineNum,
+          verseKey: v.verse_key,
+          pageNumber: v.page_number || pageNumber
+        });
+      });
+    });
+
+    // Construct lines of the King Fahd Complex Mushaf
+    const lines: KfgqpcLine[] = [];
+    const firstVerseSurah = parseInt(rawVerses[0].verse_key.split(':')[0], 10);
+
+    for (let l = 1; l <= 15; l++) {
+      if (lineWordsMap.has(l)) {
+        lines.push({
+          lineNumber: l,
+          type: 'text',
+          words: lineWordsMap.get(l)!
+        });
+      } else if (pageNumber === 1) {
+        if (l === 1) {
+          const s = SURAH_META[1];
+          lines.push({
+            lineNumber: l,
+            type: 'surah_header',
+            surahNumber: 1,
+            surahName: s?.name,
+            surahEnglishName: s?.englishName,
+            revelationType: s?.revelationType,
+            numberOfAyahs: s?.numberOfAyahs
+          });
+        }
+      } else if (pageNumber === 2) {
+        if (l === 1) {
+          const s = SURAH_META[2];
+          lines.push({
+            lineNumber: l,
+            type: 'surah_header',
+            surahNumber: 2,
+            surahName: s?.name,
+            surahEnglishName: s?.englishName,
+            revelationType: s?.revelationType,
+            numberOfAyahs: s?.numberOfAyahs
+          });
+        } else if (l === 2) {
+          lines.push({
+            lineNumber: l,
+            type: 'bismillah'
+          });
+        }
+      } else {
+        // Check if this line is a Surah Header or Bismillah before an Ayah 1
+        if (surahStarts.has(l + 1)) {
+          const sNum = surahStarts.get(l + 1)!;
+          if (sNum === 9) {
+            // Surah 9 (At-Tawbah) has no Bismillah
+            const s = SURAH_META[sNum];
+            lines.push({
+              lineNumber: l,
+              type: 'surah_header',
+              surahNumber: sNum,
+              surahName: s?.name,
+              surahEnglishName: s?.englishName,
+              revelationType: s?.revelationType,
+              numberOfAyahs: s?.numberOfAyahs
+            });
+          } else {
+            lines.push({
+              lineNumber: l,
+              type: 'bismillah'
+            });
+          }
+        } else if (surahStarts.has(l + 2)) {
+          const sNum = surahStarts.get(l + 2)!;
+          const s = SURAH_META[sNum];
+          lines.push({
+            lineNumber: l,
+            type: 'surah_header',
+            surahNumber: sNum,
+            surahName: s?.name,
+            surahEnglishName: s?.englishName,
+            revelationType: s?.revelationType,
+            numberOfAyahs: s?.numberOfAyahs
+          });
+        } else if (l === 1 && lines.length === 0) {
+          const s = SURAH_META[firstVerseSurah];
+          lines.push({
+            lineNumber: l,
+            type: 'surah_header',
+            surahNumber: firstVerseSurah,
+            surahName: s?.name,
+            surahEnglishName: s?.englishName,
+            revelationType: s?.revelationType,
+            numberOfAyahs: s?.numberOfAyahs
+          });
+        }
+      }
+    }
+
+    const firstVerse = rawVerses[0];
+    const pageData: KfgqpcPageData = {
+      pageNumber,
+      juzNumber: firstVerse?.juz_number || getJuzForPage(pageNumber),
+      hizbNumber: firstVerse?.hizb_number || 1,
+      rubNumber: firstVerse?.rub_el_hizb_number || 1,
+      primarySurahNumber: firstVerseSurah,
+      lines,
+      verses: rawVerses.map((v: any) => {
+        const [sStr, aStr] = v.verse_key.split(':');
+        return {
+          verseKey: v.verse_key,
+          surahNumber: parseInt(sStr, 10),
+          ayahNumber: parseInt(aStr, 10),
+          translation: translationsMap[v.verse_key] || ''
+        };
+      })
+    };
+
+    kfgqpcPageCache.set(pageNumber, pageData);
+
+    // Background prefetch adjacent pages
+    if (pageNumber + 1 <= 604 && !kfgqpcPageCache.has(pageNumber + 1)) {
+      setTimeout(() => fetchKfgqpcPage(pageNumber + 1).catch(() => {}), 200);
+    }
+    if (pageNumber - 1 >= 1 && !kfgqpcPageCache.has(pageNumber - 1)) {
+      setTimeout(() => fetchKfgqpcPage(pageNumber - 1).catch(() => {}), 400);
+    }
+
+    return pageData;
+  } catch (error) {
+    console.error(`Error fetching KFGQPC Page ${pageNumber}:`, error);
+    return null;
+  }
+};
 
 export const fetchMushafPage = async (pageNumber: number): Promise<MushafPageData | null> => {
   if (pageNumber < 1 || pageNumber > 604) return null;
